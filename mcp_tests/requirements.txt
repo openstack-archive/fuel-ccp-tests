@@ -1,0 +1,6 @@
+git+git://github.com/openstack/fuel-devops.git@2.9.20
+paramiko
+six
+requests>=2.2.0
+pytest>=2.9
+docker-py
