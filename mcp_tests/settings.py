@@ -31,4 +31,4 @@ TIMESTAT_PATH_YAML = os.environ.get(
 SSH_NODE_CREDENTIALS = os.environ.get('SSH_NODE_CREDENTIALS',
                                       {'login': 'test', 'password': 'test'})
 
-PRIVATE_REGISTRY = os.environ.get('PRIVATE_REGISTRY')
+PRIVATE_REGISTRY = os.environ.get('PRIVATE_REGISTRY', None)

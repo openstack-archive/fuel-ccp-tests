@@ -17,6 +17,13 @@ from __future__ import division
 from mcp_tests.logger import logger
 
 
+def exec_in_container(container, cmd):
+    command = container.create_exec(cmd)
+    stdout = container.start_exec(command)
+    inspect = container.client.exec_inspect(command['Id'])
+    return stdout, inspect['ExitCode']
+
+
 class ContainerEngine(object):
     def __init__(self,
                  remote=None,
