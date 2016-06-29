@@ -94,23 +94,22 @@ class ContainerEngine(object):
         logger.debug('Installing utils "{0}" to the  container...'.format(
             utils))
         result = self.run_container_command(cmd)
-        assert(result['exit_code'] == 0,
-               'Utils installation failed in container: '
-               '{0}'.format(result))
+        assert result['exit_code'] == 0, \
+            "Utils installation failed in container: {0}".format(result)
 
     def prepare_image(self):
         self.setup_utils()
         last_container_cmd = "docker ps -lq"
         result = self.remote.execute(last_container_cmd)
-        assert(result['exit_code'] == 0,
-               "Unable to get last container ID: {0}!".format(result))
+        assert result['exit_code'] == 0, \
+            "Unable to get last container ID: {0}!".format(result)
         last_container = ''.join([line.strip() for line in result['stdout']])
         commit_cmd = 'docker commit {0} {1}:ready'.format(last_container,
                                                           self.container_repo)
         result = self.remote.execute(commit_cmd)
-        assert(result['exit_code'] == 0,
-               'Commit to Docker image "{0}" failed: {1}.'.format(
-                   self.container_repo, result))
+        assert result['exit_code'] == 0, \
+            "Commit to Docker image '{0}' failed: {1}.".format(
+                self.container_repo, result)
         return self.image_exists(tag='ready')
 
     def setup_bash_alias(self):
@@ -135,20 +134,20 @@ class ContainerEngine(object):
                                 image_name=self.image_name))
         result = self.remote.execute('echo "{0}">> /root/.bashrc'.format(
             create_alias_cmd))
-        assert (result['exit_code'] == 0,
-                "Alias creation for running {0} from container failed: "
-                "{1}.".format(self.image_name, result))
+        assert result['exit_code'] == 0, \
+            ("Alias creation for running {0} from container "
+             "failed: {1}.").format(self.image_name, result)
         result = self.remote.execute(check_alias_cmd)
-        assert(result['exit_code'] == 0,
-               "Alias creation for running {} from container failed: "
-               "{1}.".format(self.image_name, result))
+        assert result['exit_code'] == 0, \
+            ("Alias creation for running {} from container "
+             "failed: {1}.").format(self.image_name, result)
 
     def setup(self):
         if not self.image_exists():
-            assert (self.pull_image(),
-                    "Docker image for {} not found!".format(self.image_name))
+            assert self.pull_image(), \
+                "Docker image for {} not found!".format(self.image_name)
         if not self.image_exists(tag='ready'):
-            assert(self.prepare_image(),
-                   "Docker image for {} is not ready!".format(self.image_name))
+            assert self.prepare_image(), \
+                "Docker image for {} is not ready!".format(self.image_name)
         self.repository_tag = 'ready'
         self.setup_bash_alias()

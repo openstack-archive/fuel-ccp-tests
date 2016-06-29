@@ -5,3 +5,4 @@ requests>=2.2.0
 pytest>=2.9
 docker-py
 docker-compose==1.7.1
+python-k8sclient

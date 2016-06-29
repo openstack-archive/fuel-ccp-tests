@@ -32,3 +32,7 @@ SSH_NODE_CREDENTIALS = os.environ.get('SSH_NODE_CREDENTIALS',
                                       {'login': 'test', 'password': 'test'})
 
 PRIVATE_REGISTRY = os.environ.get('PRIVATE_REGISTRY', None)
+
+KUBE_ADMIN_USER = os.environ.get('KUBE_ADMIN_USER', 'root')
+KUBE_ADMIN_PASS = os.environ.get('KUBE_ADMIN_PASS', 'changeme')
+KUBE_HOST = os.environ.get('KUBE_HOST', None)
