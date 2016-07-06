@@ -16,6 +16,7 @@
 class UnexpectedExitCode(Exception):
     def __init__(self, command, ec, expected_ec, stdout=None, stderr=None):
         """Exception for unexpected exit code after executing shell/ssh command
+
         :param command: str - executed command
         :param ec: int - actual exit code
         :param expected_ec: list of integers - expected exit codes
@@ -50,3 +51,61 @@ class VariableNotSet(Exception):
     def __str__(self):
         return "Variable {0} was not set in value {1}".format(
             self.variable_name, self.expected_value)
+
+
+class DevopsConfigPathIsNotSet(ValueError):
+    def __str__(self):
+        return "Devops config/template path is not set!"
+
+
+class DevopsConfigTypeError(TypeError):
+    def __init__(self, type_name):
+        self.type_name = type_name
+        super(DevopsConfigTypeError, self).__init__()
+
+    def __str__(self):
+        return "Devops config should be dict instead of {0}".format(
+            self.type_name
+        )
+
+
+class DevopsConfigIsNone(ValueError):
+    def __str__(self):
+        return "Devops config is None!"
+
+
+class EnvironmentNameIsNotSet(ValueError):
+    def __str__(self):
+        return "Couldn't get environment name!"
+
+
+class EnvironmentDoesNotExist(BaseException):
+    def __init__(self, env_name):
+        super(EnvironmentDoesNotExist, self).__init__()
+        self.env_name = env_name
+
+    def __str__(self):
+        return "Environment {0} does not exist!".format(
+            self.env_name
+        )
+
+
+class EnvironmentAlreadyExists(BaseException):
+    def __init__(self, env_name):
+        super(EnvironmentAlreadyExists, self).__init__()
+        self.env_name = env_name
+
+    def __str__(self):
+        return "Environment {0} already exists!".format(
+            self.env_name
+        )
+
+
+class EnvironmentIsNotSet(BaseException):
+    def __str__(self):
+        return "Environment is not set!"
+
+
+class BaseImageIsNotSet(BaseException):
+    def __str__(self):
+        return "Base image for creating VMs is not set!"

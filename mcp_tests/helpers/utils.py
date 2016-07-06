@@ -15,11 +15,15 @@
 
 import os
 import time
-import yaml
 import traceback
 
-from mcp_tests.logger import logger
+import yaml
+
+from mcp_tests import logger
 from mcp_tests import settings
+
+
+LOG = logger.logger
 
 
 def get_test_method_name():
@@ -30,6 +34,7 @@ def update_yaml(yaml_tree=None, yaml_value='', is_uniq=True,
                 yaml_file=settings.TIMESTAT_PATH_YAML):
 
     """Store/update a variable in YAML file.
+
     yaml_tree - path to the variable in YAML file, will be created if absent,
     yaml_value - value of the variable, will be overwritten if exists,
     is_uniq - If false, add the unique two-digit suffix to the variable name.
@@ -64,7 +69,8 @@ def update_yaml(yaml_tree=None, yaml_value='', is_uniq=True,
 
 
 class TimeStat(object):
-    """ Context manager for measuring the execution time of the code.
+    """Context manager for measuring the execution time of the code.
+
     Usage:
     with TimeStat([name],[is_uniq=True]):
     """
@@ -104,8 +110,8 @@ class TimeStat(object):
             update_yaml(yaml_path, '{:.2f}'.format(self.total_time),
                         self.is_uniq)
         except Exception:
-            logger.error("Error storing time statistic for {0}"
-                         " {1}".format(yaml_path, traceback.format_exc()))
+            LOG.error("Error storing time statistic for {0}"
+                      " {1}".format(yaml_path, traceback.format_exc()))
             raise
 
     @property
