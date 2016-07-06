@@ -14,10 +14,15 @@
 
 
 import os
+import pkg_resources
 import time
 
 _boolean_states = {'1': True, 'yes': True, 'true': True, 'on': True,
                    '0': False, 'no': False, 'false': False, 'off': False}
+
+_default_conf = pkg_resources.resource_filename(
+    __name__, 'templates/default.yaml')
+# _default_conf = os.getcwd() + '/mcp_tests/templates/default.yaml'
 
 
 def get_var_as_bool(name, default):
@@ -29,7 +34,14 @@ TIMESTAT_PATH_YAML = os.environ.get(
     'TIMESTAT_PATH_YAML', os.path.join(
         LOGS_DIR, 'timestat_{}.yaml'.format(time.strftime("%Y%m%d"))))
 SSH_NODE_CREDENTIALS = os.environ.get('SSH_NODE_CREDENTIALS',
-                                      {'login': 'test', 'password': 'test'})
+                                      {'login': 'vagrant',
+                                       'password': 'vagrant'})
+
+ENV_NAME = os.environ.get('ENV_NAME', 'mcp_qa-test')
+IMAGE_PATH = os.environ.get('IMAGE_PATH', None)
+CONF_PATH = os.environ.get('CONF_PATH', os.path.abspath(_default_conf))
+SUSPEND_ENV_ON_TEARDOWN = os.environ.get('SUSPEND_ENV_ON_TEARDOWN', True)
+DEPLOY_SCRIPT = os.environ.get("DEPLOY_SCRIPT", None)
 
 PRIVATE_REGISTRY = os.environ.get('PRIVATE_REGISTRY', None)
 

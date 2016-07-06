@@ -18,22 +18,25 @@ import posixpath
 import re
 import traceback
 
-from devops.helpers.helpers import wait
-from devops.models.node import SSHClient
-from paramiko import RSAKey
+from devops.helpers import helpers
+from devops.models import node
+from paramiko import rsakey
 import six
 
-from mcp_tests.logger import logger
-from mcp_tests.helpers.metaclasses import SingletonMeta
 from mcp_tests.helpers import mcp_tests_exceptions
-from mcp_tests.settings import SSH_NODE_CREDENTIALS
+from mcp_tests.helpers import metaclasses
+from mcp_tests import logger
+from mcp_tests import settings
 
 
-@six.add_metaclass(SingletonMeta)
+LOG = logger.logger
+
+
+@six.add_metaclass(metaclasses.SingletonMeta)
 class SSHManager(object):
 
     def __init__(self):
-        logger.debug('SSH_MANAGER: Run constructor SSHManager')
+        LOG.debug('SSH_MANAGER: Run constructor SSHManager')
         self.__connections = {}  # Disallow direct type change and deletion
         self.ip = None
         self.port = None
@@ -45,9 +48,9 @@ class SSHManager(object):
         return self.__connections
 
     def initialize(self, ip,
-                   login=SSH_NODE_CREDENTIALS['login'],
-                   password=SSH_NODE_CREDENTIALS['password']):
-        """ It will be moved to __init__
+                   login=settings.SSH_NODE_CREDENTIALS['login'],
+                   password=settings.SSH_NODE_CREDENTIALS['password']):
+        """It will be moved to __init__
 
         :param ip: ip address of node
         :param login: user name
@@ -61,17 +64,18 @@ class SSHManager(object):
 
     @staticmethod
     def _connect(remote):
-        """ Check if connection is stable and return this one
+        """Check if connection is stable and return this one
 
         :param remote:
         :return:
         """
         try:
-            wait(lambda: remote.execute("cd ~")['exit_code'] == 0, timeout=20)
+            helpers.wait(lambda: remote.execute("cd ~")['exit_code'] == 0,
+                         timeout=20)
         except Exception:
-            logger.info('SSHManager: Check for current '
-                        'connection fails. Try to reconnect')
-            logger.debug(traceback.format_exc())
+            LOG.info('SSHManager: Check for current '
+                     'connection fails. Try to reconnect')
+            LOG.debug(traceback.format_exc())
             remote.reconnect()
         return remote
 
@@ -80,26 +84,26 @@ class SSHManager(object):
         remote = self.get_remote(self.ip)
         key_string = '/root/.ssh/id_rsa'
         with remote.open(key_string) as f:
-            keys.append(RSAKey.from_private_key(f))
+            keys.append(rsakey.RSAKey.from_private_key(f))
         return keys
 
     def get_remote(self, ip, port=22):
-        """ Function returns remote SSH connection to node by ip address
+        """Function returns remote SSH connection to node by ip address
 
         :param ip: IP of host
         :param port: port for SSH
-        :return: SSHClient
+        :return: node.SSHClient
         """
         if (ip, port) not in self.connections:
-            logger.debug('SSH_MANAGER:Create new connection for '
-                         '{ip}:{port}'.format(ip=ip, port=port))
+            LOG.debug('SSH_MANAGER:Create new connection for '
+                      '{ip}:{port}'.format(ip=ip, port=port))
 
             keys = self._get_keys()
             ip = self.ip
             username = self.login
             password = self.password
 
-            ssh_client = SSHClient(
+            ssh_client = node.SSHClient(
                 host=ip,
                 port=port,
                 username=username,
@@ -109,9 +113,10 @@ class SSHManager(object):
 
             ssh_client.sudo_mode = True
             self.connections[(ip, port)] = ssh_client
-        logger.debug('SSH_MANAGER:Return existed connection for '
-                     '{ip}:{port}'.format(ip=ip, port=port))
-        logger.debug('SSH_MANAGER: Connections {0}'.format(self.connections))
+            LOG.debug('SSH_MANAGER:Return existed connection for '
+                      '{ip}:{port}'.format(ip=ip, port=port))
+        LOG.debug(
+            'SSH_MANAGER: Connections {0}'.format(self.connections))
         return self._connect(self.connections[(ip, port)])
 
     def update_connection(self, ip, login=None, password=None,
@@ -126,13 +131,14 @@ class SSHManager(object):
         :return: None
         """
         if (ip, port) in self.connections:
-            logger.info('SSH_MANAGER:Close connection for {ip}:{port}'.format(
-                ip=ip, port=port))
+            LOG.info(
+                'SSH_MANAGER:Close connection for {ip}:{port}'.format(
+                    ip=ip, port=port))
             self.connections[(ip, port)].clear()
-            logger.info('SSH_MANAGER:Create new connection for '
-                        '{ip}:{port}'.format(ip=ip, port=port))
+            LOG.info('SSH_MANAGER:Create new connection for '
+                     '{ip}:{port}'.format(ip=ip, port=port))
 
-            self.connections[(ip, port)] = SSHClient(
+            self.connections[(ip, port)] = node.SSHClient(
                 host=ip,
                 port=port,
                 username=login,
@@ -143,8 +149,9 @@ class SSHManager(object):
     def clean_all_connections(self):
         for (ip, port), connection in self.connections.items():
             connection.clear()
-            logger.info('SSH_MANAGER:Close connection for {ip}:{port}'.format(
-                ip=ip, port=port))
+            LOG.info(
+                'SSH_MANAGER:Close connection for {ip}:{port}'.format(
+                    ip=ip, port=port))
 
     def execute(self, ip, cmd, port=22):
         remote = self.get_remote(ip=ip, port=port)
@@ -199,7 +206,7 @@ class SSHManager(object):
                 "{0}  Command: '{1}'  "
                 "Details:\n{2}".format(
                     error_msg, cmd, details_log))
-            logger.error(log_msg)
+            LOG.error(log_msg)
             if raise_on_assert:
                 raise mcp_tests_exceptions.UnexpectedExitCode(
                     cmd,
@@ -208,7 +215,7 @@ class SSHManager(object):
                     stdout=result['stdout_str'],
                     stderr=result['stderr_str'])
         else:
-            logger.debug(details_log)
+            LOG.debug(details_log)
 
         if jsonify:
             try:
@@ -218,7 +225,7 @@ class SSHManager(object):
                 error_msg = (
                     "Unable to deserialize output of command"
                     " '{0}' on host {1}".format(cmd, ip))
-                logger.error(error_msg)
+                LOG.error(error_msg)
                 raise Exception(error_msg)
 
         return result
@@ -229,7 +236,7 @@ class SSHManager(object):
 
     @staticmethod
     def _json_deserialize(json_string):
-        """ Deserialize json_string and return object
+        """Deserialize json_string and return object
 
         :param json_string: string or list with json
         :return: obj
@@ -242,8 +249,8 @@ class SSHManager(object):
             obj = json.loads(json_string)
         except Exception:
             log_msg = "Unable to deserialize"
-            logger.error("{0}. Actual string:\n{1}".format(log_msg,
-                                                           json_string))
+            LOG.error("{0}. Actual string:\n{1}".format(log_msg,
+                                                        json_string))
             raise Exception(log_msg)
         return obj
 
@@ -281,7 +288,7 @@ class SSHManager(object):
 
     def cond_upload(self, ip, source, target, port=22, condition='',
                     clean_target=False):
-        """ Upload files only if condition in regexp matches filenames
+        """Upload files only if condition in regexp matches filenames
 
         :param ip: host ip
         :param source: source path
@@ -292,7 +299,8 @@ class SSHManager(object):
         """
 
         # remote = self.get_remote(ip=ip, port=port)
-        # maybe we should use SSHClient function. e.g. remote.isdir(target)
+        # maybe we should use node.SSHClient function.
+        # e.g. remote.isdir(target)
         # we can move this function to some *_actions class
         if self.isdir_on_remote(ip=ip, port=port, path=target):
             target = posixpath.join(target, os.path.basename(source))
@@ -306,12 +314,12 @@ class SSHManager(object):
             if re.match(condition, source):
                 self.upload_to_remote(ip=ip, port=port,
                                       source=source, target=target)
-                logger.debug("File '{0}' uploaded to the remote folder"
-                             " '{1}'".format(source, target))
+                LOG.debug("File '{0}' uploaded to the remote folder"
+                          " '{1}'".format(source, target))
                 return 1
             else:
-                logger.debug("Pattern '{0}' doesn't match the file '{1}', "
-                             "uploading skipped".format(condition, source))
+                LOG.debug("Pattern '{0}' doesn't match the file '{1}', "
+                          "uploading skipped".format(condition, source))
                 return 0
 
         files_count = 0
@@ -332,10 +340,12 @@ class SSHManager(object):
                                           source=local_path,
                                           target=remote_path)
                     files_count += 1
-                    logger.debug("File '{0}' uploaded to the "
-                                 "remote folder '{1}'".format(source, target))
+                    LOG.debug("File '{0}' uploaded to the "
+                              "remote folder '{1}'".format(
+                                  source, target))
                 else:
-                    logger.debug("Pattern '{0}' doesn't match the file '{1}', "
-                                 "uploading skipped".format(condition,
-                                                            local_path))
+                    LOG.debug(
+                        "Pattern '{0}' doesn't match the file '{1}', "
+                        "uploading skipped".format(condition,
+                                                   local_path))
         return files_count
