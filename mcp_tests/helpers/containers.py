@@ -14,7 +14,10 @@
 
 from __future__ import division
 
-from mcp_tests.logger import logger
+from mcp_tests import logger
+
+
+LOG = logger.logger
 
 
 def exec_in_container(container, cmd):
@@ -49,19 +52,19 @@ class ContainerEngine(object):
     def image_exists(self, tag='latest'):
         cmd = "docker images | grep {0}| awk '{{print $1}}'".format(
             self.image_name)
-        logger.info('Checking Docker images...')
+        LOG.info('Checking Docker images...')
         result = self.remote.execute(cmd)
-        logger.debug(result)
+        LOG.debug(result)
         existing_images = [line.strip().split() for line in result['stdout']]
         return [self.container_repo, tag] in existing_images
 
     def pull_image(self):
-        # TODO: add possibility to load image from local path or
+        # TODO(dtyzhnenko): add possibility to load image from local path or
         # remote link provided in settings, in order to speed up downloading
         cmd = 'docker pull {0}'.format(self.container_repo)
-        logger.debug('Downloading Rally repository/image from registry...')
+        LOG.debug('Downloading Rally repository/image from registry...')
         result = self.remote.execute(cmd)
-        logger.debug(result)
+        LOG.debug(result)
         return self.image_exists()
 
     def run_container_command(self, command, in_background=False):
@@ -81,17 +84,20 @@ class ContainerEngine(object):
                    container_repo=self.container_repo,
                    tag=self.repository_tag,
                    command=command))
-        logger.debug('Executing command "{0}" in Rally container {1}..'.format(
-            cmd, self.container_repo))
+        LOG.debug(
+            'Executing command "{0}" in Rally container {1}..'.format(
+                cmd, self.container_repo
+            )
+        )
         result = self.remote.execute(cmd)
-        logger.debug(result)
+        LOG.debug(result)
         return result
 
     def setup_utils(self):
         utils = ['gawk', 'vim', 'curl']
         cmd = ('unset http_proxy https_proxy; apt-get update; '
                'apt-get install -y {0}'.format(' '.join(utils)))
-        logger.debug('Installing utils "{0}" to the  container...'.format(
+        LOG.debug('Installing utils "{0}" to the  container...'.format(
             utils))
         result = self.run_container_command(cmd)
         assert result['exit_code'] == 0, \
@@ -118,8 +124,11 @@ class ContainerEngine(object):
         result = self.remote.execute(check_alias_cmd)
         if result['exit_code'] == 0:
             return
-        logger.debug('Creating bash alias for {} inside container...'.format(
-            self.image_name))
+        LOG.debug(
+            'Creating bash alias for {} inside container...'.format(
+                self.image_name
+            )
+        )
         create_alias_cmd = ("alias {alias_name}='docker run --user {user_id} "
                             "--net=\"host\"  -e \"http_proxy={proxy_url}\" -t "
                             "-i -v {dir_for_home}:{home_bind_path}  "
