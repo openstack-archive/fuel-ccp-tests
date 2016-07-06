@@ -12,21 +12,22 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from mcp_tests.helpers import containers
-from mcp_tests.helpers import ssh_manager
+import collections
 
 
-class TestBasic(object):
-    """Basic test case class for tests.
+def enum(*values, **kwargs):
+    names = kwargs.get('names')
+    if names:
+        return collections.namedtuple('Enum', names)(*values)
+    return collections.namedtuple('Enum', values)(*values)
 
-    """
-    def __init__(self):
-        self._devops_config = None
+NODE_ROLE = enum(
+    'master',
+    'slave',
+    'k8s',
+)
 
-    @property
-    def ssh_manager(self):
-        return ssh_manager.SSHManager()
-
-    @property
-    def container_engine(self):
-        return containers.ContainerEngine()
+NETWORK_TYPE = enum(
+    'private',
+    'public'
+)
