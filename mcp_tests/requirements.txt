@@ -1,8 +1,10 @@
-git+git://github.com/openstack/fuel-devops.git@2.9.20
+git+git://github.com/openstack/fuel-devops.git
 paramiko
 six
 requests>=2.2.0
 pytest>=2.9
 docker-py
 docker-compose==1.7.1
+urllib3
+psycopg2
 python-k8sclient
