@@ -13,18 +13,19 @@
 #    under the License.
 import pytest
 
-from devops.helpers.helpers import tcp_ping
-from devops.helpers.helpers import wait
+from devops.helpers import helpers
 
+from mcp_tests.helpers import containers as cs
+from mcp_tests import logger
+from mcp_tests import service_tests
 from mcp_tests import settings
-from mcp_tests.helpers.containers import exec_in_container
-from mcp_tests.logger import logger
-from mcp_tests.service_tests import ServiceBaseTest
+
+LOG = logger.logger
 
 
 @pytest.mark.skipif(settings.PRIVATE_REGISTRY is None,
                     reason="PRIVATE_REGISTRY isn't set")
-class TestMysqlImage(ServiceBaseTest):
+class TestMysqlImage(service_tests.ServiceBaseTest):
     """Test class consits simple tests for mysql container"""
 
     services = [
@@ -47,10 +48,10 @@ class TestMysqlImage(ServiceBaseTest):
             4. Check access from root user
 
         """
-        logger.info("Trying check daemon")
+        LOG.info("Trying check daemon")
         container = self.containers[0]
         cmd = 'pgrep mysqld'
-        out, exit_code = exec_in_container(container, cmd)
+        out, exit_code = cs.exec_in_container(container, cmd)
         assert exit_code == 0
 
     @pytest.mark.mysql_base
@@ -61,10 +62,10 @@ class TestMysqlImage(ServiceBaseTest):
             3. Check port 3306
 
         """
-        logger.info("Trying to reach port 3306")
-        wait(lambda: tcp_ping('localhost', 33306),
-             timeout=30,
-             timeout_msg="MySQL port in not reacheble.")
+        LOG.info("Trying to reach port 3306")
+        helpers.wait(lambda: helpers.tcp_ping('localhost', 33306),
+                     timeout=30,
+                     timeout_msg="MySQL port in not reacheble.")
 
     @pytest.mark.mysql_base
     def test_mysql_is_accessible(self):
@@ -74,13 +75,13 @@ class TestMysqlImage(ServiceBaseTest):
             4. Check access from root user
 
         """
-        logger.info("Trying fetch databases list")
+        LOG.info("Trying fetch databases list")
         container = self.containers[0]
         cmd = 'mysql -Ns -uroot -pr00tme -e "SHOW DATABASES"'
-        out, exit_code = exec_in_container(container, cmd)
+        out, exit_code = cs.exec_in_container(container, cmd)
         assert exit_code == 0
 
         out = filter(bool, out.split('\n'))
-        logger.info("Databases in DB - {}".format(out))
+        LOG.info("Databases in DB - {}".format(out))
         assert set(out) == \
             set(['information_schema', 'mysql', 'performance_schema'])

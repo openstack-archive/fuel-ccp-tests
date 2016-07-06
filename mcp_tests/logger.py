@@ -13,18 +13,18 @@
 #    under the License.
 import functools
 import logging
-import traceback
 import os
+import traceback
 
-from mcp_tests.settings import LOGS_DIR
+from mcp_tests import settings
 
-if not os.path.exists(LOGS_DIR):
-    os.makedirs(LOGS_DIR)
+if not os.path.exists(settings.LOGS_DIR):
+    os.makedirs(settings.LOGS_DIR)
 
 logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s - %(levelname)s %(filename)s:'
                     '%(lineno)d -- %(message)s',
-                    filename=os.path.join(LOGS_DIR, 'tests.log'),
+                    filename=os.path.join(settings.LOGS_DIR, 'tests.log'),
                     filemode='w')
 
 console = logging.StreamHandler()

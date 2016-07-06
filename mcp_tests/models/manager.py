@@ -12,14 +12,36 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from mcp_tests.base_test import TestBasic
+from mcp_tests import base_test
+from mcp_tests.helpers import env_config
 
 
-class Manager(TestBasic):
-    """Manager class for tests."""
+class Manager(base_test.TestBasic):
+    """Base manager class."""
 
-    def __init__(self, config_file, cls):
+    def __init__(self):
         super(Manager, self).__init__()
-        self._devops_config = None
+        self.__devops_config = env_config.EnvironmentConfig()
         self._start_time = 0
-        self._context = cls
+        self._env = None
+
+    @property
+    def devops_config(self):
+        return self.__devops_config
+
+    @devops_config.setter
+    def devops_config(self, conf):
+        """Setter for self.__devops_config
+
+        :param conf: mcp_tests.helpers.env_config.EnvironmentConfig
+        """
+        if not isinstance(conf, env_config.EnvironmentConfig):
+            msg = ("Unexpected type of devops config. Got '{0}' " +
+                   "instead of '{1}'")
+            raise TypeError(
+                msg.format(
+                    type(conf).__name__,
+                    env_config.EnvironmentConfig.__name__
+                )
+            )
+        self.__devops_config = conf

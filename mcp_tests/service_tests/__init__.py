@@ -14,14 +14,15 @@
 import logging
 import time
 
+from compose import project
+from compose import service
 import docker
-from compose.project import Project
-from compose.service import Service
 
-from mcp_tests.logger import logger
-from mcp_tests.logger import console
+from mcp_tests import logger
 
-logging.getLogger('compose.service').addHandler(console)
+logging.getLogger('compose.service').addHandler(logger.console)
+
+LOG = logger.logger
 
 
 class ServiceBaseTest(object):
@@ -35,27 +36,27 @@ class ServiceBaseTest(object):
             1. Get image from private registry
             2. Start container with it
         """
-        logger.info("Up services")
+        LOG.info("Up services")
         cli = docker.Client()
         project_name = cls.__name__
         services = []
         for s in cls.services:
             services.append(
-                Service(
+                service.Service(
                     # name=s['name'],
                     project=project_name,
                     client=cli,
                     **s))
-        cls.project = Project(
+        cls.project = project.Project(
             name=project_name,
             services=services,
             client=cli)
         cls.containers = cls.project.up()
         wait_services = getattr(cls, 'wait_services', 5)
-        logger.info("Sleep {} sec until MariDB is setting up".format(
+        LOG.info("Sleep {} sec until MariDB is setting up".format(
             wait_services))
         time.sleep(wait_services)
-        logger.info("Start tests")
+        LOG.info("Start tests")
 
     @classmethod
     def teardown_class(cls):
@@ -66,6 +67,6 @@ class ServiceBaseTest(object):
             6. Remove volumes
 
         """
-        logger.info("Down service and remove volume")
+        LOG.info("Down service and remove volume")
         cls.project.down(remove_image_type=False,
                          include_volumes=True)
