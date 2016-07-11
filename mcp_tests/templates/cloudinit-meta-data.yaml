@@ -1,0 +1,11 @@
+| # All the data below will be stored as a string object
+  instance-id: iid-local1
+  local-hostname: {hostname}
+  network-interfaces: |
+   auto {interface_name}
+   iface {interface_name} inet static
+   address {address}
+   network {network}
+   netmask {netmask}
+   gateway {gateway}
+   dns-nameservers {dns} {dns_ext}
