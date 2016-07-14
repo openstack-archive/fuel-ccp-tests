@@ -16,16 +16,47 @@ LOG = logger.logger
 class TestCreateEnv(object):
     """Create VMs for mcpinstaller"""
 
-    env = envmanager.EnvironmentManager(settings.CONF_PATH)
+    # TODO: provide with a fixture for test_start_environment()
+    start_environment_conf = {
+        'conf_path': settings.CONF_PATH,
+        'env_name': settings.ENV_NAME,
+    }
+    # TODO: provide with a fixture for test_deploy_images()
+    deploy_images_conf = {
+        'kubectl_label_nodes': {
+            'openstack-compute-controller': [
+                'node1',
+                'node2',
+                'node3',
+            ],
+            'openstack-controller': [
+                'node1',
+            ],
+            'openstack-compute': [
+                'node2',
+                'node3',
+            ]
+        },
+        'registry': settings.REGISTRY,
+        'ccpinstaller': settings.CCPINSTALLER,
+        'microservices': settings.MICROSERVICES,
+        'build_images': settings.BUILD_IMAGES,
+    }
+
+    env = None
     empty_snapshot = "empty"
     upgraded_snapshot = "upgraded"
     deployed_snapshot = "kargo_deployed"
+    openstack_snapshot = "openstack_deployed"
 
     @classmethod
     def setup_class(cls):
         LOG.info("Creating environment")
+        cls.env = envmanager.EnvironmentManager(
+            cls.start_environment_conf['conf_path'])
         try:
-            cls.env.get_env_by_name(name=settings.ENV_NAME)
+            cls.env.get_env_by_name(
+                name=cls.start_environment_conf['env_name'])
         except error.DevopsObjNotFound:
             LOG.info("Environment doesn't exist, creating a new one")
             cls.env.create_environment()
@@ -60,7 +91,7 @@ class TestCreateEnv(object):
             ]
             commands = [
                 "apt-get update",
-                "apt-get upgrade -y",
+                #"apt-get upgrade -y",
                 "apt-get install -y {soft}".format(
                     soft=" ".join(soft_requirements)
                 ),
@@ -93,7 +124,7 @@ class TestCreateEnv(object):
                             LOG.debug(
                                 ("dpkg is locked on {node_name},"
                                  " another try in 5 secs").format(
-                                     node_name=node.name))
+                                    node_name=node.name))
                             time.sleep(5)
                             restart = True
                         else:
@@ -119,7 +150,9 @@ class TestCreateEnv(object):
         kube_settings = [
             "kube_network_plugin: \"calico\"",
             "kube_proxy_mode: \"iptables\"",
-            # "kube_version: \"v1.2.5\"",
+            "kube_version: \"v1.2.4\"",
+            "cloud_provider: \"generic\"",
+            "etcd_deployment_type: \"docker\"",
         ]
         environment_variables = {
             "SLAVE_IPS": " ".join(self.env.k8s_ips),
@@ -141,6 +174,83 @@ class TestCreateEnv(object):
         except (SystemExit, KeyboardInterrupt) as err:
             process.terminate()
             raise err
+
+    @pytest.mark.deploy_ccp
+    def test_deploy_microservices(self):
+        assert self.env.has_snapshot('kargo_deployed')
+        self.env.revert_snapshot("kargo_deployed")
+        admin_node = self.env.k8s_nodes[0]
+        remote = self.env.node_ssh_client(
+            admin_node,
+            **settings.SSH_NODE_CREDENTIALS)
+        for repo in self.deploy_images_conf['ccpinstaller'], \
+                self.deploy_images_conf['microservices']:
+            remote.upload(repo, '/home/vagrant')
+
+        command = [
+            'cd  ~/fuel-ccp && pip install .'
+        ]
+        command_build = [
+            'kubectl create -f '
+            '~/fuel-ccp-installer/registry/registry-pod.yaml',
+            'kubectl create -f '
+            '~/fuel-ccp-installer/registry/service-registry.yaml',
+            'mcp-microservices --images-base-distro debian '
+            '--images-base-tag 8.4 --images-maintainer '
+            'mos-microservices@mirantis.com --repositories-protocol https '
+            '--repositories-port 443 --builder-push '
+            '--registry-address {0} --registry-insecure '
+            '--images-tag latest build'.format(
+                self.deploy_images_conf['registry'])
+        ]
+        command_deploy = [
+            'mcp-microservices --images-base-distro debian '
+            '--images-base-tag 8.4 --images-maintainer '
+            'mos-microservices@mirantis.com  --repositories-protocol '
+            'https --repositories-port 443  '
+            '--registry-address {0} --registry-insecure '
+            '--images-tag latest deploy'.format(
+                self.deploy_images_conf['registry'])
+        ]
+        if not self.deploy_images_conf['build_images']:
+            command.extend(command_deploy)
+        else:
+            for subcommand in command_build, command_deploy:
+                command.extend(subcommand)
+        with remote.get_sudo(remote):
+            for cmd in command:
+                LOG.info(
+                    "Running command '{cmd}' on node {node_name}".format(
+                        cmd=cmd,
+                        node_name=admin_node.name
+                    )
+                )
+                result = remote.execute(cmd)
+                assert result['exit_code'] == 0
+        remote.close()
+        self.env.create_snapshot(self.openstack_snapshot)
+
+    @pytest.mark.deploy_ccp
+    def test_label_nodes(self):
+        admin_node = self.env.k8s_nodes[0]
+        remote = self.env.node_ssh_client(
+            admin_node,
+            **settings.SSH_NODE_CREDENTIALS)
+        kubectl_label_nodes = self.deploy_images_conf['kubectl_label_nodes']
+        for label in kubectl_label_nodes:
+            nodes = kubectl_label_nodes[label]
+            node_str = ' '.join(nodes)
+            cmd = 'kubectl label nodes {0} {1}=true'.format(node_str, label)
+            with remote.get_sudo(remote):
+                LOG.info(
+                    "Running command '{cmd}' on node {node_name}".format(
+                        cmd=cmd,
+                        node_name=admin_node.name
+                    )
+                )
+                result = remote.execute(cmd)
+                assert result['exit_code'] == 0
+        remote.close()
 
     @pytest.mark.skipif(not settings.SUSPEND_ENV_ON_TEARDOWN,
                         reason="Suspend isn't needed"
