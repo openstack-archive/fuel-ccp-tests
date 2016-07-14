@@ -3,9 +3,11 @@ import os
 import subprocess
 import pytest
 import time
+import yaml
 
 from devops import error
 
+from mcp_tests.helpers import checkers
 from mcp_tests.managers import envmanager
 from mcp_tests import logger
 from mcp_tests import settings
@@ -16,16 +18,51 @@ LOG = logger.logger
 class TestCreateEnv(object):
     """Create VMs for mcpinstaller"""
 
-    env = envmanager.EnvironmentManager(settings.CONF_PATH)
+    # TODO: provide with a fixture for test_start_environment()
+    start_environment_conf = {
+        'conf_path': settings.CONF_PATH,
+        'env_name': settings.ENV_NAME,
+    }
+    # TODO: provide with a fixture for test_deploy_images()
+    deploy_images_conf = {
+        'kubectl_label_nodes': {
+            'openstack-compute-controller': [
+                'node1',
+                'node2',
+                'node3',
+            ],
+            'openstack-controller': [
+                'node1',
+            ],
+            'openstack-compute': [
+                'node2',
+                'node3',
+            ]
+        },
+        'registry': settings.REGISTRY,
+        'ccpinstaller': settings.CCPINSTALLER,
+        'microservices': settings.MICROSERVICES,
+        'mos-rally-verify': settings.MOS_RALLY,
+        'build_yaml': settings._build_conf,
+        'deployment_type': settings.DEPLOYMENT_TYPE,
+        'path_to_log': settings.PATH_TO_LOG
+    }
+
+    env = None
     empty_snapshot = "empty"
     upgraded_snapshot = "upgraded"
     deployed_snapshot = "kargo_deployed"
+    build_snapshot = "build_mages"
+    openstack_snapshot = "openstack_deployed"
 
     @classmethod
     def setup_class(cls):
         LOG.info("Creating environment")
+        cls.env = envmanager.EnvironmentManager(
+            cls.start_environment_conf['conf_path'])
         try:
-            cls.env.get_env_by_name(name=settings.ENV_NAME)
+            cls.env.get_env_by_name(
+                name=cls.start_environment_conf['env_name'])
         except error.DevopsObjNotFound:
             LOG.info("Environment doesn't exist, creating a new one")
             cls.env.create_environment()
@@ -93,7 +130,7 @@ class TestCreateEnv(object):
                             LOG.debug(
                                 ("dpkg is locked on {node_name},"
                                  " another try in 5 secs").format(
-                                     node_name=node.name))
+                                    node_name=node.name))
                             time.sleep(5)
                             restart = True
                         else:
@@ -120,6 +157,9 @@ class TestCreateEnv(object):
             "kube_network_plugin: \"calico\"",
             "kube_proxy_mode: \"iptables\"",
             "kube_version: \"{0}\"".format(settings.KUBE_VERSION),
+            "cloud_provider: \"generic\"",
+            "etcd_deployment_type: \"{0}\"".format(
+                self.deploy_images_conf['deployment_type']),
         ]
         environment_variables = {
             "SLAVE_IPS": " ".join(self.env.k8s_ips),
@@ -166,6 +206,114 @@ class TestCreateEnv(object):
         except (SystemExit, KeyboardInterrupt) as err:
             process.terminate()
             raise err
+
+    @pytest.mark.deploy_ccp
+    def test_build_microservices(self):
+        """Build images
+
+        Scenario:
+        1. Revert snapshot
+        2. Upload microservices and ccpinstaller
+        3. Create registry
+        4. Build images
+        5. Check calico network
+
+        Duration 40 min
+        """
+        assert self.env.has_snapshot(self.deployed_snapshot)
+        self.env.revert_snapshot(self.deployed_snapshot)
+        master_node = self.env.k8s_nodes[0]
+        remote = self.env.node_ssh_client(
+            master_node,
+            **settings.SSH_NODE_CREDENTIALS)
+        yaml_path = self.deploy_images_conf['build_yaml']
+        with open(yaml_path, 'r') as yaml_path:
+            data = ' '.join(yaml.load(yaml_path)['mcp-microservices-options'])
+            data = data.format(
+                registry_address=self.deploy_images_conf['registry'],
+                path_to_log=self.deploy_images_conf['path_to_log'])
+        for repo in self.deploy_images_conf['ccpinstaller'], \
+                self.deploy_images_conf['microservices']:
+            remote.upload(repo, '/home/vagrant')
+        command = [
+            'cd  ~/fuel-ccp && pip install .',
+            'kubectl create -f '
+            '~/fuel-ccp-installer/registry/registry-pod.yaml',
+            'kubectl create -f '
+            '~/fuel-ccp-installer/registry/service-registry.yaml',
+            '>{0}'.format(self.deploy_images_conf['path_to_log']),
+            'mcp-microservices {0} build'.format(data)
+        ]
+        with remote.get_sudo(remote):
+            for cmd in command:
+                LOG.info(
+                    "Running command '{cmd}' on node {node_name}".format(
+                        cmd=cmd,
+                        node_name=master_node.name
+                    )
+                )
+                result = remote.execute(cmd)
+                assert result['exit_code'] == 0
+        remote.close()
+        checkers.check_calico_network(remote, master_node)
+        self.env.create_snapshot(self.build_snapshot)
+
+    @pytest.mark.deploy_ccp
+    def test_deploy_microservices(self):
+        """Deploy base environment
+
+        Scenario:
+        1. Revert snapshot
+        2. Upload microservices
+        3. Deploy environment
+        4. Label nodes
+        5. Check deployment
+
+        Duration 30 min
+        """
+        assert self.env.has_snapshot(self.deployed_snapshot)
+        self.env.revert_snapshot(self.deployed_snapshot)
+        master_node = self.env.k8s_nodes[0]
+        remote = self.env.node_ssh_client(
+            master_node,
+            **settings.SSH_NODE_CREDENTIALS)
+
+        remote.upload(self.deploy_images_conf['microservices'],
+                      '/home/vagrant')
+        yaml_path = self.deploy_images_conf['build_yaml']
+        with open(yaml_path, 'r') as yaml_path:
+            data = yaml.load(yaml_path)['mcp-microservices-options']
+            data.remove(data[5])
+            data = ' '.join(data)
+            data = data.format(
+                registry_address=self.deploy_images_conf['registry'],
+                path_to_log=self.deploy_images_conf['path_to_log'])
+        command = [
+            'cd  ~/fuel-ccp && pip install .',
+            '>{0}'.format(self.deploy_images_conf['path_to_log']),
+            'mcp-microservices {0} deploy'.format(data),
+        ]
+        kubectl_label_nodes = self.deploy_images_conf['kubectl_label_nodes']
+        for label in kubectl_label_nodes:
+            nodes = kubectl_label_nodes[label]
+            node_str = ' '.join(nodes)
+            cmd = 'kubectl label nodes {0} {1}=true'.format(node_str, label)
+            command.append(cmd)
+        with remote.get_sudo(remote):
+            for cmd in command:
+                LOG.info(
+                    "Running command '{cmd}' on node {node_name}".format(
+                        cmd=cmd,
+                        node_name=master_node.name
+                    )
+                )
+                result = remote.execute(cmd)
+                assert result['exit_code'] == 0
+
+        remote.close()
+        self.env.create_snapshot(self.openstack_snapshot)
+        checkers.check_pods_status(master_node)
+        checkers.check_jobs_status(master_node)
 
     @pytest.mark.skipif(not settings.SUSPEND_ENV_ON_TEARDOWN,
                         reason="Suspend isn't needed"
