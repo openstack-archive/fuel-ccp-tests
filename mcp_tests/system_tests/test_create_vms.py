@@ -119,13 +119,13 @@ class TestCreateEnv(object):
         kube_settings = [
             "kube_network_plugin: \"calico\"",
             "kube_proxy_mode: \"iptables\"",
-            # "kube_version: \"v1.2.5\"",
+            "kube_version: \"{0}\"".format(settings.KUBE_VERSION),
         ]
         environment_variables = {
             "SLAVE_IPS": " ".join(self.env.k8s_ips),
             "ADMIN_IP": self.env.k8s_ips[0],
             "CUSTOM_YAML": "\n".join(kube_settings),
-            "WORKSPACE": "/tmp",
+            "WORKSPACE": settings.WORKSPACE,
         }
         current_env.update(dict=environment_variables)
         assert self.env.has_snapshot(self.upgraded_snapshot)

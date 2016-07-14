@@ -42,9 +42,11 @@ IMAGE_PATH = os.environ.get('IMAGE_PATH', None)
 CONF_PATH = os.environ.get('CONF_PATH', os.path.abspath(_default_conf))
 SUSPEND_ENV_ON_TEARDOWN = os.environ.get('SUSPEND_ENV_ON_TEARDOWN', True)
 DEPLOY_SCRIPT = os.environ.get("DEPLOY_SCRIPT", None)
+WORKSPACE = os.environ.get("WORKSPACE", "/tmp")
 
 PRIVATE_REGISTRY = os.environ.get('PRIVATE_REGISTRY', None)
 
 KUBE_ADMIN_USER = os.environ.get('KUBE_ADMIN_USER', 'root')
 KUBE_ADMIN_PASS = os.environ.get('KUBE_ADMIN_PASS', 'changeme')
 KUBE_HOST = os.environ.get('KUBE_HOST', None)
+KUBE_VERSION = os.environ.get("KUBE_VERSION", "v1.2.4")
