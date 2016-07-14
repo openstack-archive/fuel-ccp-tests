@@ -44,7 +44,13 @@ SUSPEND_ENV_ON_TEARDOWN = os.environ.get('SUSPEND_ENV_ON_TEARDOWN', True)
 DEPLOY_SCRIPT = os.environ.get("DEPLOY_SCRIPT", None)
 
 PRIVATE_REGISTRY = os.environ.get('PRIVATE_REGISTRY', None)
+REGISTRY = os.environ.get('REGISTRY', '127.0.0.1:31500')
 
 KUBE_ADMIN_USER = os.environ.get('KUBE_ADMIN_USER', 'root')
 KUBE_ADMIN_PASS = os.environ.get('KUBE_ADMIN_PASS', 'changeme')
 KUBE_HOST = os.environ.get('KUBE_HOST', None)
+
+
+BUILD_IMAGES = get_var_as_bool('BULD_IMAGES', False)
+CCPINSTALLER = os.environ.get('CCPINSTALLER', '/tmp/')
+MICROSERVICES = os.environ.get('MICROSERVICES', '/tmp/')
