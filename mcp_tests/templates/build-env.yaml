@@ -1,0 +1,14 @@
+mcp-microservices-options:
+- --images-base-distro debian
+- --images-base-tag 8.4
+- --images-maintainer mos-microservices@mirantis.com
+- --repositories-protocol https
+- --repositories-port 443
+- --builder-push
+- --registry-address {registry_address}
+- --logfile {path_to_log}
+- --verbose
+- --debug
+- --builder-workers 1
+- --registry-insecure
+- --images-tag latest

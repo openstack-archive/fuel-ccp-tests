@@ -24,6 +24,9 @@ _default_conf = pkg_resources.resource_filename(
     __name__, 'templates/default.yaml')
 # _default_conf = os.getcwd() + '/mcp_tests/templates/default.yaml'
 
+_build_conf = pkg_resources.resource_filename(
+    __name__, 'templates/build-env.yaml')
+
 
 def get_var_as_bool(name, default):
     value = os.environ.get(name, '')
@@ -44,8 +47,20 @@ SUSPEND_ENV_ON_TEARDOWN = os.environ.get('SUSPEND_ENV_ON_TEARDOWN', True)
 DEPLOY_SCRIPT = os.environ.get("DEPLOY_SCRIPT", None)
 
 PRIVATE_REGISTRY = os.environ.get('PRIVATE_REGISTRY', None)
+REGISTRY = os.environ.get('REGISTRY', '127.0.0.1:31500')
 
 KUBE_ADMIN_USER = os.environ.get('KUBE_ADMIN_USER', 'root')
 KUBE_ADMIN_PASS = os.environ.get('KUBE_ADMIN_PASS', 'changeme')
 KUBE_HOST = os.environ.get('KUBE_HOST', None)
+
 KUBE_VERSION = os.environ.get("KUBE_VERSION", "v1.3.0")
+
+BUILD_IMAGES = get_var_as_bool('BULD_IMAGES', False)
+CCPINSTALLER = os.environ.get('CCPINSTALLER', '/tmp/')
+MICROSERVICES = os.environ.get('MICROSERVICES', '/tmp/')
+
+CCPINSTALLER = os.environ.get('CCPINSTALLER', '/tmp/')
+MICROSERVICES = os.environ.get('MICROSERVICES', '/tmp/')
+MOS_RALLY = os.environ.get('MOS_RALLY', '/tmp/')
+DEPLOYMENT_TYPE = os.environ.get('DEPLOYMENT_TYPE', 'host')
+PATH_TO_LOG = os.environ.get('PATH_TO_LOG', '/tmp/microservices_log')
