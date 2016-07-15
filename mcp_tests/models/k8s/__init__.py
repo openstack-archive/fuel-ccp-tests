@@ -13,8 +13,9 @@
 
 import urllib3
 
+from mcp_tests import logger  # Initialize internal logger prior to k8sclient
 from mcp_tests.models.k8s.cluster import K8sCluster
 
-__all__ = ['K8sCluster']
+__all__ = ['K8sCluster', 'logger']
 
 urllib3.disable_warnings()  # Supress https insecure warning
