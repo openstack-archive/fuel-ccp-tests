@@ -19,6 +19,8 @@
    # Prepare network connection
    - sudo ifup {interface_name}
    - sudo route add default gw {gateway} {interface_name}
+   - sudo ifup enp0s4
+   - sudo ifup enp0s5
 
    # Prepare necessary packages on the node
    - sudo apt-get update
@@ -31,3 +33,16 @@
 
    # Node is ready, allow SSH access
    - sudo iptables -D INPUT -p tcp --dport 22 -j DROP
+
+  write_files:
+   # Configure second and third network interfaces
+   - path: /etc/network/interfaces.d/99-fuel-ccp-tests.cfg
+     content: |
+          auto enp0s4
+          iface enp0s4 inet dhcp
+
+          # 3rd interface should be UP without IP address
+          auto enp0s5
+          iface enp0s5 inet manual
+              pre-up ifconfig $IFACE up
+              post-down ifconfig $IFACE down

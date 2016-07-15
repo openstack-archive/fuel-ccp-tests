@@ -14,18 +14,19 @@ template:
       public-pool01:
         net: *pool_default
         params:
-          vlan_start: 1210
           ip_reserved:
             gateway: +1
             l2_network_device: +1
           ip_ranges:
-            dhcp: [+128, -32]
-            rack-01: [+2, +127]
+            dhcp: [+2, -2]
       private-pool01:
         net: *pool_default
-      storage-pool01:
-        net: *pool_default
-      management-pool01:
+        params:
+          ip_reserved:
+            l2_network_device: +1
+          ip_ranges:
+            dhcp: [+2, -2]
+      ovs-pool01:
         net: *pool_default
 
     groups:
@@ -42,8 +43,7 @@ template:
         network_pools:
           public: public-pool01
           private: private-pool01
-          storage: storage-pool01
-          management: management-pool01
+          ovs: ovs-pool01
 
         l2_network_devices:
           public:
@@ -52,16 +52,12 @@ template:
             forward:
               mode: nat
 
-          storage:
-            address_pool: storage-pool01
-            dhcp: false
-
-          management:
-            address_pool: management-pool01
-            dhcp: false
-
           private:
             address_pool: private-pool01
+            dhcp: true
+
+          ovs:
+            address_pool: ovs-pool01
             dhcp: false
 
         nodes:
@@ -96,24 +92,18 @@ template:
                   l2_network_device: private
                   interface_model: *interface_model
                 - label: enp0s5
-                  l2_network_device: storage
-                  interface_model: *interface_model
-                - label: enp0s6
-                  l2_network_device: management
+                  l2_network_device: ovs
                   interface_model: *interface_model
               network_config:
-                enp0s3:
+                enp0s3:    # Will get an IP from DHCP public-pool01
                   networks:
                     - public
-                enp0s4:
+                enp0s4:    # Will get an IP from DHCP private-pool01
                   networks:
                     - private
-                enp0s5:
+                enp0s5:    # Won't get an IP, no DHCP in ovs-pool01
                   networks:
-                    - storage
-                enp0s6:
-                  networks:
-                    - management
+                    - ovs
 
           - name: node-2
             role: k8s
