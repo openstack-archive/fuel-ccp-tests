@@ -1,0 +1,9 @@
+Code-Review+1: Sergey Lebedev <slebedev@mirantis.com>
+Code-Review+2: Andrey Sledzinskiy <asledzinskiy@mirantis.com>
+Workflow+1: tatyana-leontovich <tleontovich@mirantis.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Fri, 15 Jul 2016 10:47:47 +0000
+Reviewed-on: https://review.openstack.org/342271
+Project: openstack/fuel-ccp-tests
+Branch: refs/heads/master
