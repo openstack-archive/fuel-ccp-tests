@@ -20,6 +20,7 @@ from k8sclient.client.apis import apiv_api
 from k8sclient.client.apis import apisextensionsvbeta_api
 from k8sclient.client.apis import apisbatchv_api
 
+from mcp_tests.models.k8s import logger
 from mcp_tests.models.k8s.componentstatuses import \
     K8sComponentStatusManager
 from mcp_tests.models.k8s.daemonsets import K8sDaemonSetManager
@@ -45,27 +46,29 @@ from mcp_tests.models.k8s.secrets import K8sSecretManager
 from mcp_tests.models.k8s.serviceaccounts import K8sServiceAccountManager
 from mcp_tests.models.k8s.services import K8sServiceManager
 
+LOG = logger.logger
+
 
 class K8sCluster(object):
     """docstring for K8sCluster"""
 
     def __init__(self, schema="https", user=None, password=None,
                  host='localhost', port='443', namespace='default'):
+
+        _api_endpoint = '{schema}://{host}:{port}/'.format(
+            schema=schema, host=host, port=port)
+        LOG.debug("K8sCluster initializes with endpoint: {}".format(
+            _api_endpoint))
+        self._client = api_client.ApiClient(_api_endpoint)
+
         if user and password:
             auth = base64.encodestring('%s:%s' % (user, password))[:-1]
             auth = "Basic {}".format(auth)
-            self._client = api_client.ApiClient(
-                '{schema}://{host}:{port}/'.format(
-                    schema=schema, host=host, port=port))
             self._client.set_default_header('Authorization', auth)
             restcli_impl = self._client.RESTClient.IMPL
             restcli_impl.ssl_pool_manager.connection_pool_kw['cert_reqs'] = \
                 ssl.CERT_NONE
 
-        else:
-            self._client = api_client.ApiClient(
-                '{schema}://{host}:{port}/'.format(
-                    schema=schema, host=host, port=port))
         self._api = apiv_api.ApivApi(self._client)
         self._bapi = apisbatchv_api.ApisbatchvApi(self._client)
         self._eapi = apisextensionsvbeta_api.ApisextensionsvbetaApi(
