@@ -63,9 +63,9 @@ template:
             dhcp: false
 
         group_volumes:
-         - name: baseimage   # This name is used for 'backing_store' option for node volumes.
-           source_image: !os_env IMAGE_PATH
-           format: qcow2
+          - name: baseimage
+            source_image: !os_env IMAGE_PATH
+            format: qcow2
 
         nodes:
           - name: master
@@ -80,6 +80,9 @@ template:
                 - name: system
                   capacity: !os_env NODE_VOLUME_SIZE, 150
                   backing_store: baseimage
+                  format: qcow2
+                - name: lvm
+                  capacity: 10
                   format: qcow2
 
               interfaces:
