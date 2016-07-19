@@ -42,6 +42,7 @@ IMAGE_PATH = os.environ.get('IMAGE_PATH', None)
 CONF_PATH = os.environ.get('CONF_PATH', os.path.abspath(_default_conf))
 SUSPEND_ENV_ON_TEARDOWN = os.environ.get('SUSPEND_ENV_ON_TEARDOWN', True)
 DEPLOY_SCRIPT = os.environ.get("DEPLOY_SCRIPT", None)
+USE_CUSTOM_YAML = os.environ.get("USE_CUSTOM_YAML", True)
 
 PRIVATE_REGISTRY = os.environ.get('PRIVATE_REGISTRY', None)
 
