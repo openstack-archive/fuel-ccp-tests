@@ -36,6 +36,7 @@ TIMESTAT_PATH_YAML = os.environ.get(
 SSH_NODE_CREDENTIALS = os.environ.get('SSH_NODE_CREDENTIALS',
                                       {'login': 'vagrant',
                                        'password': 'vagrant'})
+VIRTUAL_ENV = os.environ.get('VIRTUAL_ENV', "")
 
 ENV_NAME = os.environ.get('ENV_NAME', 'mcp_qa-test')
 IMAGE_PATH = os.environ.get('IMAGE_PATH', None)
