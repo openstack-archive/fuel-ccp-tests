@@ -36,7 +36,8 @@ class EnvironmentManager(manager.Manager):
         :param node_image: path to node image string
         """
         super(EnvironmentManager, self).__init__(*args, **kwargs)
-        self.config_file = config_file
+        if config_file is not None:
+            self.devops_config.load_template(config_file)
         self.env_name = env_name
         self.master_image = master_image
         self.node_image = node_image
@@ -81,7 +82,7 @@ class EnvironmentManager(manager.Manager):
         """
         self._env = models.Environment.get(name=name)
 
-    def create_snapshot(self, name):
+    def create_snapshot(self, name, description=None):
         """Create named snapshot of current env.
 
         :name: string
@@ -89,7 +90,7 @@ class EnvironmentManager(manager.Manager):
         LOG.info("Creating snapshot named '{0}'".format(name))
         if self._env is not None:
             self._env.suspend()
-            self._env.snapshot(name, force=True)
+            self._env.snapshot(name, description=description, force=True)
             self._env.resume()
         else:
             raise exc.EnvironmentIsNotSet()
@@ -113,10 +114,7 @@ class EnvironmentManager(manager.Manager):
         otherwise we tries to generate config from self.config_file,
         """
         if self.devops_config.config is None:
-            LOG.debug('Seems config for fuel-devops is not set.')
-            if self.config_file is None:
-                raise exc.DevopsConfigPathIsNotSet()
-            self.devops_config.load_template(self.config_file)
+            raise exc.DevopsConfigPathIsNotSet()
         self.merge_config_params()
         settings = self.devops_config
         env_name = settings['env_name']
@@ -148,8 +146,6 @@ class EnvironmentManager(manager.Manager):
         if self._env is None:
             raise exc.EnvironmentIsNotSet()
         self._env.start()
-
-    def wait_ssh_k8s_nodes(self):
         for node in self.k8s_nodes:
             LOG.debug("Waiting for SSH on node '{}...'".format(node.name))
             timeout = 360
