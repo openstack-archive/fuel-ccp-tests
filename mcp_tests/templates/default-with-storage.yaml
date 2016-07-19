@@ -76,6 +76,9 @@ template:
                   capacity: !os_env NODE_VOLUME_SIZE, 50
                   source_image: !os_env IMAGE_PATH
                   format: qcow2
+                - name: lvm
+                  capacity: 10
+                  format: qcow2
 
               interfaces:
                 - label: iface0
