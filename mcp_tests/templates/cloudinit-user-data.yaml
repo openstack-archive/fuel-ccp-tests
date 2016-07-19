@@ -16,9 +16,15 @@
    - cloud-init-per once sudo iptables -A INPUT -p tcp --dport 22 -j DROP
 
   runcmd:
+   # Configure dhclient
+   - sudo echo "nameserver 8.8.8.8" >> /etc/resolvconf/resolv.conf.d/base
+   - sudo resolvconf -u
+
    # Prepare network connection
    - sudo ifup {interface_name}
    - sudo route add default gw {gateway} {interface_name}
+   - sudo ifup enp0s4
+   - sudo ifup enp0s5
 
    # Prepare necessary packages on the node
    - sudo apt-get update
@@ -31,3 +37,18 @@
 
    # Node is ready, allow SSH access
    - sudo iptables -D INPUT -p tcp --dport 22 -j DROP
+
+  write_files:
+   - path: /etc/network/interfaces.d/99-fuel-ccp-tests.cfg
+     content: |
+          auto enp0s3
+          iface enp0s3 inet dhcp
+
+          auto enp0s4
+          iface enp0s4 inet dhcp
+
+          # 3rd interface should be UP without IP address
+          auto enp0s5
+          iface enp0s5 inet manual
+              pre-up ifconfig $IFACE up
+              post-down ifconfig $IFACE down
