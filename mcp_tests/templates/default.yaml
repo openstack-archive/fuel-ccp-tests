@@ -64,6 +64,11 @@ template:
             address_pool: private-pool01
             dhcp: false
 
+        group_volumes:
+         - name: baseimage   # This name is used for 'backing_store' option for node volumes.
+           source_image: !os_env IMAGE_PATH
+           format: qcow2
+
         nodes:
           - name: master
             role: k8s
@@ -76,7 +81,7 @@ template:
               volumes:
                 - name: system
                   capacity: !os_env NODE_VOLUME_SIZE, 50
-                  source_image: !os_env IMAGE_PATH
+                  backing_store: baseimage
                   format: qcow2
 
               interfaces:

@@ -60,6 +60,11 @@ template:
             address_pool: ovs-pool01
             dhcp: false
 
+        group_volumes:
+         - name: cloudimage    # This name is used for 'backing_store' option for node volumes.
+           source_image: !os_env CLOUD_IMAGE_PATH  # https://cloud-images.ubuntu.com/xenial/current/xenial-server-cloudimg-amd64-disk1.img
+           format: qcow2
+
         nodes:
           - name: node-1
             role: k8s
@@ -73,7 +78,7 @@ template:
               volumes:
                 - name: system
                   capacity: !os_env NODE_VOLUME_SIZE, 50
-                  source_image: !os_env CLOUD_IMAGE_PATH  # https://cloud-images.ubuntu.com/xenial/current/xenial-server-cloudimg-amd64-disk1.img
+                  backing_store: cloudimage
                   format: qcow2
                 - name: iso  # Volume with name 'iso' will be used
                              # for store image with cloud-init metadata.
