@@ -2,7 +2,6 @@ import copy
 import os
 import subprocess
 import pytest
-import time
 
 from devops import error
 
@@ -43,74 +42,6 @@ class TestCreateEnv(object):
             self.env.revert_snapshot(snapshot_name)
 
     @pytest.mark.create_vms
-    def test_upgrade_system_on_nodes(self):
-        snapshot_name = self.upgraded_snapshot
-
-        def upgrade(node):
-            soft_requirements = [
-                "git",
-                "python-setuptools",
-                "python-dev",
-                "python-pip",
-                "gcc",
-                "libssl-dev",
-                "libffi-dev",
-                "vim",
-                "software-properties-common"
-            ]
-            commands = [
-                "apt-get update",
-                "apt-get upgrade -y",
-                "apt-get install -y {soft}".format(
-                    soft=" ".join(soft_requirements)
-                ),
-                "apt-get autoremove -y",
-                "pip install -U setuptools pip",
-                "pip install 'cryptography>=1.3.2'",
-                "pip install 'cffi>=1.6.0'"
-            ]
-            LOG.info("Getting ssh connect to {node_name}".format(
-                node_name=node.name
-            ))
-            remote = self.env.node_ssh_client(
-                node,
-                **settings.SSH_NODE_CREDENTIALS
-            )
-            with remote.get_sudo(remote):
-                for cmd in commands:
-                    LOG.info(
-                        "Running command '{cmd}' on node {node_name}".format(
-                            cmd=cmd,
-                            node_name=node.name
-                        )
-                    )
-                    restart = True
-                    while restart:
-                        result = remote.execute(cmd)
-                        if result['exit_code'] == 100:
-                            # For some reasons dpkg may be locked by tasks
-                            # for searching updates during login.
-                            LOG.debug(
-                                ("dpkg is locked on {node_name},"
-                                 " another try in 5 secs").format(
-                                     node_name=node.name))
-                            time.sleep(5)
-                            restart = True
-                        else:
-                            restart = False
-                    assert result['exit_code'] == 0
-            LOG.info("Closing connection to {}".format(node.name))
-            remote.close()
-
-        if not self.env.has_snapshot(snapshot_name):
-            for node in self.env.k8s_nodes:
-                upgrade(node)
-
-            self.env.create_snapshot(snapshot_name)
-        else:
-            self.env.revert_snapshot(snapshot_name)
-
-    @pytest.mark.create_vms
     @pytest.mark.skipif(settings.DEPLOY_SCRIPT is None,
                         reason="Deploy script is not provided"
                         )
@@ -127,8 +58,8 @@ class TestCreateEnv(object):
             "CUSTOM_YAML": "\n".join(kube_settings),
         }
         current_env.update(dict=environment_variables)
-        assert self.env.has_snapshot(self.upgraded_snapshot)
-        self.env.revert_snapshot(self.upgraded_snapshot)
+        assert self.env.has_snapshot(self.empty_snapshot)
+        self.env.revert_snapshot(self.empty_snapshot)
         try:
             process = subprocess.Popen([settings.DEPLOY_SCRIPT],
                                        env=current_env,
