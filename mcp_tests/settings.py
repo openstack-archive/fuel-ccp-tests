@@ -11,8 +11,6 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-
-
 import os
 import pkg_resources
 import time
@@ -33,9 +31,11 @@ LOGS_DIR = os.environ.get('LOGS_DIR', os.getcwd())
 TIMESTAT_PATH_YAML = os.environ.get(
     'TIMESTAT_PATH_YAML', os.path.join(
         LOGS_DIR, 'timestat_{}.yaml'.format(time.strftime("%Y%m%d"))))
-SSH_NODE_CREDENTIALS = os.environ.get('SSH_NODE_CREDENTIALS',
-                                      {'login': 'vagrant',
-                                       'password': 'vagrant'})
+
+SSH_LOGIN = os.environ.get('SSH_LOGIN', 'vagrant')
+SSH_PASSWORD = os.environ.get('SSH_PASSWORD', 'vagrant')
+SSH_NODE_CREDENTIALS = {"login": SSH_LOGIN,
+                        "password": SSH_PASSWORD}
 
 ENV_NAME = os.environ.get('ENV_NAME', 'mcp_qa-test')
 IMAGE_PATH = os.environ.get('IMAGE_PATH', None)
