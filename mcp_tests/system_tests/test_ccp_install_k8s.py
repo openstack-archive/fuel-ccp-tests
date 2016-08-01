@@ -11,30 +11,39 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-import copy
 import pytest
 
 from mcp_tests import logger
 from mcp_tests import settings
-from mcp_tests.helpers import utils
 import base_test
 
 LOG = logger.logger
 
 
-class TestFuelCCPInstaller(base_test.SystemBaseTest):
-    """Test class for testing k8s deployed by fuel-ccp-installer"""
+class FuelCCPInstallerConfigMixin:
 
     kube_settings = {
-        "kube_proxy_mode": "iptables",
-        "hyperkube_image_repo": "quay.io/coreos/hyperkube",
-        "hyperkube_image_tag": "{0}_coreos.0".format(
-            settings.KUBE_VERSION),
-        "kube_version": settings.KUBE_VERSION,
-        "cloud_provider": "generic",
-        # Configure calico to set --nat-outgoing and --ipip pool option	18
         "ipip": settings.IPIP_USAGE,
+        "hyperkube_image_repo": settings.HYPERKUBE_IMAGE_REPO,
+        "hyperkube_image_tag": settings.HYPERKUBE_IMAGE_TAG,
+        "docker_version": float(settings.DOCKER_VERSION),
+        "kube_hostpath_dynamic_provisioner": "{}".format(
+            settings.KUBE_HOSTPATH_DYNAMIC_PROVISIONER).lower(),
+        "kube_version": settings.KUBE_VERSION,
     }
+
+    base_images = [
+        "andyshinn/dnsmasq",
+        "calico/node",
+        "quay.io/coreos/etcd",
+    ]
+
+    custom_yaml_images = base_images + [kube_settings['hyperkube_image_repo']]
+
+
+class TestFuelCCPInstaller(base_test.SystemBaseTest,
+                           FuelCCPInstallerConfigMixin):
+    """Test class for testing k8s deployed by fuel-ccp-installer"""
 
     @pytest.mark.snapshot_needed
     @pytest.mark.revert_snapshot
@@ -43,80 +52,54 @@ class TestFuelCCPInstaller(base_test.SystemBaseTest):
         """Test for deploying an k8s environment and check it
 
         Scenario:
-            1. Install k8s with default parameters.
+            1. Install k8s.
             2. Check number of nodes.
             3. Basic check of running containers on nodes.
             4. Check requirement base settings.
         """
         self.ccp_install_k8s(env)
         self.check_number_kube_nodes(env, k8sclient)
-        self.check_running_containers(env)
-        self.check_etcd_health(env)
-
-    @pytest.mark.snapshot_needed
-    @pytest.mark.revert_snapshot
-    @pytest.mark.fail_snapshot
-    def test_k8s_installed_with_etcd_on_host(self, env, k8sclient):
-        """Deploy k8s with etcd on the host
-
-        Scenario:
-            1. Install k8s with custom yaml, etcd on the host
-            2. Check number of nodes.
-            3. Basic check of running containers on nodes.
-            4. Check requirement base settings.
-        """
-        test_kube_settings = copy.deepcopy(self.kube_settings)
-        additional_kube_settings = {
-            "kube_network_plugin": "calico",
-            "etcd_deployment_type": "host",
-        }
-        test_kube_settings.update(additional_kube_settings)
-        self.ccp_install_k8s(env, custom_yaml=test_kube_settings)
-        self.check_number_kube_nodes(env, k8sclient)
-        self.check_running_containers(env, network_plugin='calico')
+        self.check_running_containers(env, required_images=self.base_images)
         self.calico_ipip_exists(env)
         self.check_etcd_health(env)
 
     @pytest.mark.snapshot_needed
     @pytest.mark.revert_snapshot
     @pytest.mark.fail_snapshot
-    def test_k8s_installed_with_etcd_in_container(self, env, k8sclient):
-        """Deploy k8s with etcd in container
+    def test_k8s_installed_with_custom_yaml(self, env, k8sclient):
+        """Test for deploying an k8s environment and check it
 
         Scenario:
-            1. Install k8s with custom yaml, etcd in container
+            1. Install k8s.
             2. Check number of nodes.
             3. Basic check of running containers on nodes.
             4. Check requirement base settings.
         """
-        test_kube_settings = copy.deepcopy(self.kube_settings)
-        additional_kube_settings = {
-            "kube_network_plugin": "calico",
-            "etcd_deployment_type": "docker",
-        }
-        test_kube_settings.update(additional_kube_settings)
-        self.ccp_install_k8s(env, custom_yaml=test_kube_settings)
-
+        self.ccp_install_k8s(env, custom_yaml=self.kube_settings)
         self.check_number_kube_nodes(env, k8sclient)
-        self.check_running_containers(env, network_plugin='calico')
+        self.check_running_containers(env,
+                                      required_images=self.custom_yaml_images)
         self.calico_ipip_exists(env)
         self.check_etcd_health(env)
 
     @pytest.mark.snapshot_needed
     @pytest.mark.revert_snapshot
     @pytest.mark.fail_snapshot
-    def test_k8s_installed_with_ready_ssh_keys(self, env, k8sclient):
-        """Deploy k8s with ssh keys provided
+    def test_k8s_installed_with_ready_ssh_keys(self, ssh_keys_dir, env,
+                                               k8sclient):
+        """Test for deploying an k8s environment and check it
 
         Scenario:
-            1. Install k8s with ready ssh keys
+            1. Install k8s (with prepared ssh keys).
             2. Check number of nodes.
-            3. Basic check of running containers on nodes
+            3. Basic check of running containers on nodes.
+            4. Check requirement base settings.
         """
-        dirpath = utils.generate_keys()
-        env_var = {"WORKSPACE": dirpath}
-        self.ccp_install_k8s(env, env_var=env_var)
-
+        add_var = {
+            "WORKSPACE": ssh_keys_dir
+        }
+        self.ccp_install_k8s(env, env_var=add_var)
         self.check_number_kube_nodes(env, k8sclient)
-        self.check_running_containers(env, network_plugin='calico')
-        utils.clean_dir(dirpath)
+        self.check_running_containers(env, required_images=self.base_images)
+        self.calico_ipip_exists(env)
+        self.check_etcd_health(env)

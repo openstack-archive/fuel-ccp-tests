@@ -17,11 +17,22 @@ import time
 import pytest
 
 from mcp_tests import logger
+from mcp_tests.helpers import utils
 
 LOG = logger.logger
 
 
 pytest_plugins = ['k8s_fixtures', 'env_fixtures', 'ccp_installer_fixtures']
+
+
+@pytest.yield_fixture(scope='session')
+def ssh_keys_dir(request):
+    ssh_keys_dir = utils.generate_keys()
+    LOG.info("SSH keys were generated in {}".format(ssh_keys_dir))
+    yield ssh_keys_dir
+    utils.clean_dir(ssh_keys_dir)
+    LOG.info("Tmp dir {} with generated ssh keys was cleaned".format(
+        ssh_keys_dir))
 
 
 @pytest.hookimpl(tryfirst=True, hookwrapper=True)
