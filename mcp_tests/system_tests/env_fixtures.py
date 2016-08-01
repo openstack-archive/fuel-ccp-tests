@@ -156,3 +156,62 @@ def snapshot(request, env):
                     name=snapshot_name, env=env
                 )
     request.addfinalizer(test_fin)
+
+
+@pytest.fixture(scope='function')
+def cluster_roles():
+    """Store initial cluster roles
+
+    :return: dict deploy_images_conf
+    """
+    deploy_images_conf = {
+        'kubectl_label_nodes': {
+            'openstack-compute-controller': [
+                'node1',
+                'node2',
+                'node3',
+            ],
+            'openstack-controller': [
+                'node1',
+            ],
+            'openstack-compute': [
+                'node2',
+                'node3',
+            ]
+        },
+        'registry': settings.REGISTRY,
+        'build_yaml': settings._build_conf,
+        'path_to_log': settings.PATH_TO_LOG,
+        'path_to_conf': settings.PATH_TO_CONF
+    }
+    return deploy_images_conf
+
+
+@pytest.fixture(scope='class')
+def prepare_env(env):
+    """Fixture for installation microservices
+
+    :param env: envmanager.EnvironmentManager
+    :param master_node: self.env.k8s_ips[0]
+    """
+    remote = env.node_ssh_client(
+        env.k8s_nodes[0],
+        **settings.SSH_NODE_CREDENTIALS)
+    for repo in settings.CCPINSTALLER, settings.MICROSERVICES:
+        remote.upload(repo, '/home/vagrant')
+    command = [
+        'cd  ~/fuel-ccp && pip install .',
+        '>{0}'.format(settings.PATH_TO_LOG),
+        "cat ~/fuel-ccp/etc/topology-example.yaml >> /tmp/ccp-globals.yaml"
+    ]
+    with remote.get_sudo(remote):
+        for cmd in command:
+            LOG.info(
+                "Running command '{cmd}' on node {node_name}".format(
+                    cmd=cmd,
+                    node_name=env.k8s_nodes[0].name
+                )
+            )
+            result = remote.execute(cmd)
+            assert result['exit_code'] == 0
+        remote.close()
