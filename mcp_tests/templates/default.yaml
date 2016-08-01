@@ -72,7 +72,7 @@ template:
             role: k8s
             params: &rack-01-node-params
               vcpu: !os_env SLAVE_NODE_CPU, 2
-              memory: !os_env SLAVE_NODE_MEMORY, 2048
+              memory: !os_env SLAVE_NODE_MEMORY, 8048
               boot:
                 - network
                 - hd
