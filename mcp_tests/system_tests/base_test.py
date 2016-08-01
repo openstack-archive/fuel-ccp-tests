@@ -31,7 +31,6 @@ class SystemBaseTest(object):
     kube_settings = {}
 
     base_images = [
-        "quay.io/coreos/etcd",
         "andyshinn/dnsmasq",
         "quay.io/coreos/hyperkube"
     ]
@@ -39,6 +38,10 @@ class SystemBaseTest(object):
     @property
     def kube_network_plugin(self):
         return self.kube_settings.get('kube_network_plugin', None)
+
+    @property
+    def etcd_deployment_type(self):
+        return self.kube_settings.get('etcd_deployment_type', 'docker')
 
     def exec_on_node(self, env, node, cmd, expected_exit_code=0):
         """Function to exec command on node and get result
@@ -92,8 +95,11 @@ class SystemBaseTest(object):
         """
         cmd = "docker ps --no-trunc --format '{{.Image}}'"
         expected_list = copy.deepcopy(self.base_images)
-        if self.kube_network_plugin == 'calico' and use_custom_yaml:
-            expected_list.append('calico/node')
+        if use_custom_yaml:
+            if self.etcd_deployment_type == 'docker':
+                expected_list.append("quay.io/coreos/etcd")
+            if self.kube_network_plugin == 'calico':
+                expected_list.append('calico/node')
         result = self.exec_on_node(env, node, cmd)
         images = [x.split(":")[0] for x in result['stdout']]
         assert set(expected_list) < set(images)

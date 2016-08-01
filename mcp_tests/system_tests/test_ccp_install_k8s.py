@@ -28,11 +28,10 @@ class TestFuelCCPInstaller(base_test.SystemBaseTest):
         "kube_proxy_mode": "iptables",
         "hyperkube_image_repo": "quay.io/coreos/hyperkube",
         "hyperkube_image_tag": "{0}_coreos.0".format(settings.KUBE_VERSION),
-        "etcd_deployment_type": "host",
         "kube_version": settings.KUBE_VERSION,
-        "cloud_provider": "generic",
         # Configure calico to set --nat-outgoing and --ipip pool option	18
         "ipip": settings.IPIP_USAGE,
+        "kube_version": settings.KUBE_VERSION
     }
 
     @pytest.mark.snapshot_needed
