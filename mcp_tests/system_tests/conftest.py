@@ -17,11 +17,21 @@ import time
 import pytest
 
 from mcp_tests import logger
+from mcp_tests.helpers import utils
 
 LOG = logger.logger
 
 
 pytest_plugins = ['k8s_fixtures', 'env_fixtures', 'ccp_installer_fixtures']
+
+
+@pytest.fixture
+def ssh_keys_dir(request):
+    ssh_keys_dir = utils.generate_keys()
+    request.instance.additional_env.update(
+        {'WORKSPACE': ssh_keys_dir}
+    )
+    return ssh_keys_dir
 
 
 @pytest.hookimpl(tryfirst=True, hookwrapper=True)
@@ -33,6 +43,11 @@ def pytest_runtest_makereport(item, call):
 
 def pytest_runtest_setup(item):
     item.cls._current_test = item.function
+    lable_mark = item.keywords.get('lable', None)
+    if lable_mark:
+        item.function.__old_name__ = item.function.__name__
+        item.function.__name__ = lable_mark.kwargs.get('name',
+                                                       item.function.__name__)
     item._start_time = time.time()
     head = "<" * 5 + "#" * 30 + "[ {} ]" + "#" * 30 + ">" * 5
     head = head.format(item.function.__name__)
