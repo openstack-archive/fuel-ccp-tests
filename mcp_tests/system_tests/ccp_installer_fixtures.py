@@ -13,19 +13,31 @@
 #    under the License.
 import pytest
 
+from mcp_tests import settings
+
+INSTALL_ACTION = "ccp_install_k8s"
+
 
 @pytest.fixture(scope='function')
 def k8s_installed(request, env):
     """Fixture to prepare needed state and revert from snapshot if it's needed
 
+    To install k8s on top of env with default settings, test class should has
+    kube_settings variable with None or empty dict value. If there are no that
+    attribute, DEFAULT_CUSTOM_YAML, compiled in settings, will be used.
+
+    Value of module variable INSTALL_ACTION is used to get required method of
+    test class to perform k8s deployment.
+
     :param request: pytest.python.FixtureRequest
     :param env: envmanager.EnvironmentManager
     """
-    ACTION = "ccp_install_k8s"
-    install_action = getattr(request.instance, ACTION, None)
+    install_action = getattr(request.instance, INSTALL_ACTION, None)
+    kube_settings = getattr(request.instance, 'kube_settings',
+                            settings.DEFAULT_CUSTOM_YAML)
     if install_action is None:
         pytest.fail(msg="Test instance hasn't attribute '{0}'".format(
-            ACTION
+            INSTALL_ACTION
         ))
     else:
-        install_action(env)
+        install_action(env, custom_yaml=kube_settings)

@@ -45,8 +45,39 @@ DEPLOY_SCRIPT = os.environ.get("DEPLOY_SCRIPT", None)
 
 PRIVATE_REGISTRY = os.environ.get('PRIVATE_REGISTRY', None)
 
+KUBE_HOSTPATH_DYNAMIC_PROVISIONER = get_var_as_bool(
+    'KUBE_HOSTPATH_DYNAMIC_PROVISIONER', True)
 KUBE_ADMIN_USER = os.environ.get('KUBE_ADMIN_USER', 'root')
 KUBE_ADMIN_PASS = os.environ.get('KUBE_ADMIN_PASS', 'changeme')
 KUBE_HOST = os.environ.get('KUBE_HOST', None)
 KUBE_VERSION = os.environ.get("KUBE_VERSION", "v1.3.0")
+KUBE_NETWORK_PLUGIN = os.environ.get("KUBE_NETWORK_PLUGIN", "calico")
+KUBE_PROXY_MODE = os.environ.get("KUBE_PROXY_MODE", "iptables")
 IPIP_USAGE = get_var_as_bool('IPIP_USAGE', True)
+DOCKER_VERSION = float(os.environ.get("DOCKER_VERSION", "1.11"))
+
+KARGO_REPO = os.environ.get('KARGO_REPO',
+                            "https://github.com/kubespray/kargo.git")
+KARGO_COMMIT = os.environ.get('KARGO_COMMIT', 'master')
+
+HYPERKUBE_IMAGE_REPO = os.environ.get('HYPERKUBE_IMAGE_REPO',
+                                      "gcr.io/google_containers/hyperkube")
+HYPERKUBE_IMAGE_TAG = os.environ.get('HYPERKUBE_IMAGE_TAG', KUBE_VERSION)
+ETCD_IMAGE_REPO = os.environ.get('ETCD_IMAGE_REPO', "quay.io/coreos/etcd")
+ETCD_IMAGE_TAG = os.environ.get("ETCD_IMAGE_TAG", 'v3.0.1')
+ETCD_DEPLOYMENT_TYPE = os.environ.get('ETCD_DEPLOYMENT_TYPE', "docker")
+
+DEFAULT_CUSTOM_YAML = {
+    "kube_network_plugin": KUBE_NETWORK_PLUGIN,
+    "kube_proxy_mode": KUBE_PROXY_MODE,
+    "docker_version": DOCKER_VERSION,
+    "etcd_image_repo": ETCD_IMAGE_REPO,
+    "etcd_image_tag": ETCD_IMAGE_TAG,
+    "kube_hostpath_dynamic_provisioner": "{}".format(
+        KUBE_HOSTPATH_DYNAMIC_PROVISIONER).lower(),
+    "etcd_deployment_type": ETCD_DEPLOYMENT_TYPE,
+    "hyperkube_image_tag": HYPERKUBE_IMAGE_TAG,
+    "hyperkube_image_repo": HYPERKUBE_IMAGE_REPO,
+    "ipip": IPIP_USAGE,
+    "kube_version": KUBE_VERSION,
+}
