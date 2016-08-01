@@ -50,6 +50,7 @@ class K8sPodManager(K8sBaseManager):
 
     def _delete(self, body, name, **kwargs):
         return self.api.delete_namespaced_pod(
+            body=body,
             namespace=self._namespace, name=name, **kwargs)
 
     def _deletecollection(self, **kwargs):

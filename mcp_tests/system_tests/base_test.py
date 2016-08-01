@@ -15,6 +15,7 @@ import copy
 import subprocess
 import os
 
+from devops.helpers import helpers
 import pytest
 import yaml
 
@@ -28,14 +29,6 @@ LOG.addHandler(logger.console)
 class SystemBaseTest(object):
     """SystemBaseTest contains setup/teardown for environment creation"""
 
-    kube_settings = {}
-
-    base_images = [
-        "quay.io/coreos/etcd",
-        "andyshinn/dnsmasq",
-        "quay.io/coreos/hyperkube"
-    ]
-
     def exec_on_node(self, env, node, cmd, expected_exit_code=0):
         """Function to exec command on node and get result
 
@@ -48,52 +41,95 @@ class SystemBaseTest(object):
             node,
             **settings.SSH_NODE_CREDENTIALS
         )
+        return self.exec_on_remote(remote, cmd, expected_exit_code)
+
+    def exec_on_remote(self, remote, cmd, expected_exit_code=0):
         with remote.get_sudo(remote):
             result = remote.execute(
                 command=cmd,
                 verbose=True
             )
-            assert result['exit_code'] == expected_exit_code
+            assert result['exit_code'] == expected_exit_code,\
+                "Failed command '{}' run on node '{}'".format(
+                    cmd, remote.hostname)
         return result
 
-    def calico_ipip_exists(self, node, env):
+    def calico_ipip_exists(self, env):
         """Check if ipip is in calico pool config
 
         :param node: devops.models.Node
         :param env: mcp_tests.managers.envmanager.EnvironmentManager
         """
+        cmd = "calicoctl pool show | grep ipip"
         for node in env.k8s_nodes:
-            cmd = "calicoctl pool show | grep ipip"
             self.exec_on_node(env, node, cmd)
 
-    def running_containers(self, node, env, network_plugin):
+    def required_images_exists(self, node, env, required_images):
         """Check if there are all base containers on node
 
         :param node: devops.models.Node
         :param env: mcp_tests.managers.envmanager.EnvironmentManager
+        :param required_images: list
         """
         cmd = "docker ps --no-trunc --format '{{.Image}}'"
-        expected_list = copy.deepcopy(self.base_images)
-        if network_plugin == 'calico':
-            expected_list.append('calico/node')
         result = self.exec_on_node(env, node, cmd)
         images = [x.split(":")[0] for x in result['stdout']]
-        assert set(expected_list) < set(images)
+        assert set(required_images) < set(images),\
+            "Running containers check failed on node '{}'".format(node.name)
 
-    def check_running_containers(self, env, network_plugin=''):
+    def check_list_required_images(self, env, required_images):
         """Check running containers on each node
 
         :param env: mcp_tests.managers.envmanager.EnvironmentManager
+        :param required_images: list
         """
+        LOG.info("Check that required containers exist")
         for node in env.k8s_nodes:
-            self.running_containers(node, env, network_plugin)
+            self.required_images_exists(node, env, required_images)
+
+    def check_pod_create(self, body, k8sclient, timeout=300, interval=5):
+        """Check creating sample pod
+
+        :param k8s_pod: V1Pod
+        :param k8sclient: K8sCluster
+        :rtype: V1Pod
+        """
+        LOG.info("Creating pod in k8s cluster")
+        LOG.debug(
+            "POD spec to create:\n{}".format(
+                yaml.dump(body, default_flow_style=False))
+        )
+        LOG.debug("Timeout for creation is set to {}".format(timeout))
+        LOG.debug("Checking interval is set to {}".format(interval))
+        pod = k8sclient.pods.create(body=body)
+        helpers.wait(
+            predicate=lambda: k8sclient.pods.get(
+                name=pod.metadata.name).status.phase == "Running",
+            timeout=timeout,
+            interval=interval,
+            timeout_msg="Pod creation timeout reached!"
+        )
+        LOG.info("Pod '{}' is created".format(pod.metadata.name))
+        return k8sclient.pods.get(name=pod.metadata.name)
+
+    def check_pod_delete(self, k8s_pod, k8sclient):
+        """Deleting pod from k8s
+
+        :param k8s_pod: mcp_tests.models.k8s.nodes.K8sNode
+        :param k8sclient: mcp_tests.models.k8s.cluster.K8sCluster
+        """
+        LOG.info("Deleting pod '{}'".format(k8s_pod.name))
+        LOG.debug("Pod status:\n{}".format(k8s_pod.status))
+        k8sclient.pods.delete(body=k8s_pod, name=k8s_pod.name)
+        LOG.debug("Pod '{}' is deleted".format(k8s_pod.name))
 
     def check_number_kube_nodes(self, env, k8sclient):
         """Check number of slaves"""
         LOG.info("Check number of nodes")
         k8s_nodes = k8sclient.nodes.list()
         devops_nodes = env.k8s_nodes
-        assert len(k8s_nodes) == len(devops_nodes)
+        assert len(k8s_nodes) == len(devops_nodes),\
+            "Check number k8s nodes failed!"
 
     def check_etcd_health(self, env):
         devops_nodes = env.k8s_nodes
@@ -112,6 +148,10 @@ class SystemBaseTest(object):
         environment_variables = {
             "SLAVE_IPS": " ".join(env.k8s_ips),
             "ADMIN_IP": env.k8s_ips[0],
+            "ADMIN_USER": settings.SSH_LOGIN,
+            "ADMIN_PASSWORD": settings.SSH_PASSWORD,
+            "KARGO_REPO": settings.KARGO_REPO,
+            "KARGO_COMMIT": settings.KARGO_COMMIT,
         }
         if custom_yaml:
             environment_variables.update(
@@ -123,7 +163,7 @@ class SystemBaseTest(object):
         current_env.update(dict=environment_variables)
         self.deploy_k8s(environ=current_env)
 
-    def deploy_k8s(self, environ=os.environ):
+    def deploy_k8s(self, environ=None):
         """Base action to deploy k8s by external deployment script"""
         try:
             process = subprocess.Popen([settings.DEPLOY_SCRIPT],
@@ -131,7 +171,7 @@ class SystemBaseTest(object):
                                        shell=True,
                                        bufsize=0,
                                        )
-            assert process.wait() == 0
+            assert process.wait() == 0, "k8s deployment failed!"
         except (SystemExit, KeyboardInterrupt) as err:
             process.terminate()
             raise err
