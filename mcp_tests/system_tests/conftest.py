@@ -21,7 +21,8 @@ from mcp_tests import logger
 LOG = logger.logger
 
 
-pytest_plugins = ['k8s_fixtures', 'env_fixtures', 'ccp_installer_fixtures']
+pytest_plugins = ['k8s_fixtures', 'env_fixtures', 'ccp_installer_fixtures',
+                  'static_env_fixtures']
 
 
 @pytest.hookimpl(tryfirst=True, hookwrapper=True)
