@@ -51,6 +51,7 @@ KUBE_ADMIN_USER = os.environ.get('KUBE_ADMIN_USER', 'root')
 KUBE_ADMIN_PASS = os.environ.get('KUBE_ADMIN_PASS', 'changeme')
 KUBE_HOST = os.environ.get('KUBE_HOST', None)
 KUBE_VERSION = os.environ.get("KUBE_VERSION", "v1.3.0")
+
 KUBE_NETWORK_PLUGIN = os.environ.get("KUBE_NETWORK_PLUGIN", "calico")
 KUBE_PROXY_MODE = os.environ.get("KUBE_PROXY_MODE", "iptables")
 IPIP_USAGE = get_var_as_bool('IPIP_USAGE', True)
@@ -81,3 +82,11 @@ DEFAULT_CUSTOM_YAML = {
     "ipip": IPIP_USAGE,
     "kube_version": KUBE_VERSION,
 }
+
+BUILD_IMAGES = get_var_as_bool('BUILD_IMAGES', True)
+REGISTRY = os.environ.get('REGISTRY', '127.0.0.1:31500')
+FUEL_CCP_PATH_ON_REMOTE = os.environ.get('FUEL_CCP_PATH_ON_REMOTE', '/tmp/')
+IPIP_USAGE = get_var_as_bool('IPIP_USAGE', True)
+IMAGES_NAMESPACE = os.environ.get('IMAGES_NAMESPACE', 'mcp')
+IMAGES_TAG = os.environ.get('IMAGES_TAG', 'test_latest')
+UPSTREAM_DNS = os.environ.get('UPSTREAM_DNS', '8.8.8.8').split(',')

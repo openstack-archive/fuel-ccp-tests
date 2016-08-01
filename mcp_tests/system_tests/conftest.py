@@ -22,7 +22,8 @@ from mcp_tests.helpers import utils
 LOG = logger.logger
 
 
-pytest_plugins = ['k8s_fixtures', 'env_fixtures', 'ccp_installer_fixtures']
+pytest_plugins = ['k8s_fixtures', 'env_fixtures', 'ccp_installer_fixtures',
+                  'ccp_fixtures']
 
 
 @pytest.yield_fixture(scope='session')
