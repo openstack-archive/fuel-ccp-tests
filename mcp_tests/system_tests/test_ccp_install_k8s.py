@@ -20,26 +20,18 @@ import base_test
 LOG = logger.logger
 
 
-class TestFuelCCPInstaller(base_test.SystemBaseTest):
+class TestFuelCCPInstallerDefault(base_test.SystemBaseTest):
     """Test class for testing k8s deployed by fuel-ccp-installer"""
 
-    kube_settings = {
-        "kube_network_plugin": "calico",
-        "kube_proxy_mode": "iptables",
-        "hyperkube_image_repo": "quay.io/coreos/hyperkube",
-        "hyperkube_image_tag": "{0}_coreos.0".format(settings.KUBE_VERSION),
-        "etcd_deployment_type": "host",
-        "kube_version": settings.KUBE_VERSION,
-        "cloud_provider": "generic",
-        # Configure calico to set --nat-outgoing and --ipip pool option	18
-        "ipip": settings.IPIP_USAGE,
-    }
+    base_images = [
+        "andyshinn/dnsmasq",
+        "quay.io/coreos/hyperkube"
+    ]
 
     @pytest.mark.snapshot_needed
     @pytest.mark.revert_snapshot
     @pytest.mark.fail_snapshot
-    def test_k8s_installed_default(self, env, k8sclient,
-                                   use_custom_yaml=False):
+    def test_k8s_installed(self, env, k8sclient):
         """Test for deploying an k8s environment and check it
 
         Scenario:
@@ -48,16 +40,36 @@ class TestFuelCCPInstaller(base_test.SystemBaseTest):
             3. Basic check of running containers on nodes.
             4. Check requirement base settings.
         """
-        self.ccp_install_k8s(env, use_custom_yaml=use_custom_yaml)
+        self.ccp_install_k8s(env)
         self.check_number_kube_nodes(env, k8sclient)
-        self.check_running_containers(env, use_custom_yaml=use_custom_yaml)
-        self.check_requirement_settings(env, use_custom_yaml=use_custom_yaml)
+        self.check_running_containers(env)
+        self.check_requirement_settings(env)
+
+
+class TestFuelCCPInstallerCustom(base_test.SystemBaseTest):
+    """Test class for testing k8s deployed by fuel-ccp-installer"""
+
+    kube_settings = {
+        "kube_network_plugin": "calico",
+        "kube_proxy_mode": "iptables",
+        "hyperkube_image_repo": "quay.io/coreos/hyperkube",
+        "hyperkube_image_tag": "{0}_coreos.0".format(settings.KUBE_VERSION),
+        "kube_version": settings.KUBE_VERSION,
+        # Configure calico to set --nat-outgoing and --ipip pool option	18
+        "ipip": settings.IPIP_USAGE,
+    }
+
+    base_images = [
+        "andyshinn/dnsmasq",
+        "calico/node",
+        "quay.io/coreos/etcd",
+        "quay.io/coreos/hyperkube"
+    ]
 
     @pytest.mark.snapshot_needed
     @pytest.mark.revert_snapshot
     @pytest.mark.fail_snapshot
-    def test_k8s_installed_with_custom_yaml(self, env, k8sclient,
-                                            use_custom_yaml=True):
+    def test_k8s_installed(self, env, k8sclient):
         """Test for deploying an k8s environment and check it
 
         Scenario:
@@ -66,7 +78,7 @@ class TestFuelCCPInstaller(base_test.SystemBaseTest):
             3. Basic check of running containers on nodes.
             4. Check requirement base settings.
         """
-        self.ccp_install_k8s(env, use_custom_yaml=use_custom_yaml)
+        self.ccp_install_k8s(env)
         self.check_number_kube_nodes(env, k8sclient)
-        self.check_running_containers(env, use_custom_yaml=use_custom_yaml)
-        self.check_requirement_settings(env, use_custom_yaml=use_custom_yaml)
+        self.check_running_containers(env)
+        self.check_requirement_settings(env)
