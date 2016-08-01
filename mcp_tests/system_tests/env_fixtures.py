@@ -56,8 +56,9 @@ def revert_snapshot(request, env):
             LOG.info("Reverting snapshot {0}".format(snapshot_name))
             env.revert_snapshot(snapshot_name)
         else:
-            pytest.fail("Environment doesn't have snapshot named '{}'".format(
-                snapshot_name))
+            if revert_snapshot.kwargs.get('strict', True):
+                pytest.fail("Environment doesn't have snapshot "
+                            "named '{}'".format(snapshot_name))
 
 
 @pytest.fixture(scope="session")
