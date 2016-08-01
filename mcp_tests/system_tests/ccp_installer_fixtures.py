@@ -23,9 +23,10 @@ def k8s_installed(request, env):
     """
     ACTION = "ccp_install_k8s"
     install_action = getattr(request.instance, ACTION, None)
+    kube_settings = getattr(request.instance, 'kube_settings', None)
     if install_action is None:
         pytest.fail(msg="Test instance hasn't attribute '{0}'".format(
             ACTION
         ))
     else:
-        install_action(env)
+        install_action(env, custom_yaml=kube_settings)
