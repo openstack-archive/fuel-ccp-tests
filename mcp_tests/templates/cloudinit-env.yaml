@@ -77,7 +77,7 @@ template:
               cloud_init_iface_up: enp0s3
               volumes:
                 - name: system
-                  capacity: !os_env NODE_VOLUME_SIZE, 50
+                  capacity: !os_env NODE_VOLUME_SIZE, 150
                   backing_store: cloudimage
                   format: qcow2
                 - name: iso  # Volume with name 'iso' will be used
