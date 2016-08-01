@@ -40,9 +40,9 @@ SSH_NODE_CREDENTIALS = {"login": SSH_LOGIN,
 ENV_NAME = os.environ.get('ENV_NAME', 'mcp_qa-test')
 IMAGE_PATH = os.environ.get('IMAGE_PATH', None)
 CONF_PATH = os.environ.get('CONF_PATH', os.path.abspath(_default_conf))
-SUSPEND_ENV_ON_TEARDOWN = os.environ.get('SUSPEND_ENV_ON_TEARDOWN', True)
+SUSPEND_ENV_ON_TEARDOWN = get_var_as_bool('SUSPEND_ENV_ON_TEARDOWN', True)
 DEPLOY_SCRIPT = os.environ.get("DEPLOY_SCRIPT", None)
-USE_CUSTOM_YAML = os.environ.get("USE_CUSTOM_YAML", True)
+USE_CUSTOM_YAML = get_var_as_bool("USE_CUSTOM_YAML", True)
 
 PRIVATE_REGISTRY = os.environ.get('PRIVATE_REGISTRY', None)
 
@@ -50,3 +50,4 @@ KUBE_ADMIN_USER = os.environ.get('KUBE_ADMIN_USER', 'root')
 KUBE_ADMIN_PASS = os.environ.get('KUBE_ADMIN_PASS', 'changeme')
 KUBE_HOST = os.environ.get('KUBE_HOST', None)
 KUBE_VERSION = os.environ.get("KUBE_VERSION", "v1.3.0")
+IPIP_USAGE = get_var_as_bool('IPIP_USAGE', True)
