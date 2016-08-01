@@ -78,8 +78,9 @@ def revert_snapshot(request, env):
             LOG.info("Reverting snapshot {0}".format(snapshot_name))
             env.revert_snapshot(snapshot_name)
         else:
-            pytest.fail("Environment doesn't have snapshot named '{}'".format(
-                snapshot_name))
+            if revert_snapshot.kwargs.get('strict', True):
+                pytest.fail("Environment doesn't have snapshot "
+                            "named '{}'".format(snapshot_name))
 
 
 @pytest.fixture(scope="session")
@@ -156,3 +157,72 @@ def snapshot(request, env):
                     name=snapshot_name, env=env
                 )
     request.addfinalizer(test_fin)
+
+
+@pytest.fixture(scope='function')
+def cluster_roles():
+    """Store initial cluster roles
+
+    :return: dict deploy_images_conf
+    """
+    deploy_images_conf = {
+        'kubectl_label_nodes': {
+            'openstack-compute-controller': [
+                'node1',
+                'node2',
+                'node3',
+            ],
+            'openstack-controller': [
+                'node1',
+            ],
+            'openstack-compute': [
+                'node2',
+                'node3',
+            ]
+        },
+        'registry': settings.REGISTRY,
+        'build_yaml': settings._build_conf,
+        'path_to_log': settings.PATH_TO_LOG,
+        'path_to_conf': settings.PATH_TO_CONF,
+        'images_namespace': settings.IMAGES_NAMESPACE
+    }
+    return deploy_images_conf
+
+
+@pytest.fixture(scope='class')
+def prepare_env(env):
+    """Fixture for installation microservices
+
+    :param env: envmanager.EnvironmentManager
+    :param master_node: self.env.k8s_ips[0]
+    """
+    master_node = env.k8s_nodes[0]
+    remote = env.node_ssh_client(
+        master_node,
+        **settings.SSH_NODE_CREDENTIALS)
+    for repo in settings.CCPINSTALLER, settings.CCP:
+        remote.upload(repo, './')
+    command = [
+        'cd  ~/{0} && pip install .'.format(
+            settings.CCP.split('/')[-1]),
+        '>{0}'.format(settings.PATH_TO_LOG),
+        "cat ~/fuel-ccp/etc/topology-example.yaml >> {0}".format(
+            settings.PATH_TO_CONF)
+    ]
+    with remote.get_sudo(remote):
+        for cmd in command:
+            LOG.info(
+                "Running command '{cmd}' on node {node_name}".format(
+                    cmd=cmd,
+                    node_name=master_node.name
+                )
+            )
+            result = remote.check_call(cmd, verbose=True)
+            assert result['exit_code'] == 0
+        remote.close()
+
+
+@pytest.fixture(scope='function')
+def namespace(request):
+    namespace = getattr(request.instance, 'namespace', 'default')
+    return namespace

@@ -17,8 +17,8 @@ from mcp_tests import settings
 from mcp_tests.models.k8s import cluster
 
 
-@pytest.fixture(scope='session')
-def k8sclient(env):
+@pytest.fixture(scope='function')
+def k8sclient(env, namespace):
     """Fixture to get K8sCluster instance for session
 
     :param env: envmanager.EnvironmentManager
@@ -27,5 +27,6 @@ def k8sclient(env):
     admin_ip = env.node_ip(env.k8s_nodes[0])
     k8s = cluster.K8sCluster(user=settings.KUBE_ADMIN_USER,
                              password=settings.KUBE_ADMIN_PASS,
-                             host=admin_ip)
+                             host=admin_ip,
+                             namespace=namespace)
     return k8s
