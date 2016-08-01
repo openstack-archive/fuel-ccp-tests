@@ -21,6 +21,8 @@ _boolean_states = {'1': True, 'yes': True, 'true': True, 'on': True,
 _default_conf = pkg_resources.resource_filename(
     __name__, 'templates/default.yaml')
 # _default_conf = os.getcwd() + '/mcp_tests/templates/default.yaml'
+_build_conf = pkg_resources.resource_filename(
+    __name__, 'templates/build-env.yaml')
 
 
 def get_var_as_bool(name, default):
@@ -50,4 +52,12 @@ KUBE_ADMIN_USER = os.environ.get('KUBE_ADMIN_USER', 'root')
 KUBE_ADMIN_PASS = os.environ.get('KUBE_ADMIN_PASS', 'changeme')
 KUBE_HOST = os.environ.get('KUBE_HOST', None)
 KUBE_VERSION = os.environ.get("KUBE_VERSION", "v1.3.0")
+
+REGISTRY = os.environ.get('REGISTRY', '127.0.0.1:31500')
+CCPINSTALLER = os.environ.get('CCPINSTALLER', '/tmp/')
+CCP = os.environ.get('CCP', '/tmp/')
+PATH_TO_LOG = os.environ.get('PATH_TO_LOG', '/tmp/microservices_log')
+PATH_TO_CONF = os.environ.get('PATH_TO_CONF', '/tmp/ccp-globals.yaml')
 IPIP_USAGE = get_var_as_bool('IPIP_USAGE', True)
+IMAGES_NAMESPACE = os.environ.get('IMAGES_NAMESPACE', 'mcp')
+UPSTREAM_DNS = os.environ.get('UPSTREAM_DNS', [])
