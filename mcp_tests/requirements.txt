@@ -1,4 +1,4 @@
-git+git://github.com/openstack/fuel-devops.git
+git+git://github.com/openstack/fuel-devops.git@3.0.1
 paramiko
 six
 requests>=2.2.0
@@ -7,4 +7,4 @@ docker-py
 docker-compose==1.7.1
 urllib3
 psycopg2
-python-k8sclient
+git+git://github.com/openstack/python-k8sclient.git
