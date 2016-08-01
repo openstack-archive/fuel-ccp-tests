@@ -78,8 +78,9 @@ def revert_snapshot(request, env):
             LOG.info("Reverting snapshot {0}".format(snapshot_name))
             env.revert_snapshot(snapshot_name)
         else:
-            pytest.fail("Environment doesn't have snapshot named '{}'".format(
-                snapshot_name))
+            if revert_snapshot.kwargs.get('strict', True):
+                pytest.fail("Environment doesn't have snapshot "
+                            "named '{}'".format(snapshot_name))
 
 
 @pytest.fixture(scope="session")
@@ -156,3 +157,41 @@ def snapshot(request, env):
                     name=snapshot_name, env=env
                 )
     request.addfinalizer(test_fin)
+
+
+@pytest.fixture(scope='class')
+def pre_build_deploy_step(env):
+    """Install microservices, create config/log files
+
+    :param env: envmanager.EnvironmentManager
+    :param master_node: self.env.k8s_ips[0]
+    """
+    master_node = env.k8s_nodes[0]
+    remote = env.node_ssh_client(
+        master_node,
+        **settings.SSH_NODE_CREDENTIALS)
+
+    remote.upload(settings.MICROSERVICES_REPO, './')
+    command = [
+        'cd  ~/{0} && pip install .'.format(
+            settings.MICROSERVICES_REPO.split('/')[-1]),
+        '>/var/log/microservices.log',
+        "cat ~/fuel-ccp/etc/topology-example.yaml > /tmp/ccp-globals.yaml"
+    ]
+    with remote.get_sudo(remote):
+        for cmd in command:
+            LOG.info(
+                "Running command '{cmd}' on node {node_name}".format(
+                    cmd=cmd,
+                    node_name=master_node.name
+                )
+            )
+            result = remote.check_call(cmd, verbose=True)
+            assert result['exit_code'] == 0
+        remote.close()
+
+
+@pytest.fixture(scope='function')
+def namespace(request):
+    namespace = getattr(request.instance, 'namespace', 'default')
+    return namespace

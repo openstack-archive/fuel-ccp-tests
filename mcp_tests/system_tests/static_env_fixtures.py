@@ -14,19 +14,31 @@
 import pytest
 
 from mcp_tests import settings
-from mcp_tests.models.k8s import cluster
 
 
 @pytest.fixture(scope='function')
-def k8sclient(env, namespace):
-    """Fixture to get K8sCluster instance for session
+def cluster_roles():
+    """Store initial cluster roles
 
-    :param env: envmanager.EnvironmentManager
-    :rtype: cluster.K8sCluster
+    :return: dict deploy_images_conf
     """
-    admin_ip = env.node_ip(env.k8s_nodes[0])
-    k8s = cluster.K8sCluster(user=settings.KUBE_ADMIN_USER,
-                             password=settings.KUBE_ADMIN_PASS,
-                             host=admin_ip,
-                             namespace=namespace)
-    return k8s
+    deploy_images_conf = {
+        'kubectl_label_nodes': {
+            'openstack-compute-controller': [
+                'node1',
+                'node2',
+                'node3',
+            ],
+            'openstack-controller': [
+                'node1',
+            ],
+            'openstack-compute': [
+                'node2',
+                'node3',
+            ]
+        },
+        'registry': settings.REGISTRY,
+        'images_namespace': settings.IMAGES_NAMESPACE,
+        'images_tag': settings.IMAGES_TAG
+    }
+    return deploy_images_conf
