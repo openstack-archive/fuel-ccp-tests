@@ -22,6 +22,11 @@ _default_conf = pkg_resources.resource_filename(
     __name__, 'templates/default.yaml')
 # _default_conf = os.getcwd() + '/mcp_tests/templates/default.yaml'
 
+_kubelet_plugins_dir = '/usr/libexec/kubernetes/kubelet-plugins'
+_volumes_plugins_dir = os.path.join(
+    _kubelet_plugins_dir,
+    'volume/exec')
+
 
 def get_var_as_bool(name, default):
     value = os.environ.get(name, '')
@@ -51,3 +56,8 @@ KUBE_ADMIN_PASS = os.environ.get('KUBE_ADMIN_PASS', 'changeme')
 KUBE_HOST = os.environ.get('KUBE_HOST', None)
 KUBE_VERSION = os.environ.get("KUBE_VERSION", "v1.3.0")
 IPIP_USAGE = get_var_as_bool('IPIP_USAGE', True)
+
+LVM_PLUGIN_DIRNAME = os.environ.get("LVM_PLUGIN_DIRNAME", 'mirantis.com~lvm')
+LVM_PLUGIN_DIR = os.path.join(_volumes_plugins_dir, LVM_PLUGIN_DIRNAME)
+LVM_PLUGIN_PATH = os.environ.get("LVM_PLUGIN_PATH", "~/lvm")
+LVM_FILENAME = os.path.basename(LVM_PLUGIN_PATH)
