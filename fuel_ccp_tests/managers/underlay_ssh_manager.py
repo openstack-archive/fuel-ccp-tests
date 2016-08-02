@@ -11,9 +11,14 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+import time
 
 from devops.helpers import ssh_client
 from paramiko import rsakey
+
+from fuel_ccp_tests import logger
+
+LOG = logger.logger
 
 
 class UnderlaySSHManager(object):
@@ -59,6 +64,7 @@ class UnderlaySSHManager(object):
     """
 
     config_ssh = None
+    config_lvm = None
 
     def __init__(self, config_ssh):
         """Read config.underlay.ssh object
@@ -134,6 +140,51 @@ class UnderlaySSHManager(object):
             if ssh['node_name'] not in names:
                 names.append(ssh['node_name'])
         return names
+
+    def enable_lvm(self, lvmconfig):
+        """Method for enabling lvm oh hosts in environment
+
+        :param lvmconfig: dict with ids or device' names of lvm storage
+        """
+        def get_actions(lvm_id):
+            return [
+                "apt-get update",
+                "apt-get install -y lvm2 liblvm2-dev thin-provisioning-tools",
+                "systemctl enable lvm2-lvmetad.service",
+                "systemctl enable lvm2-lvmetad.socket",
+                "systemctl start lvm2-lvmetad.service",
+                "systemctl start lvm2-lvmetad.socket",
+                "pvcreate {} && pvs".format(lvm_id),
+                "vgcreate default {} && vgs".format(lvm_id),
+                "lvcreate -L 1G -T default/pool && lvs",
+            ]
+        for node_name in self.node_names():
+            lvm = lvmconfig.get(node_name)
+            if 'id' in lvm:
+                lvmdevice = '/dev/disk/by-id/{}'.format(lvm['id'])
+            elif 'device' in lvm:
+                lvmdevice = '/dev/{}'.format(lvm['device'])
+            else:
+                lvmdevice = None
+            for command in get_actions(lvmdevice):
+                retry = True
+                while retry:
+                    result = self.sudo_check_call(
+                        command, node_name=node_name,
+                        verbose=True,
+                        expected=[0, 100]
+                    )
+                    if result.exit_code == 100:
+                        LOG.debug(
+                            "dpkg is locked on '{}' another "
+                            "try in 5 secs".format(
+                                node_name
+                            ))
+                        time.sleep(5)
+                        retry = True
+                    else:
+                        retry = False
+        self.config_lvm = lvmconfig
 
     def host_by_node_name(self, node_name, address_pool=None):
         ssh_data = self.__ssh_data(node_name=node_name,

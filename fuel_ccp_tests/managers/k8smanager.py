@@ -35,8 +35,29 @@ class K8SManager(object):
         self.__underlay = underlay
         super(K8SManager, self).__init__()
 
+    def upload_lvm_plugin(self, host_ip):
+        if self.__underlay:
+            with self.__underlay.remote(host=host_ip) as remote:
+                remote.upload(settings.LVM_PLUGIN_PATH, '/tmp/')
+                with remote.get_sudo(remote):
+                    remote.check_call(
+                        'mkdir -p {}'.format(settings.LVM_PLUGIN_DIR),
+                        verbose=True
+                    )
+                    remote.check_call(
+                        "mv /tmp/{} {}".format(settings.LVM_FILENAME,
+                                               settings.LVM_PLUGIN_DIR),
+                        verbose=True
+                    )
+                    remote.check_call(
+                        "chmod +x {}/{}".format(settings.LVM_PLUGIN_DIR,
+                                                settings.LVM_FILENAME),
+                        verbose=True
+                    )
+
     def install_k8s(self, custom_yaml=None, env_var=None,
-                    k8s_admin_ip=None, k8s_slave_ips=None):
+                    k8s_admin_ip=None, k8s_slave_ips=None,
+                    lvm_support=False):
         """Action to deploy k8s by fuel-ccp-installer script
 
         Additional steps:
@@ -57,6 +78,11 @@ class K8SManager(object):
         if k8s_slave_ips is None:
             k8s_slave_ips = [self.__underlay.host_by_node_name(k8s_node)
                              for k8s_node in k8s_nodes]
+
+        if lvm_support:
+            LOG.info("uploading LVM plugin for k8s")
+            for host_ip in k8s_slave_ips:
+                self.upload_lvm_plugin(host_ip)
 
         environment_variables = {
             "SLAVE_IPS": " ".join(k8s_slave_ips),
