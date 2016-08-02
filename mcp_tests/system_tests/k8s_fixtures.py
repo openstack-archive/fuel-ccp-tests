@@ -18,6 +18,16 @@ from mcp_tests.models.k8s import cluster
 
 
 @pytest.fixture(scope='session')
+def env_with_k8s(env):
+    """Fixture to install k8s on environment
+
+    :param env: envmanager.EnvironmentManager
+    """
+    env.install_k8s()
+    return env
+
+
+@pytest.fixture(scope='session')
 def k8sclient(env):
     """Fixture to get K8sCluster instance for session
 

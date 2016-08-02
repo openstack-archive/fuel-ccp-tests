@@ -12,11 +12,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 import copy
-import subprocess
-import os
+# import subprocess
+# import os
 
 import pytest
-import yaml
+# import yaml
 
 from mcp_tests import logger
 from mcp_tests import settings
@@ -112,38 +112,6 @@ class SystemBaseTest(object):
         k8s_nodes = k8sclient.nodes.list()
         devops_nodes = env.k8s_nodes
         assert len(k8s_nodes) == len(devops_nodes)
-
-    def ccp_install_k8s(self, env, use_custom_yaml=False):
-        """Action to deploy k8s by fuel-ccp-installer script
-
-        :param env: mcp_tests.managers.envmanager.EnvironmentManager
-        :param use_custom_yaml: Bool
-        """
-        current_env = copy.deepcopy(os.environ)
-        environment_variables = {
-            "SLAVE_IPS": " ".join(env.k8s_ips),
-            "ADMIN_IP": env.k8s_ips[0],
-        }
-        if use_custom_yaml:
-            environment_variables.update(
-                {"CUSTOM_YAML": yaml.dump(
-                    self.kube_settings, default_flow_style=False)}
-            )
-        current_env.update(dict=environment_variables)
-        self.deploy_k8s(environ=current_env)
-
-    def deploy_k8s(self, environ=os.environ):
-        """Base action to deploy k8s by external deployment script"""
-        try:
-            process = subprocess.Popen([settings.DEPLOY_SCRIPT],
-                                       env=environ,
-                                       shell=True,
-                                       bufsize=0,
-                                       )
-            assert process.wait() == 0
-        except (SystemExit, KeyboardInterrupt) as err:
-            process.terminate()
-            raise err
 
     def create_env_snapshot(self, name, env, description=None):
         env.create_snapshot(name, description=description)
