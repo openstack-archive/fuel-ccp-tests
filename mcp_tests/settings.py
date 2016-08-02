@@ -81,3 +81,9 @@ DEFAULT_CUSTOM_YAML = {
     "ipip": IPIP_USAGE,
     "kube_version": KUBE_VERSION,
 }
+
+LVM_PLUGIN_DIRNAME = os.environ.get("LVM_PLUGIN_DIRNAME", 'mirantis.com~lvm')
+LVM_PLUGIN_DIR = os.path.join(
+    '/usr/libexec/kubernetes/kubelet-plugins/volume/exec', LVM_PLUGIN_DIRNAME)
+LVM_PLUGIN_PATH = os.environ.get("LVM_PLUGIN_PATH", "~/lvm")
+LVM_FILENAME = os.path.basename(LVM_PLUGIN_PATH)
