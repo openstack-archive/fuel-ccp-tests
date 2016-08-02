@@ -50,6 +50,8 @@ underlay_opts = [
                   'port': (optional),
                   'keys': [(optional)],
                   }, ...]""", default=[]),
+    ct.Cfg('lvm', ct.JSONDict(),
+           help="LVM settings for Underlay")
 ]
 
 # TODO(ddmitriev): remove these variables from settings.py
