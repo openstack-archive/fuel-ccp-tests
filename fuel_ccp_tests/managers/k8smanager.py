@@ -39,9 +39,44 @@ class K8SManager(object):
         self._api_client = None
         super(K8SManager, self).__init__()
 
+    def mark_lvm_nodes(self, lvm_config):
+        lvm_mark = {"lvm": "on"}
+        # Get nodes ips
+        lvm_nodes_ips = [self.__underlay.host_by_node_name(node_name)
+                         for node_name in lvm_config]
+        # Get only those K8sNodes, which has ips from lvm_nodes_ips
+        lvm_nodes = filter(
+            lambda x: len(filter(lambda y: y.address in lvm_nodes_ips,
+                                 x.status.addresses)) > 0,
+            self.api.nodes.list())
+
+        for node in lvm_nodes:
+            node.add_labels(lvm_mark)
+
+    def upload_lvm_plugin(self, node_name):
+        LOG.info("Uploading LVM plugin to node '{}'".format(node_name))
+        if self.__underlay:
+            with self.__underlay.remote(node_name=node_name) as remote:
+                remote.upload(settings.LVM_PLUGIN_PATH, '/tmp/')
+                with remote.get_sudo(remote):
+                    remote.check_call(
+                        'mkdir -p {}'.format(settings.LVM_PLUGIN_DIR),
+                        verbose=True
+                    )
+                    remote.check_call(
+                        "mv /tmp/{} {}".format(settings.LVM_FILENAME,
+                                               settings.LVM_PLUGIN_DIR),
+                        verbose=True
+                    )
+                    remote.check_call(
+                        "chmod +x {}/{}".format(settings.LVM_PLUGIN_DIR,
+                                                settings.LVM_FILENAME),
+                        verbose=True
+                    )
+
     def install_k8s(self, custom_yaml=None, env_var=None,
                     k8s_admin_ip=None, k8s_slave_ips=None,
-                    expected_ec=None, verbose=True):
+                    expected_ec=None, verbose=True, lvm_config=None):
         """Action to deploy k8s by fuel-ccp-installer script
 
         Additional steps:
@@ -63,6 +98,11 @@ class K8SManager(object):
         if k8s_slave_ips is None:
             k8s_slave_ips = [self.__underlay.host_by_node_name(k8s_node)
                              for k8s_node in k8s_nodes]
+
+        if lvm_config:
+            LOG.info("uploading LVM plugin for k8s")
+            for node_name in lvm_config:
+                self.upload_lvm_plugin(node_name)
 
         environment_variables = {
             "SLAVE_IPS": " ".join(k8s_slave_ips),
@@ -111,6 +151,8 @@ class K8SManager(object):
                 remote.check_call('sudo usermod -aG docker vagrant')
 
         self.__config.k8s.kube_host = k8s_admin_ip
+
+        self.mark_lvm_nodes(lvm_config)
 
         return result
 

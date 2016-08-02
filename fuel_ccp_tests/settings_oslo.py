@@ -53,6 +53,8 @@ underlay_opts = [
     ct.Cfg('roles', ct.JSONList(),
            help="Node roles managed by underlay in the environment",
            default=[ext.NODE_ROLE.k8s, ]),
+    ct.Cfg('lvm', ct.JSONDict(),
+           help="LVM settings for Underlay"),
 ]
 
 # TODO(ddmitriev): remove these variables from settings.py
