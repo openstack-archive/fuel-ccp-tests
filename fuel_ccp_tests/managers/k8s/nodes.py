@@ -26,6 +26,33 @@ class K8sNode(K8sBaseResource):
     def name(self):
         return self.metadata.name
 
+    @property
+    def labels(self):
+        return self.metadata.labels
+
+    @labels.setter
+    def labels(self, labels):
+        current_labels = {
+            label: None for label in self.labels
+        }
+        current_labels.update(labels)
+        self.add_labels(labels=current_labels)
+
+    def add_labels(self, labels):
+        if not isinstance(labels, dict):
+            raise TypeError("labels must be a dict!")
+        body = {
+            "metadata":
+            {
+                "labels": labels
+            }
+        }
+        self._add_details(self._manager.update(body=body, name=self.name))
+
+    def remove_labels(self, list_labels):
+        labels = {label: None for label in list_labels}
+        self.add_labels(labels=labels)
+
 
 class K8sNodeManager(K8sBaseManager):
     """docstring for ClassName"""
@@ -49,3 +76,6 @@ class K8sNodeManager(K8sBaseManager):
 
     def _deletecollection(self, **kwargs):
         return self.api.deletecollection_namespaced_node(**kwargs)
+
+    def update(self, body, name, **kwargs):
+        return self.api.patch_namespaced_node(body=body, name=name, **kwargs)

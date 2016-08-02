@@ -11,6 +11,7 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+
 import pytest
 
 from fuel_ccp_tests.helpers import ext
@@ -150,7 +151,7 @@ def snapshot(request, hardware):
 
 
 @pytest.fixture(scope="function")
-def underlay(revert_snapshot, config, hardware):
+def underlay(request, revert_snapshot, config, hardware):
     """Fixture that should provide SSH access to underlay objects.
 
        Input data:
@@ -162,6 +163,8 @@ def underlay(revert_snapshot, config, hardware):
                                - provide SSH access to underlay nodes using
                                  node names or node IPs.
     """
+    lvm_support = request.keywords.get('lvm_support', None)
+
     # Try to guess environment config for reverted snapshot
     if revert_snapshot and not config.underlay.ssh:
         config.underlay.ssh = hardware.get_ssh_data(
@@ -187,4 +190,10 @@ def underlay(revert_snapshot, config, hardware):
         #    (can be passed from external config with TESTS_CONFIGS variable)
         pass
 
-    return underlay_ssh_manager.UnderlaySSHManager(config.underlay.ssh)
+    underlay = underlay_ssh_manager.UnderlaySSHManager(config.underlay.ssh)
+
+    if lvm_support and not config.underlay.lvm:
+        underlay.enable_lvm(hardware.lvm_storages())
+        config.underlay.lvm = underlay.config_lvm
+
+    return underlay
