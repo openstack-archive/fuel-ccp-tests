@@ -95,3 +95,8 @@ IMAGES_TAG = os.environ.get('IMAGES_TAG', 'latest')
 UPSTREAM_DNS = os.environ.get('UPSTREAM_DNS', '8.8.8.8').split(',')
 SERVICE_PATH = os.environ.get('SERVICE_PATH')
 TEMPEST_SCRIPT_PATH = os.environ.get('TEMPEST_SCRIPT_PATH')
+LVM_PLUGIN_DIRNAME = os.environ.get("LVM_PLUGIN_DIRNAME", 'mirantis.com~lvm')
+LVM_PLUGIN_DIR = os.path.join(
+    '/usr/libexec/kubernetes/kubelet-plugins/volume/exec', LVM_PLUGIN_DIRNAME)
+LVM_PLUGIN_PATH = os.environ.get("LVM_PLUGIN_PATH", "~/lvm")
+LVM_FILENAME = os.path.basename(LVM_PLUGIN_PATH)
