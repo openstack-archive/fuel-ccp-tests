@@ -138,3 +138,8 @@ AC_REPO = os.environ.get("AC_REPO", "")
 AC_ZIP_URL = os.environ.get(
     "AC_ZIP_URL", "{repo}/archive/{commit}.zip".format(
         repo=AC_REPO, commit=AC_COMMIT))
+LVM_PLUGIN_DIRNAME = os.environ.get("LVM_PLUGIN_DIRNAME", 'mirantis.com~lvm')
+LVM_PLUGIN_DIR = os.path.join(
+    '/usr/libexec/kubernetes/kubelet-plugins/volume/exec', LVM_PLUGIN_DIRNAME)
+LVM_PLUGIN_PATH = os.environ.get("LVM_PLUGIN_PATH", "~/lvm")
+LVM_FILENAME = os.path.basename(LVM_PLUGIN_PATH)
