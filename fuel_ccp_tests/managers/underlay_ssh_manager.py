@@ -12,8 +12,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from devops.helpers import helpers
 from devops.helpers import ssh_client
 from paramiko import rsakey
+
+from fuel_ccp_tests import logger
+
+LOG = logger.logger
 
 
 class UnderlaySSHManager(object):
@@ -59,6 +64,7 @@ class UnderlaySSHManager(object):
     """
 
     config_ssh = None
+    config_lvm = None
 
     def __init__(self, config_ssh):
         """Read config.underlay.ssh object
@@ -135,6 +141,38 @@ class UnderlaySSHManager(object):
                 names.append(ssh['node_name'])
         return names
 
+    def enable_lvm(self, lvmconfig):
+        """Method for enabling lvm oh hosts in environment
+
+        :param lvmconfig: dict with ids or device' names of lvm storage
+        """
+        def get_actions(lvm_id):
+            return [
+                "systemctl enable lvm2-lvmetad.service",
+                "systemctl enable lvm2-lvmetad.socket",
+                "systemctl start lvm2-lvmetad.service",
+                "systemctl start lvm2-lvmetad.socket",
+                "pvcreate {} && pvs".format(lvm_id),
+                "vgcreate default {} && vgs".format(lvm_id),
+                "lvcreate -L 1G -T default/pool && lvs",
+            ]
+        lvmpackages = ["lvm2", "liblvm2-dev", "thin-provisioning-tools"]
+        for node_name in self.node_names():
+            lvm = lvmconfig.get(node_name)
+            if 'id' in lvm:
+                lvmdevice = '/dev/disk/by-id/{}'.format(lvm['id'])
+            elif 'device' in lvm:
+                lvmdevice = '/dev/{}'.format(lvm['device'])
+            else:
+                lvmdevice = None
+            if lvmdevice:
+                self.apt_install_package(
+                    packages=lvmpackages, node_name=node_name, verbose=True)
+                for command in get_actions(lvmdevice):
+                    self.sudo_check_call(command, node_name=node_name,
+                                         verbose=True)
+        self.config_lvm = lvmconfig
+
     def host_by_node_name(self, node_name, address_pool=None):
         ssh_data = self.__ssh_data(node_name=node_name,
                                    address_pool=address_pool)
@@ -168,13 +206,15 @@ class UnderlaySSHManager(object):
         """Execute command on the node_name/host and check for exit code
 
         :type cmd: str
+        :type node_name: str
+        :type host: str
         :type verbose: bool
         :type timeout: int
         :type error_info: str
         :type expected: list
         :type raise_on_err: bool
         :rtype: list stdout
-        :raises: DevopsCalledProcessError
+        :raises: devops.error.DevopsCalledProcessError
         """
         remote = self.remote(node_name=node_name, host=host,
                              address_pool=address_pool)
@@ -182,6 +222,36 @@ class UnderlaySSHManager(object):
             command=cmd, verbose=verbose, timeout=timeout,
             error_info=error_info, expected=expected,
             raise_on_err=raise_on_err)
+
+    def apt_install_package(self, packages=None, node_name=None, host=None,
+                            **kwargs):
+        """Method to install packages on ubuntu nodes
+
+        :type packages: list
+        :type node_name: str
+        :type host: str
+        :raises: devops.error.DevopsCalledProcessError,
+        devops.error.TimeoutError, AssertionError, ValueError
+
+        Other params of check_call and sudo_check_call are allowed
+        """
+        expected = kwargs.pop('expected', None)
+        if not packages or not isinstance(packages, list):
+            raise ValueError("packages list should be provided!")
+        install = "apt-get install -y {}".format(" ".join(packages))
+        # Should wait until other 'apt' jobs are finished
+        pgrep_expected = [0, 1]
+        pgrep_command = "pgrep -a -f apt"
+        helpers.wait(
+            lambda: (self.check_call(
+                pgrep_command, expected=pgrep_expected, host=host,
+                node_name=node_name, **kwargs).exit_code == 1
+            ), interval=30, timeout=1200,
+            timeout_msg="Timeout reached while waiting for apt lock"
+        )
+        # Install packages
+        self.sudo_check_call(install, expected=expected, node_name=node_name,
+                             host=host, **kwargs)
 
     def sudo_check_call(
             self, cmd,
@@ -192,13 +262,15 @@ class UnderlaySSHManager(object):
         """Execute command with sudo on node_name/host and check for exit code
 
         :type cmd: str
+        :type node_name: str
+        :type host: str
         :type verbose: bool
         :type timeout: int
         :type error_info: str
         :type expected: list
         :type raise_on_err: bool
         :rtype: list stdout
-        :raises: DevopsCalledProcessError
+        :raises: devops.error.DevopsCalledProcessError
         """
         remote = self.remote(node_name=node_name, host=host,
                              address_pool=address_pool)

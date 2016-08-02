@@ -11,6 +11,7 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+
 import pytest
 
 from fuel_ccp_tests import logger
@@ -151,6 +152,14 @@ def snapshot(request, hardware):
             hardware.create_snapshot(snapshot_name)
 
     request.addfinalizer(test_fin)
+
+
+@pytest.fixture
+def underlay_lvm(request, hardware, underlay):
+    lvm_support = request.keywords.get('lvm_support', None)
+    if lvm_support and not underlay.config_lvm:
+        underlay.enable_lvm(hardware.lvm_storages())
+    return underlay
 
 
 @pytest.fixture(scope="session")
