@@ -11,6 +11,8 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+import time
+
 from devops import error
 import pytest
 
@@ -59,6 +61,76 @@ def revert_snapshot(request, env):
             if revert_snapshot.kwargs.get('strict', True):
                 pytest.fail("Environment doesn't have snapshot "
                             "named '{}'".format(snapshot_name))
+
+
+@pytest.fixture(scope='class')
+def env_lvm_support(env):
+    def get_lvm_id(node):
+        lvm = filter(lambda x: x.volume.name == 'lvm', node.disk_devices)[0]
+        lvm_id = "{bus}-{serial}".format(
+            bus=lvm.bus,
+            serial=lvm.volume.serial[:20])
+        LOG.info("Got lvm_id '{}' for node '{}'".format(lvm_id, node.name))
+        return lvm_id
+
+    def get_actions(lvm_id):
+        return [
+            "apt-get update",
+            "apt-get install -y lvm2 liblvm2-dev thin-provisioning-tools",
+            "systemctl enable lvm2-lvmetad.service",
+            "systemctl enable lvm2-lvmetad.socket",
+            "systemctl start lvm2-lvmetad.service",
+            "systemctl start lvm2-lvmetad.socket",
+            "pvcreate /dev/disk/by-id/{} && pvs".format(lvm_id),
+            "vgcreate default /dev/disk/by-id/{} && vgs".format(lvm_id),
+            "lvcreate -L 1G -T default/pool && lvs",
+            "mkdir -p {}".format(settings.LVM_PLUGIN_DIR),
+            "mv /tmp/{} {}".format(settings.LVM_FILENAME,
+                                   settings.LVM_PLUGIN_DIR),
+            "chmod +x {}/{}".format(settings.LVM_PLUGIN_DIR,
+                                    settings.LVM_FILENAME)
+        ]
+
+    def get_remote(env):
+        for node in env.k8s_nodes:
+            LOG.info("Getting remote to node '{}'".format(node.name))
+            remote = env.node_ssh_client(
+                node, **settings.SSH_NODE_CREDENTIALS)
+            with remote.get_sudo(remote):
+                yield remote, node
+            LOG.info("Destroying remote to node '{}'".format(node.name))
+            remote.close()
+
+    lvm_snapshot = "lvm_support_enabled"
+    if not env.has_snapshot(lvm_snapshot):
+        LOG.info("Preparing environment for LVM usage")
+        for remote, node in get_remote(env):
+            LOG.info(
+                "Uploading LVM plugin on remote node '{}'".format(node.name))
+            remote.upload(settings.LVM_PLUGIN_PATH, '/tmp/')
+            for cmd in get_actions(get_lvm_id(node)):
+                LOG.info("Run command '{}' on node '{}'".format(
+                    cmd, node.name
+                ))
+                restart = True
+                while restart:
+                    result = remote.check_call(command=cmd, expected=[0, 100])
+                    if result['exit_code'] == 100:
+                        LOG.debug(
+                            "dpkg is locked on '{}' another "
+                            "try in 5 secs".format(
+                                node.name
+                            ))
+                        time.sleep(5)
+                        restart = True
+                    else:
+                        restart = False
+        LOG.info("Creating snapshot '{}'".format(lvm_snapshot))
+        env.create_snapshot(lvm_snapshot)
+    else:
+        LOG.info("Snapshot '{}' found, trying to revert...".format(
+            lvm_snapshot))
+
 
 
 @pytest.fixture(scope="session")
