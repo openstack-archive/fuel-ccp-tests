@@ -15,6 +15,9 @@
 
 import os
 import time
+import paramiko
+import shutil
+import tempfile
 import traceback
 
 import yaml
@@ -117,3 +120,17 @@ class TimeStat(object):
     @property
     def spent_time(self):
         return time.time() - self.begin_time
+
+
+def generate_keys():
+    key = paramiko.RSAKey.generate(1024)
+    public = key.get_base64()
+    dirpath = tempfile.mkdtemp()
+    key.write_private_key_file(dirpath + '/id_rsa')
+    with open(dirpath + '/id_rsa.pub', 'w') as file:
+        file.write(public)
+    return dirpath
+
+
+def clean_dir(dirpath):
+    shutil.rmtree(dirpath)

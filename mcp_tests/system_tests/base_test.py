@@ -36,10 +36,6 @@ class SystemBaseTest(object):
         "quay.io/coreos/hyperkube"
     ]
 
-    @property
-    def kube_network_plugin(self):
-        return self.kube_settings.get('kube_network_plugin', None)
-
     def exec_on_node(self, env, node, cmd, expected_exit_code=0):
         """Function to exec command on node and get result
 
@@ -60,51 +56,37 @@ class SystemBaseTest(object):
             assert result['exit_code'] == expected_exit_code
         return result
 
-    def check_requirement_settings(self, env, use_custom_yaml):
-        """Check requirement settings"""
-        for node in env.k8s_nodes:
-            if use_custom_yaml and self.kube_network_plugin == 'calico':
-                self.calico_ipip_exists(node, env)
-            else:
-                self.calico_ipip_exists(node, env, exists=False)
-
-    def calico_ipip_exists(self, node, env, exists=True):
+    def calico_ipip_exists(self, node, env):
         """Check if ipip is in calico pool config
 
         :param node: devops.models.Node
         :param env: mcp_tests.managers.envmanager.EnvironmentManager
-        :param exists: Bool
         """
-        def expected(x):
-            if x:
-                return 0
-            else:
-                return 1
-        cmd = "calicoctl pool show | grep ipip"
-        self.exec_on_node(env, node, cmd, expected_exit_code=expected(exists))
+        for node in env.k8s_nodes:
+            cmd = "calicoctl pool show | grep ipip"
+            self.exec_on_node(env, node, cmd)
 
-    def running_containers(self, node, env, use_custom_yaml):
+    def running_containers(self, node, env, network_plugin):
         """Check if there are all base containers on node
 
         :param node: devops.models.Node
         :param env: mcp_tests.managers.envmanager.EnvironmentManager
-        :param use_custom_yaml: Bool
         """
         cmd = "docker ps --no-trunc --format '{{.Image}}'"
         expected_list = copy.deepcopy(self.base_images)
-        if self.kube_network_plugin == 'calico' and use_custom_yaml:
+        if network_plugin == 'calico':
             expected_list.append('calico/node')
         result = self.exec_on_node(env, node, cmd)
         images = [x.split(":")[0] for x in result['stdout']]
         assert set(expected_list) < set(images)
 
-    def check_running_containers(self, env, use_custom_yaml):
+    def check_running_containers(self, env, network_plugin=''):
         """Check running containers on each node
 
         :param env: mcp_tests.managers.envmanager.EnvironmentManager
         """
         for node in env.k8s_nodes:
-            self.running_containers(node, env, use_custom_yaml)
+            self.running_containers(node, env, network_plugin)
 
     def check_number_kube_nodes(self, env, k8sclient):
         """Check number of slaves"""
@@ -113,22 +95,31 @@ class SystemBaseTest(object):
         devops_nodes = env.k8s_nodes
         assert len(k8s_nodes) == len(devops_nodes)
 
-    def ccp_install_k8s(self, env, use_custom_yaml=False):
+    def check_etcd_health(self, env):
+        devops_nodes = env.k8s_nodes
+        cmd = "etcdctl cluster-health | grep 'got healthy result' | wc -l"
+        etcd_nodes = self.exec_on_node(env, env.k8s_nodes[0], cmd)['stdout']
+        assert int(etcd_nodes) == len(devops_nodes),\
+            "Number of etcd nodes is {0}," \
+            " should be {1}".format(etcd_nodes, len(devops_nodes))
+
+    def ccp_install_k8s(self, env, custom_yaml=None, env_var=None):
         """Action to deploy k8s by fuel-ccp-installer script
 
         :param env: mcp_tests.managers.envmanager.EnvironmentManager
-        :param use_custom_yaml: Bool
         """
         current_env = copy.deepcopy(os.environ)
         environment_variables = {
             "SLAVE_IPS": " ".join(env.k8s_ips),
             "ADMIN_IP": env.k8s_ips[0],
         }
-        if use_custom_yaml:
+        if custom_yaml:
             environment_variables.update(
                 {"CUSTOM_YAML": yaml.dump(
-                    self.kube_settings, default_flow_style=False)}
+                    custom_yaml, default_flow_style=False)}
             )
+        if env_var:
+            environment_variables.update(env_var)
         current_env.update(dict=environment_variables)
         self.deploy_k8s(environ=current_env)
 

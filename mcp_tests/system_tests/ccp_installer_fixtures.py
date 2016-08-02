@@ -16,13 +16,6 @@ import pytest
 from mcp_tests import settings
 
 
-@pytest.fixture
-def use_custom_yaml(request):
-    """Fixture to get USE_CUSTOM_YAML setting and provide its value"""
-    use_custom_yaml = settings.USE_CUSTOM_YAML
-    return use_custom_yaml
-
-
 @pytest.fixture(scope='function')
 def k8s_installed(request, env, use_custom_yaml):
     """Fixture to prepare needed state and revert from snapshot if it's needed
