@@ -48,7 +48,7 @@ class TestFuelCCPInstaller(base_test.SystemBaseTest):
             3. Basic check of running containers on nodes.
             4. Check requirement base settings.
         """
-        self.ccp_install_k8s(env, use_custom_yaml=use_custom_yaml)
+        env.install_k8s(use_custom_yaml=use_custom_yaml)
         self.check_number_kube_nodes(env, k8sclient)
         self.check_running_containers(env, use_custom_yaml=use_custom_yaml)
         self.check_requirement_settings(env, use_custom_yaml=use_custom_yaml)
@@ -66,7 +66,7 @@ class TestFuelCCPInstaller(base_test.SystemBaseTest):
             3. Basic check of running containers on nodes.
             4. Check requirement base settings.
         """
-        self.ccp_install_k8s(env, use_custom_yaml=use_custom_yaml)
+        env.install_k8s(use_custom_yaml=use_custom_yaml)
         self.check_number_kube_nodes(env, k8sclient)
         self.check_running_containers(env, use_custom_yaml=use_custom_yaml)
         self.check_requirement_settings(env, use_custom_yaml=use_custom_yaml)

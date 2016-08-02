@@ -16,7 +16,7 @@ import pytest
 from mcp_tests import settings
 
 
-@pytest.fixture
+@pytest.fixture(scope='session')
 def use_custom_yaml(request):
     """Fixture to get USE_CUSTOM_YAML setting and provide its value"""
     use_custom_yaml = settings.USE_CUSTOM_YAML
@@ -31,11 +31,11 @@ def k8s_installed(request, env, use_custom_yaml):
     :param env: envmanager.EnvironmentManager
     :param use_custom_yaml: Bool
     """
-    ACTION = "ccp_install_k8s"
-    install_action = getattr(request.instance, ACTION, None)
+    action = "ccp_install_k8s"
+    install_action = getattr(request.instance, action, None)
     if install_action is None:
         pytest.fail(msg="Test instance hasn't attribute '{0}'".format(
-            ACTION
+            action
         ))
     else:
         install_action(env,
