@@ -32,6 +32,26 @@ class EnvironmentManagerEmpty(object):
         """
         self.__config = config
 
+    def lvm_storages(self):
+        """Returns data of lvm_storages on nodes in environment
+
+        It's expected that data of self.__config.lvm_storages will be
+        like this:
+            {
+                "node1": {
+                    "device": "vdb"
+                },
+                "node2": {
+                    "device": "vdb"
+                },
+                "node3": {
+                    "device": "vdb"
+                },
+            }
+        :rtype: dict
+        """
+        return self.__config.lvm_storages
+
     def get_ssh_data(self):
         raise Exception("EnvironmentManagerEmpty doesn't have SSH details. "
                         "Please provide SSH details in config.underlay.ssh")
