@@ -55,6 +55,8 @@ underlay_opts = [
     ct.Cfg('nameservers', ct.JSONList(),
            help="IP addresses of DNS servers",
            default=[]),
+    ct.Cfg('lvm', ct.JSONDict(),
+           help="LVM settings for Underlay"),
 ]
 
 # TODO(ddmitriev): remove these variables from settings.py
