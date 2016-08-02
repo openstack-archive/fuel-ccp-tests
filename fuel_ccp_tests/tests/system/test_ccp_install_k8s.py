@@ -100,9 +100,9 @@ class TestFuelCCPInstaller(base_test.SystemBaseTest,
         self.calico_ipip_exists(underlay)
         self.check_etcd_health(underlay)
         nginx = self.get_nginx_spec()
-        pod = self.check_pod_create(body=nginx, k8sclient=k8sclient)
+        pod = k8s_actions.check_pod_create(body=nginx)
         self.check_nginx_pod_is_reached(underlay, pod.status.pod_ip)
-        self.check_pod_delete(pod, k8sclient)
+        k8s_actions.check_pod_delete(pod)
 
     @pytest.mark.k8s_installed_with_etcd_on_host
     @pytest.mark.snapshot_needed
@@ -142,9 +142,9 @@ class TestFuelCCPInstaller(base_test.SystemBaseTest,
         self.calico_ipip_exists(underlay)
         self.check_etcd_health(underlay)
         nginx = self.get_nginx_spec()
-        pod = self.check_pod_create(body=nginx, k8sclient=k8sclient)
+        pod = k8s_actions.check_pod_create(body=nginx)
         self.check_nginx_pod_is_reached(underlay, pod.status.pod_ip)
-        self.check_pod_delete(pod, k8sclient)
+        k8s_actions.check_pod_delete(pod)
 
     @pytest.mark.k8s_installed_with_etcd_in_container
     @pytest.mark.snapshot_needed
@@ -184,9 +184,9 @@ class TestFuelCCPInstaller(base_test.SystemBaseTest,
         self.calico_ipip_exists(underlay)
         self.check_etcd_health(underlay)
         nginx = self.get_nginx_spec()
-        pod = self.check_pod_create(body=nginx, k8sclient=k8sclient)
+        pod = k8s_actions.check_pod_create(body=nginx)
         self.check_nginx_pod_is_reached(underlay, pod.status.pod_ip)
-        self.check_pod_delete(pod, k8sclient)
+        k8s_actions.check_pod_delete(pod)
 
     @pytest.mark.k8s_installed_with_ready_ssh_keys
     @pytest.mark.snapshot_needed
@@ -220,9 +220,9 @@ class TestFuelCCPInstaller(base_test.SystemBaseTest,
         self.calico_ipip_exists(underlay)
         self.check_etcd_health(underlay)
         nginx = self.get_nginx_spec()
-        pod = self.check_pod_create(body=nginx, k8sclient=k8sclient)
+        pod = k8s_actions.check_pod_create(body=nginx)
         self.check_nginx_pod_is_reached(underlay, pod.status.pod_ip)
-        self.check_pod_delete(pod, k8sclient)
+        k8s_actions.check_pod_delete(pod)
 
 
 @pytest.mark.fuel_ccp_installer_idempotency
