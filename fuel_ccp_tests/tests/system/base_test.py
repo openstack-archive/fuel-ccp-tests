@@ -91,7 +91,7 @@ class SystemBaseTest(object):
         """
         LOG.info("Deleting pod '{}'".format(k8s_pod.name))
         LOG.debug("Pod status:\n{}".format(k8s_pod.status))
-        k8sclient.pods.delete(body=k8s_pod, name=k8s_pod.name)
+        k8sclient.pods.delete(body=k8s_pod.swagger_types, name=k8s_pod.name)
         LOG.debug("Pod '{}' is deleted".format(k8s_pod.name))
 
     def check_number_kube_nodes(self, underlay, k8sclient):
