@@ -70,8 +70,10 @@ def k8scluster(revert_snapshot, request, config,
         kube_settings = getattr(request.instance, 'kube_settings',
                                 settings.DEFAULT_CUSTOM_YAML)
         LOG.info('Kube settings are {}'.format(kube_settings))
-        k8s_actions.install_k8s(custom_yaml=kube_settings)
 
+        k8s_actions.install_k8s(
+            custom_yaml=kube_settings,
+            lvm_config=underlay.config_lvm)
         hardware.create_snapshot(ext.SNAPSHOT.k8s_deployed)
 
     else:
