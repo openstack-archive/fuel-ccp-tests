@@ -39,9 +39,44 @@ class K8SManager(object):
         self._api_client = None
         super(K8SManager, self).__init__()
 
+    def mark_lvm_nodes(self, lvm_config):
+        lvm_mark = {"lvm": "on"}
+        # Get nodes ips
+        lvm_nodes_ips = [self.__underlay.host_by_node_name(node_name)
+                         for node_name in lvm_config]
+        # Get only those K8sNodes, which has ips from lvm_nodes_ips
+        lvm_nodes = filter(
+            lambda x: len(filter(lambda y: y.address in lvm_nodes_ips,
+                                 x.status.addresses)) > 0,
+            self.api.nodes.list())
+
+        for node in lvm_nodes:
+            node.add_labels(lvm_mark)
+
+    def upload_lvm_plugin(self, node_name):
+        LOG.info("Uploading LVM plugin to node '{}'".format(node_name))
+        if self.__underlay:
+            with self.__underlay.remote(node_name=node_name) as remote:
+                remote.upload(settings.LVM_PLUGIN_PATH, '/tmp/')
+                with remote.get_sudo(remote):
+                    remote.check_call(
+                        'mkdir -p {}'.format(settings.LVM_PLUGIN_DIR),
+                        verbose=True
+                    )
+                    remote.check_call(
+                        "mv /tmp/{} {}".format(settings.LVM_FILENAME,
+                                               settings.LVM_PLUGIN_DIR),
+                        verbose=True
+                    )
+                    remote.check_call(
+                        "chmod +x {}/{}".format(settings.LVM_PLUGIN_DIR,
+                                                settings.LVM_FILENAME),
+                        verbose=True
+                    )
+
     def install_k8s(self, custom_yaml=None, env_var=None,
                     k8s_admin_ip=None, k8s_slave_ips=None,
-                    expected_ec=None, verbose=True):
+                    expected_ec=None, verbose=True, lvm_config=None):
         """Action to deploy k8s by fuel-ccp-installer script
 
         Additional steps:
@@ -63,6 +98,11 @@ class K8SManager(object):
         if k8s_slave_ips is None:
             k8s_slave_ips = [self.__underlay.host_by_node_name(k8s_node)
                              for k8s_node in k8s_nodes]
+
+        if lvm_config:
+            LOG.info("uploading LVM plugin for k8s")
+            for node_name in lvm_config:
+                self.upload_lvm_plugin(node_name)
 
         environment_variables = {
             "SLAVE_IPS": " ".join(k8s_slave_ips),
@@ -111,6 +151,8 @@ class K8SManager(object):
                 remote.check_call('sudo usermod -aG docker vagrant')
 
         self.__config.k8s.kube_host = k8s_admin_ip
+
+        self.mark_lvm_nodes(lvm_config)
 
         return result
 
@@ -167,6 +209,79 @@ class K8SManager(object):
                      timeout_msg='Timeout waiting, pod {pod_name} is not in '
                                  '"{phase}" phase'.format(
                                      pod_name=pod_name, phase=phase))
+
+    def check_pod_create(self, body, timeout=300, interval=5):
+        """Check creating sample pod
+
+        :param k8s_pod: V1Pod
+        :param k8sclient: K8sCluster
+        :rtype: V1Pod
+        """
+        LOG.info("Creating pod in k8s cluster")
+        LOG.debug(
+            "POD spec to create:\n{}".format(
+                yaml.dump(body, default_flow_style=False))
+        )
+        LOG.debug("Timeout for creation is set to {}".format(timeout))
+        LOG.debug("Checking interval is set to {}".format(interval))
+        pod = self.api.pods.create(body=body)
+        pod.wait_running(timeout=300, interval=5)
+        LOG.info("Pod '{}' is created".format(pod.metadata.name))
+        return self.api.pods.get(name=pod.metadata.name)
+
+    def wait_pod_deleted(self, podname, timeout=60, interval=5):
+        helpers.wait(
+            lambda: podname not in [pod.name for pod in self.api.pods.list()],
+            timeout=timeout,
+            interval=interval,
+            timeout_msg="Pod deletion timeout reached!"
+        )
+
+    def check_pod_delete(self, k8s_pod, timeout=300, interval=5):
+        """Deleting pod from k8s
+
+        :param k8s_pod: fuel_ccp_tests.managers.k8s.nodes.K8sNode
+        :param k8sclient: fuel_ccp_tests.managers.k8s.cluster.K8sCluster
+        """
+        LOG.info("Deleting pod '{}'".format(k8s_pod.name))
+        LOG.debug("Pod status:\n{}".format(k8s_pod.status))
+        LOG.debug("Timeout for deletion is set to {}".format(timeout))
+        LOG.debug("Checking interval is set to {}".format(interval))
+        self.api.pods.delete(body=k8s_pod, name=k8s_pod.name)
+        self.wait_pod_deleted(k8s_pod.name, timeout, interval)
+        LOG.debug("Pod '{}' is deleted".format(k8s_pod.name))
+
+    def check_service_create(self, body):
+        """Check creating k8s service
+
+        :param body: dict, service spec
+        :param k8sclient: K8sCluster object
+        :rtype: K8sService object
+        """
+        LOG.info("Creating service in k8s cluster")
+        LOG.debug(
+            "Service spec to create:\n{}".format(
+                yaml.dump(body, default_flow_style=False))
+        )
+        service = self.api.services.create(body=body)
+        LOG.info("Service '{}' is created".format(service.metadata.name))
+        return self.api.services.get(name=service.metadata.name)
+
+    def check_ds_create(self, body):
+        """Check creating k8s DaemonSet
+
+        :param body: dict, DaemonSet spec
+        :param k8sclient: K8sCluster object
+        :rtype: K8sDaemonSet object
+        """
+        LOG.info("Creating DaemonSet in k8s cluster")
+        LOG.debug(
+            "DaemonSet spec to create:\n{}".format(
+                yaml.dump(body, default_flow_style=False))
+        )
+        ds = self.api.daemonsets.create(body=body)
+        LOG.info("DaemonSet '{}' is created".format(ds.metadata.name))
+        return self.api.daemonsets.get(name=ds.metadata.name)
 
     def create_objects(self, path):
         if isinstance(path, str):
