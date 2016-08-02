@@ -60,7 +60,9 @@ def k8scluster(request, config, hardware, underlay, k8s_actions):
     if config.k8s.kube_host is None:
         kube_settings = getattr(request.instance, 'kube_settings',
                                 settings.DEFAULT_CUSTOM_YAML)
-        k8s_actions.install_k8s(custom_yaml=kube_settings)
+        k8s_actions.install_k8s(
+            custom_yaml=kube_settings,
+            lvm_support=(underlay.config_lvm is not None))
         hardware.create_snapshot(ext.SNAPSHOT.k8s_deployed)
 
     return k8s_actions
