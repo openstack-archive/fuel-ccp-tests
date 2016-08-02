@@ -77,6 +77,37 @@ class EnvironmentManager(object):
             )
         self.__devops_config = conf
 
+    def lvm_storages(self):
+        """Returns a dict object of lvm storages in current environment
+
+        returned data example:
+            {
+                "master": {
+                    "id": "virtio-bff72959d1a54cb19d08"
+                },
+                "slave-0": {
+                    "id": "virtio-5e33affc8fe44503839f"
+                },
+                "slave-1": {
+                    "id": "virtio-10b6a262f1ec4341a1ba"
+                },
+            }
+
+        :rtype: dict
+        """
+        result = {}
+        for node in self.k8s_nodes:
+            result[node.name] = {}
+            result_node = result[node.name]
+            lvm = filter(lambda x: x.volume.name == 'lvm', node.disk_devices)
+            lvm = lvm[0]
+            result_node['id'] = "{bus}-{serial}".format(
+                bus=lvm.bus,
+                serial=lvm.volume.serial[:20])
+            LOG.info("Got disk-id '{}' for node '{}'".format(
+                result_node['id'], node.name))
+        return result
+
     @property
     def _d_env_name(self):
         """Get environment name from fuel devops config
