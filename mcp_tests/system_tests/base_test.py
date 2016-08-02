@@ -113,12 +113,12 @@ class SystemBaseTest(object):
     def check_pod_delete(self, k8s_pod, k8sclient):
         """Deleting pod from k8s
 
-        :param k8s_pod: mcp_tests.models.k8s.nodes.K8sNode
+        :param k8s_pod: mcp_tests.models.k8s.pods.K8sPod
         :param k8sclient: mcp_tests.models.k8s.cluster.K8sCluster
         """
         LOG.info("Deleting pod '{}'".format(k8s_pod.name))
         LOG.debug("Pod status:\n{}".format(k8s_pod.status))
-        k8sclient.pods.delete(body=k8s_pod, name=k8s_pod.name)
+        k8sclient.pods.delete(body=k8s_pod.swagger_types, name=k8s_pod.name)
         LOG.debug("Pod '{}' is deleted".format(k8s_pod.name))
 
     def check_number_kube_nodes(self, env, k8sclient):
