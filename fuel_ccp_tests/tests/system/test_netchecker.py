@@ -90,27 +90,26 @@ class TestFuelCCPNetChecker(SystemBaseTest, TestFuelCCPNetCheckerMixin):
             'docker push {0}/netchecker/{1}:latest'.format(registry, stype),
             node_name='master')
 
-    def start_netchecker_server(self, k8sclient):
+    def start_netchecker_server(self, k8s):
 
         with open(self.pod_yaml_file) as pod_conf:
             for pod_spec in yaml.load_all(pod_conf):
                 try:
-                    if k8sclient.pods.get(name=pod_spec['metadata']['name']):
+                    if k8s.api.pods.get(name=pod_spec['metadata']['name']):
                         LOG.debug('Network checker server pod {} is '
                                   'already running! Skipping resource creation'
                                   '.'.format(pod_spec['metadata']['name']))
                         continue
                 except ApiException as e:
                     if e.status == 404:
-                        self.check_pod_create(body=pod_spec,
-                                              k8sclient=k8sclient)
+                        k8s.check_pod_create(body=pod_spec)
                     else:
                         raise e
 
         with open(self.svc_yaml_file) as svc_conf:
             for svc_spec in yaml.load_all(svc_conf):
                 try:
-                    if k8sclient.services.get(
+                    if k8s.api.services.get(
                             name=svc_spec['metadata']['name']):
                         LOG.debug('Network checker server pod {} is '
                                   'already running! Skipping resource creation'
@@ -118,12 +117,11 @@ class TestFuelCCPNetChecker(SystemBaseTest, TestFuelCCPNetCheckerMixin):
                         continue
                 except ApiException as e:
                     if e.status == 404:
-                        self.check_service_create(body=svc_spec,
-                                                  k8sclient=k8sclient)
+                        k8s.check_service_create(body=svc_spec)
                     else:
                         raise e
 
-    def start_netchecker_agent(self, underlay, k8sclient):
+    def start_netchecker_agent(self, underlay, k8s):
         # TODO(apanchenko): use python API client here when it will have
         # TODO(apanchenko): needed functionality (able work with labels)
         underlay.sudo_check_call(
@@ -133,10 +131,8 @@ class TestFuelCCPNetChecker(SystemBaseTest, TestFuelCCPNetCheckerMixin):
 
         with open(self.ds_yaml_file) as ds_conf:
             for daemon_set_spec in yaml.load_all(ds_conf):
-                self.check_ds_create(body=daemon_set_spec,
-                                     k8sclient=k8sclient)
-                self.wait_ds_running(
-                    k8sclient,
+                k8s.check_ds_create(body=daemon_set_spec)
+                k8s.wait_ds_running(
                     dsname=daemon_set_spec['metadata']['name'])
 
     @staticmethod
@@ -313,12 +309,12 @@ class TestFuelCCPNetChecker(SystemBaseTest, TestFuelCCPNetCheckerMixin):
 
         # STEP #9
         self.show_step(me, 9)
-        self.start_netchecker_server(k8sclient=k8sclient)
+        self.start_netchecker_server(k8s=k8scluster)
         self.wait_netchecker_running(underlay, timeout=240)
 
         # STEP #10
         self.show_step(me, 10)
-        self.start_netchecker_agent(underlay, k8sclient)
+        self.start_netchecker_agent(underlay, k8scluster)
 
         # STEP #11
         # currently agents need some time to start reporting to the server
@@ -342,12 +338,12 @@ class TestFuelCCPNetChecker(SystemBaseTest, TestFuelCCPNetCheckerMixin):
         underlay.sudo_check_call(
             'kubectl delete pod/netchecker-server',
             node_name='master')
-        self.wait_pod_deleted(k8sclient, 'netchecker-server')
+        k8scluster.wait_pod_deleted('netchecker-server')
 
         self.block_traffic_on_slave(underlay, target_slave)
 
         # start netchecker-server
-        self.start_netchecker_server(k8sclient=k8sclient)
+        self.start_netchecker_server(k8s=k8scluster)
         self.wait_netchecker_running(underlay, timeout=240)
 
         # STEP #13
