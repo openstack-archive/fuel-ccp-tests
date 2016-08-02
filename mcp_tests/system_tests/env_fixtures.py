@@ -70,9 +70,19 @@ def revert_snapshot(request, env):
     :param request: pytest.python.FixtureRequest
     :param env: envmanager.EnvironmentManager
     """
+    # revert_snapshot = request.keywords.get('revert_snapshot', None)
+    # snapshot_name = make_snapshot_name(
+    #     env, extract_name_from_mark(revert_snapshot), INITIAL_SNAPSHOT_SUFFIX)
+    # if revert_snapshot and snapshot_name:
+    #     if env.has_snapshot(snapshot_name):
+    #         LOG.info("Reverting snapshot {0}".format(snapshot_name))
+    #         env.revert_snapshot(snapshot_name)
+    #     else:
+    #         pytest.fail("Environment doesn't have snapshot named '{}'".format(
+    #             snapshot_name))
     revert_snapshot = request.keywords.get('revert_snapshot', None)
-    snapshot_name = make_snapshot_name(
-        env, extract_name_from_mark(revert_snapshot), INITIAL_SNAPSHOT_SUFFIX)
+    snapshot_name = extract_name_from_mark(revert_snapshot) or \
+        INITIAL_SNAPSHOT_SUFFIX
     if revert_snapshot and snapshot_name:
         if env.has_snapshot(snapshot_name):
             LOG.info("Reverting snapshot {0}".format(snapshot_name))
@@ -94,9 +104,7 @@ def env():
     except error.DevopsObjNotFound:
         LOG.info("Environment doesn't exist, creating a new one")
         result.create_environment()
-        result.create_snapshot(make_snapshot_name(result,
-                                                  INITIAL_SNAPSHOT_SUFFIX,
-                                                  None))
+        result.create_snapshot(INITIAL_SNAPSHOT_SUFFIX)
         LOG.info("Environment created")
     return result
 
@@ -122,37 +130,46 @@ def snapshot(request, env):
         default_snapshot_name = getattr(request.node.function,
                                         '_snapshot_name',
                                         request.node.function.__name__)
-        if hasattr(request.node, 'rep_call') and request.node.rep_call.passed:
-            if snapshot_needed:
-                snapshot_name = make_snapshot_name(
-                    env, extract_name_from_mark(snapshot_needed),
-                    default_snapshot_name +
-                    "_passed"
-                )
-                request.instance.create_env_snapshot(
-                    name=snapshot_name, env=env
-                )
-        elif (hasattr(request.node, 'rep_setup') and
-              request.node.rep_setup.failed):
-            if fail_snapshot:
-                suffix = "{0}_prep_failed".format(
-                    default_snapshot_name
-                )
-                request.instance.create_env_snapshot(
-                    name=make_snapshot_name(
-                        env, suffix, None
-                    ), env=env
-                )
-        elif (hasattr(request.node, 'rep_call') and
-              request.node.rep_call.failed):
-            if fail_snapshot:
-                suffix = "{0}_failed".format(
-                    default_snapshot_name
-                )
-                snapshot_name = make_snapshot_name(
-                    env, suffix, None
-                )
-                request.instance.create_env_snapshot(
-                    name=snapshot_name, env=env
-                )
+        if hasattr(request.node, 'rep_call') and request.node.rep_call.passed \
+                and snapshot_needed:
+                # snapshot_name = make_snapshot_name(
+                #     env, extract_name_from_mark(snapshot_needed),
+                #     default_snapshot_name +
+                #     "_passed"
+                # )
+                # request.instance.create_env_snapshot(
+                #     name=snapshot_name, env=env
+                # )
+            snapshot_name = extract_name_from_mark(snapshot_needed) or \
+                "{}_passed".format(default_snapshot_name)
+            env.create_snapshot(snapshot_name)
+
+        elif hasattr(request.node, 'rep_setup') and \
+                request.node.rep_setup.failed and fail_snapshot:
+            # if fail_snapshot:
+                # suffix = "{0}_prep_failed".format(
+                #     default_snapshot_name
+                # )
+                # request.instance.create_env_snapshot(
+                #     name=make_snapshot_name(
+                #         env, suffix, None
+                #     ), env=env
+                # )
+            snapshot_name = "{0}_prep_failed".format(default_snapshot_name)
+            env.create_snapshot(snapshot_name)
+
+        elif hasattr(request.node, 'rep_call') and \
+                request.node.rep_call.failed and fail_snapshot:
+            # if fail_snapshot:
+            #     suffix = "{0}_failed".format(
+            #         default_snapshot_name
+            #     )
+            #     snapshot_name = make_snapshot_name(
+            #         env, suffix, None
+            #     )
+            #     request.instance.create_env_snapshot(
+            #         name=snapshot_name, env=env
+            #     )
+            snapshot_name = "{0}_failed".format(default_snapshot_name)
+            env.create_snapshot(snapshot_name)
     request.addfinalizer(test_fin)

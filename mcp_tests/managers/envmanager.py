@@ -11,6 +11,11 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+import copy
+import subprocess
+import os
+
+import yaml
 
 from devops.helpers import helpers
 from devops import models
@@ -20,6 +25,7 @@ from mcp_tests.helpers import ext
 from mcp_tests.helpers import mcp_tests_exceptions as exc
 from mcp_tests import logger
 from mcp_tests.models import manager
+from mcp_tests import settings
 
 
 LOG = logger.logger
@@ -27,6 +33,9 @@ LOG = logger.logger
 
 class EnvironmentManager(manager.Manager):
     """Class-helper for creating VMs via devops environments"""
+
+    default_kube_settings = settings.DEFAULT_KUBE_SETTINGS
+
     def __init__(self, config_file=None, env_name=None, master_image=None,
                  node_image=None, *args, **kwargs):
         """Initializing class instance
@@ -103,6 +112,7 @@ class EnvironmentManager(manager.Manager):
         LOG.info("Reverting from snapshot named '{0}'".format(name))
         if self._env is not None:
             self._env.revert(name=name)
+            LOG.info("Resuming environment after revert")
             self._env.resume()
         else:
             raise exc.EnvironmentIsNotSet()
@@ -344,3 +354,51 @@ class EnvironmentManager(manager.Manager):
                 source=source, target=target, login=login,
                 password=password, private_keys=private_keys
             )
+
+    def install_k8s(self, use_custom_yaml=False, kube_settings=None):
+        """Action to deploy k8s by fuel-ccp-installer script
+
+        :param use_custom_yaml: Bool
+        """
+        LOG.info("Trying to install k8s")
+        kube_settings = kube_settings or self.default_kube_settings
+        snapshot_name = 'k8s_deployed'
+        if not self.has_snapshot(snapshot_name):
+            current_env = copy.deepcopy(os.environ)
+            environment_variables = {
+                "SLAVE_IPS": " ".join(self.k8s_ips),
+                "ADMIN_IP": self.k8s_ips[0],
+                "KARGO_REPO": settings.KARGO_REPO,
+                "KARGO_COMMIT": settings.KARGO_COMMIT
+            }
+            if use_custom_yaml:
+                environment_variables.update(
+                    {"CUSTOM_YAML": yaml.dump(
+                        kube_settings, default_flow_style=False)}
+                )
+            current_env.update(dict=environment_variables)
+            self.deploy_k8s(environ=current_env)
+            remote = self.node_ssh_client(
+                self.k8s_nodes[0],
+                login=settings.SSH_NODE_CREDENTIALS['login'],
+                password=settings.SSH_NODE_CREDENTIALS['password'])
+            remote.check_call('sudo usermod -aG docker vagrant')
+            self.create_snapshot(snapshot_name)
+        else:
+            LOG.info("Environment has {} trying to revert".format(
+                snapshot_name))
+            self.revert_snapshot(snapshot_name)
+
+    def deploy_k8s(self, environ=os.environ):
+        """Base action to deploy k8s by external deployment script"""
+        LOG.info("Run k8s deployment")
+        try:
+            process = subprocess.Popen([settings.DEPLOY_SCRIPT],
+                                       env=environ,
+                                       shell=True,
+                                       bufsize=0,
+                                       )
+            assert process.wait() == 0
+        except (SystemExit, KeyboardInterrupt) as err:
+            process.terminate()
+            raise err
