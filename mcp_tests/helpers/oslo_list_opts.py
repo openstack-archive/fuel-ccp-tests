@@ -12,8 +12,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-pytest_plugins = ['mcp_tests.fixtures.setup_teardown_fixtures',
-                  'mcp_tests.fixtures.env_fixtures',
-                  'mcp_tests.fixtures.k8s_fixtures',
-                  'mcp_tests.fixtures.ccp_installer_fixtures',
-                  'mcp_tests.fixtures.config_fixtures']
+from mcp_tests.helpers import oslo_cfg_types as ct
+
+
+def list_opts():
+    """Return a list of oslo.config options available in the fuel-ccp-tests.
+    """
+    # TODO(ddmitriev): discovery oslo_config options from tests and serialize
+    # to list of tuples.
+    return ()
+

@@ -29,3 +29,12 @@ def k8sclient(env):
                              password=settings.KUBE_ADMIN_PASS,
                              host=admin_ip)
     return k8s
+
+
+@pytest.fixture(scope='session')
+def k8s_default_ns(request):
+    user = settings.KUBE_ADMIN_USER
+    password = settings.KUBE_ADMIN_PASS
+    host = settings.KUBE_HOST
+    return cluster.K8sCluster(user=user, password=password,
+                              host=host, namespace='default')
