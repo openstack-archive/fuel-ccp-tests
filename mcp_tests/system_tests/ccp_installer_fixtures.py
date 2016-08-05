@@ -14,18 +14,11 @@
 import pytest
 
 
-@pytest.fixture(scope='function')
-def k8s_installed(request, env):
-    """Fixture to prepare needed state and revert from snapshot if it's needed
+@pytest.fixture(scope='session')
+def env_with_k8s_and_ccp(env_with_k8s):
+    """Fixture to install fuel-ccp on k8s environment
 
-    :param request: pytest.python.FixtureRequest
-    :param env: envmanager.EnvironmentManager
+    :param env_with_k8s: envmanager.EnvironmentManager
     """
-    ACTION = "ccp_install_k8s"
-    install_action = getattr(request.instance, ACTION, None)
-    if install_action is None:
-        pytest.fail(msg="Test instance hasn't attribute '{0}'".format(
-            ACTION
-        ))
-    else:
-        install_action(env)
+    env_with_k8s.install_ccp()
+    return env_with_k8s
