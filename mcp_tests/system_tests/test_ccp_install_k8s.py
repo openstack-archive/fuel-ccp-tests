@@ -48,7 +48,7 @@ class TestFuelCCPInstaller(base_test.SystemBaseTest):
             3. Basic check of running containers on nodes.
             4. Check requirement base settings.
         """
-        self.ccp_install_k8s(env)
+        env.ccp_install_k8s(env)
         self.check_number_kube_nodes(env, k8sclient)
         self.check_running_containers(env)
         self.check_etcd_health(env)
@@ -71,7 +71,7 @@ class TestFuelCCPInstaller(base_test.SystemBaseTest):
             "etcd_deployment_type": "host",
         }
         test_kube_settings.update(additional_kube_settings)
-        self.ccp_install_k8s(env, custom_yaml=test_kube_settings)
+        env.ccp_install_k8s(env, custom_yaml=test_kube_settings)
         self.check_number_kube_nodes(env, k8sclient)
         self.check_running_containers(env, network_plugin='calico')
         self.calico_ipip_exists(env)
@@ -95,7 +95,7 @@ class TestFuelCCPInstaller(base_test.SystemBaseTest):
             "etcd_deployment_type": "docker",
         }
         test_kube_settings.update(additional_kube_settings)
-        self.ccp_install_k8s(env, custom_yaml=test_kube_settings)
+        env.ccp_install_k8s(env, custom_yaml=test_kube_settings)
 
         self.check_number_kube_nodes(env, k8sclient)
         self.check_running_containers(env, network_plugin='calico')
@@ -115,7 +115,7 @@ class TestFuelCCPInstaller(base_test.SystemBaseTest):
         """
         dirpath = utils.generate_keys()
         env_var = {"WORKSPACE": dirpath}
-        self.ccp_install_k8s(env, env_var=env_var)
+        env.ccp_install_k8s(env, env_var=env_var)
 
         self.check_number_kube_nodes(env, k8sclient)
         self.check_running_containers(env, network_plugin='calico')

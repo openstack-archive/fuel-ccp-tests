@@ -45,8 +45,33 @@ DEPLOY_SCRIPT = os.environ.get("DEPLOY_SCRIPT", None)
 
 PRIVATE_REGISTRY = os.environ.get('PRIVATE_REGISTRY', None)
 
+KARGO_REPO = os.environ.get('KARGO_REPO',
+                            'https://github.com/kubespray/kargo.git')
+KARGO_COMMIT = os.environ.get('KARGO_COMMIT', 'master')
+
 KUBE_ADMIN_USER = os.environ.get('KUBE_ADMIN_USER', 'root')
 KUBE_ADMIN_PASS = os.environ.get('KUBE_ADMIN_PASS', 'changeme')
 KUBE_HOST = os.environ.get('KUBE_HOST', None)
 KUBE_VERSION = os.environ.get("KUBE_VERSION", "v1.3.0")
+KUBE_NETWORK_PLUGIN = os.environ.get('KUDE_NETOWKR_PLUGIN', 'calico')
+KUBE_PROXY_MODE = os.environ.get('KUBE_PROXY_MODE', "iptables")
+HYPERKUBE_IMAGE_REPO = os.environ.get('HYPERKUBE_IMAGE_REPO',
+                                      "quay.io/coreos/hyperkube")
+HYPERKUBE_IMAGE_TAG = os.environ.get('HYPERKUBE_IMAGE_TAG',
+                                     "{0}_coreos.0".format(KUBE_VERSION))
+ETCD_DEPLOYMENT_TYPE = os.environ.get('ETCD_DEPLOYMENT_TYPE', "host")
+CLOUD_PROVIDER = os.environ.get('CLOUD_PROVIDER', "generic")
 IPIP_USAGE = get_var_as_bool('IPIP_USAGE', True)
+
+
+DEFAULT_CUSTOM_YAML = {
+    "kube_network_plugin": KUBE_NETWORK_PLUGIN,
+    "kube_proxy_mode": KUBE_PROXY_MODE,
+    "kube_version": KUBE_VERSION,
+    "hyperkube_image_repo": HYPERKUBE_IMAGE_REPO,
+    "hyperkube_image_tag": HYPERKUBE_IMAGE_TAG,
+    "etcd_deployment_type": ETCD_DEPLOYMENT_TYPE,
+    "cloud_provider": CLOUD_PROVIDER,
+    # Configure calico to set --nat-outgoing and --ipip pool option 18
+    "ipip": IPIP_USAGE
+}
