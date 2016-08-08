@@ -98,10 +98,10 @@ class SystemBaseTest(object):
     def check_etcd_health(self, env):
         devops_nodes = env.k8s_nodes
         cmd = "etcdctl cluster-health | grep -c 'got healthy result'"
-        etcd_nodes = self.exec_on_node(env, env.k8s_nodes[0], cmd)['stdout']
+        etcd_nodes = self.exec_on_node(env, env.k8s_nodes[0], cmd)['stdout'][0]
         assert int(etcd_nodes) == len(devops_nodes),\
             "Number of etcd nodes is {0}," \
-            " should be {1}".format(etcd_nodes, len(devops_nodes))
+            " should be {1}".format(int(etcd_nodes), len(devops_nodes))
 
     def ccp_install_k8s(self, env, custom_yaml=None, env_var=None):
         """Action to deploy k8s by fuel-ccp-installer script
