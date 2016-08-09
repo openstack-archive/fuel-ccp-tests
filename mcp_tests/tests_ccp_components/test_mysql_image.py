@@ -17,7 +17,7 @@ from devops.helpers import helpers
 
 from mcp_tests.helpers import containers as cs
 from mcp_tests import logger
-from mcp_tests import service_tests
+from mcp_tests import tests_ccp_components
 from mcp_tests import settings
 
 LOG = logger.logger
@@ -25,7 +25,7 @@ LOG = logger.logger
 
 @pytest.mark.skipif(settings.PRIVATE_REGISTRY is None,
                     reason="PRIVATE_REGISTRY isn't set")
-class TestMysqlImage(service_tests.ServiceBaseTest):
+class TestMysqlImage(tests_ccp_components.ServiceBaseTest):
     """Test class consits simple tests for mysql container"""
 
     services = [
