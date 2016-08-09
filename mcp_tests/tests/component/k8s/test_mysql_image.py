@@ -13,19 +13,68 @@
 #    under the License.
 import pytest
 
+from compose import project
+from compose import service
+import docker
 from devops.helpers import helpers
 
 from mcp_tests.helpers import containers as cs
 from mcp_tests import logger
-from mcp_tests import service_tests
 from mcp_tests import settings
 
 LOG = logger.logger
 
 
+class ServiceBaseTest(object):
+    """ServiceBaseTest contains setup/teardown for services up and down"""
+
+    @classmethod
+    def setup_class(cls):
+        """Start container from image
+
+        Scenario:
+            1. Get image from private registry
+            2. Start container with it
+        """
+        LOG.info("Up services")
+        cli = docker.Client()
+        project_name = cls.__name__
+        services = []
+        for s in cls.services:
+            services.append(
+                service.Service(
+                    # name=s['name'],
+                    project=project_name,
+                    client=cli,
+                    **s))
+        cls.project = project.Project(
+            name=project_name,
+            services=services,
+            client=cli)
+        cls.containers = cls.project.up()
+        wait_services = getattr(cls, 'wait_services', 5)
+        LOG.info("Sleep {} sec until MariDB is setting up".format(
+            wait_services))
+        time.sleep(wait_services)
+        LOG.info("Start tests")
+
+    @classmethod
+    def teardown_class(cls):
+        """Down service
+
+        Scenario:
+            5. Kill container
+            6. Remove volumes
+
+        """
+        LOG.info("Down service and remove volume")
+        cls.project.down(remove_image_type=False,
+                         include_volumes=True)
+
+
 @pytest.mark.skipif(settings.PRIVATE_REGISTRY is None,
                     reason="PRIVATE_REGISTRY isn't set")
-class TestMysqlImage(service_tests.ServiceBaseTest):
+class TestMysqlImage(ServiceBaseTest):
     """Test class consits simple tests for mysql container"""
 
     services = [
