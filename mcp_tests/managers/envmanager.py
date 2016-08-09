@@ -89,6 +89,14 @@ class EnvironmentManager(manager.Manager):
         """
         self._env = models.Environment.get(name=name)
 
+    def get_default_node_group(self):
+        return self._env.get_group(name='default')
+
+    def get_network_pool(self, net_pool_name):
+        default_node_group = self.get_default_node_group()
+        network_pool = default_node_group.get_network_pool(name=net_pool_name)
+        return network_pool
+
     def create_snapshot(self, name, description=None):
         """Create named snapshot of current env.
 
