@@ -12,11 +12,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from mcp_tests import base_test
 from mcp_tests.helpers import env_config
 
 
-class Manager(base_test.TestBasic):
+class Manager(object):
     """Base manager class."""
 
     def __init__(self):
