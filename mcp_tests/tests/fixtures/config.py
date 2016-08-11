@@ -11,7 +11,7 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-
+import os
 import pytest
 from mcp_tests import settings_oslo
 
@@ -20,6 +20,9 @@ from mcp_tests import settings_oslo
 def config(request):
 
     config_files = []
+    custom_config = os.environ.get('CUSTOM_CONFIG', None)
+    if custom_config:
+        config_files.append(custom_config)
     config_opts = settings_oslo.load_config(config_files)
 
     return config_opts
