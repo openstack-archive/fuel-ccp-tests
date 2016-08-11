@@ -34,24 +34,23 @@ class K8sReplicationControllerManager(K8sBaseManager):
 
     def _get(self, name, **kwargs):
         return self.api.read_namespaced_replication_controller(
-            namespace=self._namespace, name=name, **kwargs)
+            name=name, **kwargs)
 
     def _list(self, **kwargs):
-        return self.api.list_namespaced_replication_controller(
-            namespace=self._namespace, **kwargs)
+        return self.api.list_namespaced_replication_controller(**kwargs)
 
     def _create(self, body, **kwargs):
         return self.api.create_namespaced_replication_controller(
-            body, namespace=self._namespace, **kwargs)
+            body=body, **kwargs)
 
     def _replace(self, body, name, **kwargs):
         return self.api.replace_namespaced_replication_controller(
-            body=body, namespace=self._namespace, name=name, **kwargs)
+            body=body, name=name, **kwargs)
 
     def _delete(self, body, name, **kwargs):
         return self.api.delete_namespaced_replication_controller(
-            namespace=self._namespace, name=name, **kwargs)
+            body=body, name=name, **kwargs)
 
     def _deletecollection(self, **kwargs):
         return self.api.deletecollection_namespaced_replication_controller(
-            namespace=self._namespace, **kwargs)
+            **kwargs)

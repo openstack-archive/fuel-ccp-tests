@@ -50,7 +50,7 @@ class K8sCluster(object):
     """docstring for K8sCluster"""
 
     def __init__(self, schema="https", user=None, password=None,
-                 host='localhost', port='443', namespace='default'):
+                 host='localhost', port='443', default_namespace='default'):
         if user and password:
             auth = base64.encodestring('%s:%s' % (user, password))[:-1]
             auth = "Basic {}".format(auth)
@@ -70,31 +70,35 @@ class K8sCluster(object):
         self._bapi = apisbatchv_api.ApisbatchvApi(self._client)
         self._eapi = apisextensionsvbeta_api.ApisextensionsvbetaApi(
             self._client)
-        self._namespace = namespace
+        self._default_namespace = default_namespace
 
-        self.nodes = K8sNodeManager(self._api, self._namespace)
-        self.pods = K8sPodManager(self._api, self._namespace)
-        self.endpoints = K8sEndpointManager(self._api, self._namespace)
-        self.namespaces = K8sNamespaceManager(self._api, self._namespace)
-        self.services = K8sServiceManager(self._api, self._namespace)
-        self.serviceaccountss = K8sServiceAccountManager(
-            self._api, self._namespace)
-        self.secrets = K8sSecretManager(self._api, self._namespace)
-        self.events = K8sEventManager(self._api, self._namespace)
-        self.limitranges = K8sLimitRangeManager(self._api, self._namespace)
-        self.jobs = K8sJobManager(self._bapi, self._namespace)
-        self.daemonsets = K8sDaemonSetManager(self._eapi, self._namespace)
-        self.ingresses = K8sIngressManager(self._eapi, self._namespace)
-        self.deployments = K8sDeploymentManager(self._eapi, self._namespace)
+        self.nodes = K8sNodeManager(self._api, self._default_namespace)
+        self.pods = K8sPodManager(self._api, self._default_namespace)
+        self.endpoints = K8sEndpointManager(self._api, self._default_namespace)
+        self.namespaces = K8sNamespaceManager(self._api,
+                                              self._default_namespace)
+        self.services = K8sServiceManager(self._api, self._default_namespace)
+        self.serviceaccounts = K8sServiceAccountManager(
+            self._api, self._default_namespace)
+        self.secrets = K8sSecretManager(self._api, self._default_namespace)
+        self.events = K8sEventManager(self._api, self._default_namespace)
+        self.limitranges = K8sLimitRangeManager(self._api,
+                                                self._default_namespace)
+        self.jobs = K8sJobManager(self._bapi, self._default_namespace)
+        self.daemonsets = K8sDaemonSetManager(self._eapi,
+                                              self._default_namespace)
+        self.ingresses = K8sIngressManager(self._eapi, self._default_namespace)
+        self.deployments = K8sDeploymentManager(self._eapi,
+                                                self._default_namespace)
         self.horizontalpodautoscalers = K8sHorizontalPodAutoscalerManager(
-            self._eapi, self._namespace)
+            self._eapi, self._default_namespace)
         self.componentstatuses = K8sComponentStatusManager(
-            self._api, self._namespace)
+            self._api, self._default_namespace)
         self.resourcequotas = K8sResourceQuotaManager(
-            self._api, self._namespace)
-        self.replocationcontrollers = K8sReplicationControllerManager(
-            self._api, self._namespace)
+            self._api, self._default_namespace)
+        self.replicationcontrollers = K8sReplicationControllerManager(
+            self._api, self._default_namespace)
         self.pvolumeclaims = K8sPersistentVolumeClaimManager(
-            self._api, self._namespace)
+            self._api, self._default_namespace)
         self.pvolumes = K8sPersistentVolumeManager(
-            self._api, self._namespace)
+            self._api, self._default_namespace)

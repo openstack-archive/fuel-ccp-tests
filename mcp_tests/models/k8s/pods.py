@@ -34,25 +34,21 @@ class K8sPodManager(K8sBaseManager):
 
     def _get(self, name, **kwargs):
         return self.api.read_namespaced_pod(
-            namespace=self._namespace, name=name, **kwargs)
+            name=name, **kwargs)
 
     def _list(self, **kwargs):
-        return self.api.list_namespaced_pod(
-            namespace=self._namespace, **kwargs)
+        return self.api.list_namespaced_pod(**kwargs)
 
     def _create(self, body, **kwargs):
         return self.api.create_namespaced_pod(
-            body, namespace=self._namespace, **kwargs)
+            body=body, **kwargs)
 
     def _replace(self, body, name, **kwargs):
         return self.api.replace_namespaced_pod(
-            body=body, namespace=self._namespace, name=name, **kwargs)
+            body=body, name=name, **kwargs)
 
     def _delete(self, body, name, **kwargs):
-        return self.api.delete_namespaced_pod(
-            body=body,
-            namespace=self._namespace, name=name, **kwargs)
+        return self.api.delete_namespaced_pod(body=body, name=name, **kwargs)
 
     def _deletecollection(self, **kwargs):
-        return self.api.deletecollection_namespaced_pod(
-            namespace=self._namespace, **kwargs)
+        return self.api.deletecollection_namespaced_pod(**kwargs)
