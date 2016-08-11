@@ -33,19 +33,19 @@ class K8sNodeManager(K8sBaseManager):
     resource_class = K8sNode
 
     def _get(self, name, **kwargs):
-        return self.api.read_namespaced_node(name, **kwargs)
+        return self.api.read_namespaced_node(name=name, **kwargs)
 
     def _list(self, **kwargs):
         return self.api.list_namespaced_node(**kwargs)
 
     def _create(self, body, **kwargs):
-        return self.api.create_namespaced_node(body, **kwargs)
+        return self.api.create_namespaced_node(body=body, **kwargs)
 
     def _replace(self, body, name, **kwargs):
-        return self.api.replace_namespaced_node(body, name, **kwargs)
+        return self.api.replace_namespaced_node(body=body, name=name, **kwargs)
 
     def _delete(self, body, name, **kwargs):
-        return self.api.delete_namespaced_node(name, **kwargs)
+        return self.api.delete_namespaced_node(body=body, name=name, **kwargs)
 
     def _deletecollection(self, **kwargs):
         return self.api.deletecollection_namespaced_node(**kwargs)

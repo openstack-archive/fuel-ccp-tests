@@ -33,25 +33,21 @@ class K8sLimitRangeManager(K8sBaseManager):
     resource_class = K8sLimitRange
 
     def _get(self, name, **kwargs):
-        return self.api.read_namespaced_limit_range(
-            namespace=self._namespace, name=name, **kwargs)
+        return self.api.read_namespaced_limit_range(name=name, **kwargs)
 
     def _list(self, **kwargs):
-        return self.api.list_namespaced_limit_range(
-            namespace=self._namespace, **kwargs)
+        return self.api.list_namespaced_limit_range(**kwargs)
 
     def _create(self, body, **kwargs):
-        return self.api.create_namespaced_limit_range(
-            body, namespace=self._namespace, **kwargs)
+        return self.api.create_namespaced_limit_range(body=body, **kwargs)
 
     def _replace(self, body, name, **kwargs):
         return self.api.replace_namespaced_limit_range(
-            body=body, namespace=self._namespace, name=name, **kwargs)
+            body=body, name=name, **kwargs)
 
     def _delete(self, body, name, **kwargs):
         return self.api.delete_namespaced_limit_range(
-            namespace=self._namespace, name=name, **kwargs)
+            body=body, name=name, **kwargs)
 
     def _deletecollection(self, **kwargs):
-        return self.api.deletecollection_namespaced_limit_range(
-            namespace=self._namespace, **kwargs)
+        return self.api.deletecollection_namespaced_limit_range(**kwargs)

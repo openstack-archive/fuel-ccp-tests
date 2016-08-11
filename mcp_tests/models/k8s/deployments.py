@@ -33,31 +33,27 @@ class K8sDeploymentManager(K8sBaseManager):
     resource_class = K8sDeployment
 
     def _get(self, name, **kwargs):
-        return self.api.read_namespaced_deployment(
-            namespace=self._namespace, name=name, **kwargs)
+        return self.api.read_namespaced_deployment(name=name, **kwargs)
 
     def _list(self, **kwargs):
-        return self.api.list_namespaced_deployment(
-            namespace=self._namespace, **kwargs)
+        return self.api.list_namespaced_deployment(**kwargs)
 
     def _full_list(self, **kwargs):
         return self.api.list_deployment(**kwargs)
 
     def _create(self, body, **kwargs):
-        return self.api.create_namespaced_deployment(
-            body, namespace=self._namespace, **kwargs)
+        return self.api.create_namespaced_deployment(body=body, **kwargs)
 
     def _replace(self, body, name, **kwargs):
         return self.api.replace_namespaced_deployment(
-            body=body, namespace=self._namespace, name=name, **kwargs)
+            body=body, name=name, **kwargs)
 
     def _delete(self, body, name, **kwargs):
         return self.api.delete_namespaced_deployment(
-            namespace=self._namespace, name=name, **kwargs)
+            body=body, name=name, **kwargs)
 
     def _deletecollection(self, **kwargs):
-        return self.api.deletecollection_namespaced_deployment(
-            namespace=self._namespace, **kwargs)
+        return self.api.deletecollection_namespaced_deployment(**kwargs)
 
     def full_list(self, *args, **kwargs):
         lst = self._full_list(*args, **kwargs)

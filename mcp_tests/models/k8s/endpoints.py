@@ -36,20 +36,21 @@ class K8sEndpointManager(K8sBaseManager):
         return self.api.read_namespaced_endpoints(name, **kwargs)
 
     def _list(self, **kwargs):
-        return self.api.list_namespaced_endpoints(
-            namespace=self._namespace, **kwargs)
+        return self.api.list_namespaced_endpoints(**kwargs)
 
     def _full_list(self, **kwargs):
         return self.api.list_endpoints(**kwargs)
 
     def _create(self, body, **kwargs):
-        return self.api.create_namespaced_endpoints(body, **kwargs)
+        return self.api.create_namespaced_endpoints(body=body, **kwargs)
 
     def _replace(self, body, name, **kwargs):
-        return self.api.replace_namespaced_endpoints(body, name, **kwargs)
+        return self.api.replace_namespaced_endpoints(
+            body=body, name=body, **kwargs)
 
     def _delete(self, body, name, **kwargs):
-        return self.api.delete_namespaced_endpoints(name, **kwargs)
+        return self.api.delete_namespaced_endpoints(
+            body=body, name=name, **kwargs)
 
     def _deletecollection(self, **kwargs):
         return self.api.deletecollection_namespaced_endpoints(**kwargs)
