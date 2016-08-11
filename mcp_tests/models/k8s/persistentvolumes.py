@@ -32,25 +32,27 @@ class K8sPersistentVolumeManager(K8sBaseManager):
 
     resource_class = K8sPersistentVolume
 
-    def _get(self, name, **kwargs):
+    def _get(self, name, namespace=None, **kwargs):
         return self.api.read_namespaced_persistent_volume(
-            namespace=self._namespace, name=name, **kwargs)
+            namespace=(namespace or self._namespace), name=name, **kwargs)
 
-    def _list(self, **kwargs):
+    def _list(self, namespace=None, **kwargs):
         return self.api.list_namespaced_persistent_volume(
-            namespace=self._namespace, **kwargs)
+            namespace=(namespace or self._namespace), **kwargs)
 
-    def _create(self, body, **kwargs):
+    def _create(self, body, namespace=None, **kwargs):
         return self.api.create_namespaced_persistent_volume(
-            body, namespace=self._namespace, **kwargs)
+            body, namespace=(namespace or self._namespace), **kwargs)
 
-    def _replace(self, body, name, **kwargs):
+    def _replace(self, body, name, namespace=None, **kwargs):
         return self.api.replace_namespaced_persistent_volume(
-            body=body, namespace=self._namespace, name=name, **kwargs)
+            body=body, namespace=(namespace or self._namespace), name=name,
+            **kwargs)
 
-    def _delete(self, body, name, **kwargs):
+    def _delete(self, body, name, namespace=None, **kwargs):
         return self.api.delete_namespaced_persistent_volume(
-            namespace=self._namespace, name=name, **kwargs)
+            body=body, namespace=(namespace or self._namespace), name=name,
+            **kwargs)
 
     def _deletecollection(self, **kwargs):
         return self.api.deletecollection_namespaced_persistent_volume(

@@ -32,32 +32,34 @@ class K8sIngressManager(K8sBaseManager):
 
     resource_class = K8sIngress
 
-    def _get(self, name, **kwargs):
+    def _get(self, name, namespace=None, **kwargs):
         return self.api.read_namespaced_ingress(
-            namespace=self._namespace, name=name, **kwargs)
+            namespace=(namespace or self._namespace), name=name, **kwargs)
 
-    def _list(self, **kwargs):
+    def _list(self, namespace=None, **kwargs):
         return self.api.list_namespaced_ingress(
-            namespace=self._namespace, **kwargs)
+            namespace=(namespace or self._namespace), **kwargs)
 
     def _full_list(self, **kwargs):
         return self.api.list_ingress(**kwargs)
 
-    def _create(self, body, **kwargs):
+    def _create(self, body, namespace=None, **kwargs):
         return self.api.create_namespaced_ingress(
-            body, namespace=self._namespace, **kwargs)
+            body=body, namespace=(namespace or self._namespace), **kwargs)
 
-    def _replace(self, body, name, **kwargs):
+    def _replace(self, body, name, namespace=None, **kwargs):
         return self.api.replace_namespaced_ingress(
-            body=body, namespace=self._namespace, name=name, **kwargs)
+            body=body, namespace=(namespace or self._namespace), name=name,
+            **kwargs)
 
-    def _delete(self, body, name, **kwargs):
+    def _delete(self, body, name, namespace=None, **kwargs):
         return self.api.delete_namespaced_ingress(
-            namespace=self._namespace, name=name, **kwargs)
+            body=body, namespace=(namespace or self._namespace), name=name,
+            **kwargs)
 
-    def _deletecollection(self, **kwargs):
+    def _deletecollection(self, namespace=None, **kwargs):
         return self.api.deletecollection_namespaced_ingress(
-            namespace=self._namespace, **kwargs)
+            namespace=(namespace or self._namespace), **kwargs)
 
     def full_list(self, *args, **kwargs):
         lst = self._full_list(*args, **kwargs)

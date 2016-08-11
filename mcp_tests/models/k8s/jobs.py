@@ -32,29 +32,31 @@ class K8sJobManager(K8sBaseManager):
 
     resource_class = K8sJob
 
-    def _get(self, name, **kwargs):
+    def _get(self, name, namespace=None, **kwargs):
         return self.api.read_namespaced_job(
-            namespace=self._namespace, name=name, **kwargs)
+            namespace=(namespace or self._namespace), name=name, **kwargs)
 
-    def _list(self, **kwargs):
+    def _list(self, namespace=None, **kwargs):
         return self.api.list_namespaced_job(
-            namespace=self._namespace, **kwargs)
+            namespace=(namespace or self._namespace), **kwargs)
 
-    def _create(self, body, **kwargs):
+    def _create(self, body, namespace=None, **kwargs):
         return self.api.create_namespaced_job(
-            body, namespace=self._namespace, **kwargs)
+            body=body, namespace=(namespace or self._namespace), **kwargs)
 
-    def _replace(self, body, name, **kwargs):
+    def _replace(self, body, name, namespace=None, **kwargs):
         return self.api.replace_namespaced_job(
-            body=body, namespace=self._namespace, name=name, **kwargs)
+            body=body, namespace=(namespace or self._namespace), name=name,
+            **kwargs)
 
-    def _delete(self, body, name, **kwargs):
+    def _delete(self, body, name, namespace=None, **kwargs):
         return self.api.delete_namespaced_job(
-            namespace=self._namespace, name=name, **kwargs)
+            body=body, namespace=(namespace or self._namespace), name=name,
+            **kwargs)
 
-    def _deletecollection(self, **kwargs):
+    def _deletecollection(self, namespace=None, **kwargs):
         return self.api.deletecollection_namespaced_job(
-            namespace=self._namespace, **kwargs)
+            namespace=(namespace or self._namespace), **kwargs)
 
     def full_list(self, *args, **kwargs):
         lst = self._full_list(*args, **kwargs)

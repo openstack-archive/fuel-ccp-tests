@@ -77,7 +77,7 @@ class K8sCluster(object):
         self.endpoints = K8sEndpointManager(self._api, self._namespace)
         self.namespaces = K8sNamespaceManager(self._api, self._namespace)
         self.services = K8sServiceManager(self._api, self._namespace)
-        self.serviceaccountss = K8sServiceAccountManager(
+        self.serviceaccounts = K8sServiceAccountManager(
             self._api, self._namespace)
         self.secrets = K8sSecretManager(self._api, self._namespace)
         self.events = K8sEventManager(self._api, self._namespace)
@@ -92,7 +92,7 @@ class K8sCluster(object):
             self._api, self._namespace)
         self.resourcequotas = K8sResourceQuotaManager(
             self._api, self._namespace)
-        self.replocationcontrollers = K8sReplicationControllerManager(
+        self.replicationcontrollers = K8sReplicationControllerManager(
             self._api, self._namespace)
         self.pvolumeclaims = K8sPersistentVolumeClaimManager(
             self._api, self._namespace)
