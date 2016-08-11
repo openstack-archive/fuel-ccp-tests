@@ -56,7 +56,7 @@ class K8sBaseManager(object):
 
     def __init__(self, api, namespace):
         self._api = api
-        self._namespace = namespace
+        self._default_namespace = namespace
         self._raw = None
 
     @property
@@ -65,44 +65,52 @@ class K8sBaseManager(object):
 
     @property
     def namespace(self):
-        return self._namespace
+        return self._default_namespace
 
-    def get(self, *args, **kwargs):
+    def get(self, namespace=None, *args, **kwargs):
         if not hasattr(self, '_get'):
             raise NotImplementedError(
                 '{} does not have {}'.format(self, '_get'))
 
-        return self.resource_class(self, self._get(*args, **kwargs))
+        return self.resource_class(
+            self, self._get(
+                namespace=(namespace or self._default_namespace),
+                *args, **kwargs))
 
-    def list(self, *args, **kwargs):
+    def list(self, namespace=None, *args, **kwargs):
         if not hasattr(self, '_list'):
             raise NotImplementedError(
                 '{} does not have {}'.format(self, '_list'))
 
-        lst = self._list(*args, **kwargs)
+        lst = self._list(
+            namespace=(namespace or self._default_namespace), *args, **kwargs)
 
         return [self.resource_class(self, item) for item in lst.items]
 
-    def create(self, *args, **kwargs):
+    def create(self, namespace=None, *args, **kwargs):
         if not hasattr(self, '_create'):
             raise NotImplementedError(
                 '{} does not have {}'.format(self, '_create'))
-        return self._create(*args, **kwargs)
+        return self._create(namespace=(namespace or self._default_namespace),
+                            *args, **kwargs)
 
-    def replace(self, *args, **kwargs):
+    def replace(self, namespace=None, *args, **kwargs):
         if not hasattr(self, '_replace'):
             raise NotImplementedError(
                 '{} does not have {}'.format(self, '_replace'))
-        return self._replace(*args, **kwargs)
+        return self._replace(namespace=(namespace or self._default_namespace),
+                             *args, **kwargs)
 
-    def delete(self, *args, **kwargs):
+    def delete(self, namespace=None, *args, **kwargs):
         if not hasattr(self, '_delete'):
             raise NotImplementedError(
                 '{} does not have {}'.format(self, '_delete'))
-        return self._delete(*args, **kwargs)
+        return self._delete(namespace=(namespace or self._default_namespace),
+                            *args, **kwargs)
 
-    def deletecollection(self, *args, **kwargs):
+    def deletecollection(self, namespace=None, *args, **kwargs):
         if not hasattr(self, '_deletecollection'):
             raise NotImplementedError(
                 '{} does not have {}'.format(self, '_deletecollection'))
-        return self._deletecollection(*args, **kwargs)
+        return self._deletecollection(
+            namespace=(namespace or self._default_namespace), *args, **kwargs)
