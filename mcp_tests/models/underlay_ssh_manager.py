@@ -78,6 +78,9 @@ class UnderlaySSHManager(object):
         if config_ssh is None:
             config_ssh = []
 
+        if self.config_ssh is None:
+            self.config_ssh = []
+
         for ssh in config_ssh:
             ssh_data = {
                 'node_name': ssh['node_name'],
@@ -139,6 +142,11 @@ class UnderlaySSHManager(object):
                 names.append(ssh['node_name'])
         return names
 
+    def host_by_node_name(self, node_name, address_pool=None):
+        ssh_data = self.__ssh_data(node_name=node_name,
+                                   address_pool=address_pool)
+        return ssh_data['host']
+
     def remote(self, node_name=None, host=None, address_pool=None):
         """Get SSHClient by a node name or hostname.
 
@@ -157,3 +165,50 @@ class UnderlaySSHManager(object):
             username=ssh_data['login'],
             password=ssh_data['password'],
             private_keys=ssh_data['keys'])
+
+    def check_call(
+            self, cmd,
+            node_name=None, host=None, address_pool=None,
+            verbose=False, timeout=None,
+            error_info=None,
+            expected=None, raise_on_err=True):
+        """Execute command on the node_name/host and check for exit code
+
+        :type cmd: str
+        :type verbose: bool
+        :type timeout: int
+        :type error_info: str
+        :type expected: list
+        :type raise_on_err: bool
+        :rtype: ExecResult
+        :raises: DevopsCalledProcessError
+        """
+        remote = self.remote(node_name=node_name, host=host,
+                             address_pool=address_pool)
+        remote.check_call(command=cmd, verbose=verbose, timeout=timeout,
+                          error_info=error_info, expected=expected,
+                          raise_on_err=raise_on_err)
+
+    def sudo_check_call(
+            self, cmd,
+            node_name=None, host=None, address_pool=None,
+            verbose=False, timeout=None,
+            error_info=None,
+            expected=None, raise_on_err=True):
+        """Execute command with sudo on node_name/host and check for exit code
+
+        :type cmd: str
+        :type verbose: bool
+        :type timeout: int
+        :type error_info: str
+        :type expected: list
+        :type raise_on_err: bool
+        :rtype: ExecResult
+        :raises: DevopsCalledProcessError
+        """
+        remote = self.remote(node_name=node_name, host=host,
+                             address_pool=address_pool)
+        with remote.get_sudo(remote):
+            remote.check_call(command=cmd, verbose=verbose, timeout=timeout,
+                              error_info=error_info, expected=expected,
+                              raise_on_err=raise_on_err)

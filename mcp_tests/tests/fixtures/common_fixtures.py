@@ -11,6 +11,7 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+
 from __future__ import division
 import time
 
@@ -20,9 +21,6 @@ from mcp_tests import logger
 from mcp_tests.helpers import utils
 
 LOG = logger.logger
-
-
-pytest_plugins = ['k8s_fixtures', 'env_fixtures', 'ccp_installer_fixtures']
 
 
 @pytest.yield_fixture(scope='session')
