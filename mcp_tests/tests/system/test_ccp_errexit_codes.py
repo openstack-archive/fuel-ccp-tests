@@ -19,7 +19,8 @@ from mcp_tests.logger import logger
 
 
 @pytest.yield_fixture(scope='module')
-def admin_node(env, env_with_k8s_and_ccp):
+#def admin_node(env, env_with_k8s_and_ccp):
+def admin_node(env, ccpcluster):
     logger.info("Get SSH access to admin node")
     remote = env.node_ssh_client(
         env.k8s_nodes[0],

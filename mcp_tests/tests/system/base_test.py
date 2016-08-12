@@ -28,7 +28,7 @@ class SystemBaseTest(object):
     def exec_on_node(self, env, node, cmd, expected_exit_code=0):
         """Function to exec command on node and get result
 
-        :param env: mcp_tests.managers.envmanager.EnvironmentManager
+        :param env: mcp_tests.models.envmanager.EnvironmentManager
         :param node: devops.models.Node
         :param cmd: string
         :rtype: dict
@@ -54,7 +54,7 @@ class SystemBaseTest(object):
         """Check if ipip is in calico pool config
 
         :param node: devops.models.Node
-        :param env: mcp_tests.managers.envmanager.EnvironmentManager
+        :param env: mcp_tests.models.envmanager.EnvironmentManager
         """
         cmd = "calicoctl pool show | grep ipip"
         for node in env.k8s_nodes:
@@ -64,7 +64,7 @@ class SystemBaseTest(object):
         """Check if there are all base containers on node
 
         :param node: devops.models.Node
-        :param env: mcp_tests.managers.envmanager.EnvironmentManager
+        :param env: mcp_tests.models.envmanager.EnvironmentManager
         :param required_images: list
         """
         cmd = "docker ps --no-trunc --format '{{.Image}}'"
@@ -76,18 +76,18 @@ class SystemBaseTest(object):
     def check_list_required_images(self, env, required_images):
         """Check running containers on each node
 
-        :param env: mcp_tests.managers.envmanager.EnvironmentManager
+        :param env: mcp_tests.models.envmanager.EnvironmentManager
         :param required_images: list
         """
         LOG.info("Check that required containers exist")
         for node in env.k8s_nodes:
             self.required_images_exists(node, env, required_images)
 
-    def check_pod_create(self, body, k8sclient, timeout=300, interval=5):
+    def check_pod_create(self, body, k8scluster, timeout=300, interval=5):
         """Check creating sample pod
-        
+
         :param k8s_pod: V1Pod
-        :param k8sclient: K8sCluster
+        :param k8scluster: K8sCluster
         :rtype: V1Pod
         """
         LOG.info("Creating pod in k8s cluster")
@@ -97,32 +97,32 @@ class SystemBaseTest(object):
         )
         LOG.debug("Timeout for creation is set to {}".format(timeout))
         LOG.debug("Checking interval is set to {}".format(interval))
-        pod = k8sclient.pods.create(body=body)
+        pod = k8scluster.pods.create(body=body)
         helpers.wait(
-            predicate=lambda: k8sclient.pods.get(
+            predicate=lambda: k8scluster.pods.get(
                 name=pod.metadata.name).status.phase == "Running",
             timeout=timeout,
             interval=interval,
             timeout_msg="Pod creation timeout reached!"
         )
         LOG.info("Pod '{}' is created".format(pod.metadata.name))
-        return k8sclient.pods.get(name=pod.metadata.name)
+        return k8scluster.pods.get(name=pod.metadata.name)
 
-    def check_pod_delete(self, k8s_pod, k8sclient):
+    def check_pod_delete(self, k8s_pod, k8scluster):
         """Deleting pod from k8s
-        
+
         :param k8s_pod: mcp_tests.models.k8s.nodes.K8sNode
-        :param k8sclient: mcp_tests.models.k8s.cluster.K8sCluster
+        :param k8scluster: mcp_tests.models.k8s.cluster.K8sCluster
         """
         LOG.info("Deleting pod '{}'".format(k8s_pod.name))
         LOG.debug("Pod status:\n{}".format(k8s_pod.status))
-        k8sclient.pods.delete(body=k8s_pod, name=k8s_pod.name)
+        k8scluster.pods.delete(body=k8s_pod, name=k8s_pod.name)
         LOG.debug("Pod '{}' is deleted".format(k8s_pod.name))
 
-    def check_number_kube_nodes(self, env, k8sclient):
+    def check_number_kube_nodes(self, env, k8scluster):
         """Check number of slaves"""
         LOG.info("Check number of nodes")
-        k8s_nodes = k8sclient.nodes.list()
+        k8s_nodes = k8scluster.nodes.list()
         devops_nodes = env.k8s_nodes
         assert len(k8s_nodes) == len(devops_nodes),\
             "Check number k8s nodes failed!"

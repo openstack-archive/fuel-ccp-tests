@@ -32,7 +32,7 @@ class K8SManager(object):
         self.arg = arg
 
     @classmethod
-    def install_k8s(cls, env, custom_yaml=None, env_var=None):
+    def install_k8s(cls, underlay, custom_yaml=None, env_var=None):
         """Action to deploy k8s by fuel-ccp-installer script
 
         Additional steps:
@@ -44,36 +44,33 @@ class K8SManager(object):
             with environment settings, or put you own
         """
         LOG.info("Trying to install k8s")
-        snapshot_name = 'k8s_deployed'
-        if not env.has_snapshot(snapshot_name):
-            current_env = copy.deepcopy(os.environ)
-            environment_variables = {
-                "SLAVE_IPS": " ".join(env.k8s_ips),
-                "ADMIN_IP": env.k8s_ips[0],
-                "KARGO_REPO": settings.KARGO_REPO,
-                "KARGO_COMMIT": settings.KARGO_COMMIT
-            }
-            if custom_yaml:
-                environment_variables.update(
-                    {"CUSTOM_YAML": yaml.dump(
-                        custom_yaml, default_flow_style=False)}
-                )
-            current_env.update(dict=environment_variables)
-            if env_var:
-                environment_variables.update(env_var)
-            cls.deploy_k8s(environ=current_env)
-            remote = env.node_ssh_client(
-                env.k8s_nodes[0],
-                login=settings.SSH_NODE_CREDENTIALS['login'],
-                password=settings.SSH_NODE_CREDENTIALS['password'])
+        current_env = copy.deepcopy(os.environ)
+
+        k8s_nodes = underlay.node_names()
+        k8s_admin_ip = underlay.host_by_node_name(k8s_nodes[0])
+        k8s_slave_ips = underlay.host_by_node_name(k8s_nodes)
+
+        environment_variables = {
+            "SLAVE_IPS": " ".join(k8s_slave_ips),
+            "ADMIN_IP": k8s_admin_ip,
+            "KARGO_REPO": settings.KARGO_REPO,
+            "KARGO_COMMIT": settings.KARGO_COMMIT
+        }
+        if custom_yaml:
+            environment_variables.update(
+                {"CUSTOM_YAML": yaml.dump(
+                    custom_yaml, default_flow_style=False)}
+            )
+        current_env.update(dict=environment_variables)
+        if env_var:
+            environment_variables.update(env_var)
+        cls.deploy_k8s(environ=current_env)
+
+        with underlay.remote(host=k8s_admin_ip) as remote:
             LOG.info("Add vagrant to docker group")
             remote.check_call('sudo usermod -aG docker vagrant')
-            remote.close()
-            env.create_snapshot(snapshot_name)
-        else:
-            LOG.info("Snapshot '{}' found, trying to revert".format(
-                snapshot_name))
-            env.revert_snapshot(snapshot_name)
+
+        return k8s_admin_ip
 
     @classmethod
     def deploy_k8s(cls, environ=os.environ):
