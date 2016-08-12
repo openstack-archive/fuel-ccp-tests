@@ -139,6 +139,11 @@ class UnderlaySSHManager(object):
                 names.append(ssh['node_name'])
         return names
 
+    def host_by_node_name(self, node_name, address_pool=None):
+        ssh_data = self.__ssh_data(node_name=node_name,
+                                   address_pool=address_pool)
+        return ssh_data['host']
+
     def remote(self, node_name=None, host=None, address_pool=None):
         """Get SSHClient by a node name or hostname.
 

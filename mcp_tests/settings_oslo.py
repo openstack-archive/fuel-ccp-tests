@@ -22,6 +22,9 @@ hardware_opts = [
            help="Hardware manager name", default="devops"),
     ct.Cfg('conf_path', ct.String(),
            help="Hardware config file", default=None),
+
+    ct.Cfg('current_snapshot', ct.String(),
+           help="Latest environment status name", default='initial'),
 ]
 
 
@@ -38,31 +41,90 @@ underlay_opts = [
                   }, ...]""", default=[]),
 ]
 
+#KUBE_ADMIN_USER = os.environ.get('KUBE_ADMIN_USER', 'root')
+#KUBE_ADMIN_PASS = os.environ.get('KUBE_ADMIN_PASS', 'changeme')
+#KUBE_HOST = os.environ.get('KUBE_HOST', None)
+#KUBE_VERSION = os.environ.get("KUBE_VERSION", "v1.3.0")
+#IPIP_USAGE = get_var_as_bool('IPIP_USAGE', True)
+#DEPLOY_SCRIPT = os.environ.get("DEPLOY_SCRIPT", None)
+
+# Deploy options for a new K8S cluster
+k8s_deploy_opts = [
+    ct.Cfg('kube_version', ct.String(),
+           help="", default="v1.3.0"),
+    ct.Cfg('ipip_usage', ct.Boolean(),
+           help="", default=True),
+    ct.Cfg('deploy_script', ct.String(),
+           help="", default=None),
+    ct.Cfg('kube_settings', ct.JSONDict(),
+           help="", default=None),
+]
+
+# Access credentials to a ready K8S cluster
+k8s_opts = [
+    ct.Cfg('kube_admin_user', ct.String(),
+           help="", default="root"),
+    ct.Cfg('kube_admin_pass', ct.String(),
+           help="", default="changeme"),
+    ct.Cfg('kube_host', ct.IPAddress(),
+           help="", default=None),
+]
+
+
+#PRIVATE_REGISTRY = os.environ.get('PRIVATE_REGISTRY', None)
+
+# Deploy options for a new CCP
+ccp_deploy_opts = [
+    ct.Cfg('private_registry', ct.String(),
+           help="", default=None),
+]
+
+# Access credentials to a ready CCP
+ccp_opts = [
+# TODO: OpenStack endpoints, any other endpoints (galera? rabbit?)
+]
+
 
 _group_opts = [
     ('hardware', hardware_opts),
     ('underlay', underlay_opts),
+    ('k8s_deploy', k8s_deploy_opts),
+    ('k8s', k8s_opts),
+    ('ccp_deploy', ccp_deploy_opts),
+    ('ccp', ccp_opts),
 ]
 
 
-def register_hardware_opts(config):
+def register_opts(config):
     config.register_group(cfg.OptGroup(name='hardware',
                           title="Hardware settings", help=""))
     config.register_opts(group='hardware', opts=hardware_opts)
-    return config
 
-
-def register_underlay_opts(config):
     config.register_group(cfg.OptGroup(name='underlay',
                           title="Underlay configuration", help=""))
     config.register_opts(group='underlay', opts=underlay_opts)
+
+    config.register_group(cfg.OptGroup(name='k8s_deploy',
+                          title="K8s deploy configuration", help=""))
+    config.register_opts(group='k8s_deploy', opts=k8s_deploy_opts)
+
+    config.register_group(cfg.OptGroup(name='k8s',
+                          title="K8s config and credentials", help=""))
+    config.register_opts(group='k8s', opts=k8s_opts)
+
+    config.register_group(cfg.OptGroup(name='ccp_deploy',
+                          title="CCP deploy configuration", help=""))
+    config.register_opts(group='ccp_deploy', opts=ccp_deploy_opts)
+
+    config.register_group(cfg.OptGroup(name='ccp',
+                          title="CCP config and credentials", help=""))
+    config.register_opts(group='ccp', opts=ccp_opts)
     return config
 
 
 def load_config(config_files):
     config = cfg.CONF
-    register_hardware_opts(config)
-    register_underlay_opts(config)
+    register_opts(config)
     config(args=[], default_config_files=config_files)
     return config
 
