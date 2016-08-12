@@ -45,6 +45,12 @@ DEPLOY_SCRIPT = os.environ.get("DEPLOY_SCRIPT", None)
 
 PRIVATE_REGISTRY = os.environ.get('PRIVATE_REGISTRY', None)
 
+CCP_REPO = os.environ.get('CCP_REPO',
+                          'https://github.com/openstack/fuel-ccp.git')
+KARGO_REPO = os.environ.get('KARGO_REPO',
+                            'https://github.com/kubespray/kargo.git')
+KARGO_COMMIT = os.environ.get('KARGO_COMMIT', 'master')
+
 KUBE_HOSTPATH_DYNAMIC_PROVISIONER = get_var_as_bool(
     'KUBE_HOSTPATH_DYNAMIC_PROVISIONER', True)
 KUBE_ADMIN_USER = os.environ.get('KUBE_ADMIN_USER', 'root')
