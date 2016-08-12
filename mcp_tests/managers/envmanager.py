@@ -11,7 +11,6 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-
 from devops.helpers import helpers
 from devops import models
 from django import db
@@ -27,6 +26,7 @@ LOG = logger.logger
 
 class EnvironmentManager(manager.Manager):
     """Class-helper for creating VMs via devops environments"""
+
     def __init__(self, config_file=None, env_name=None, master_image=None,
                  node_image=None, *args, **kwargs):
         """Initializing class instance
@@ -103,6 +103,7 @@ class EnvironmentManager(manager.Manager):
         LOG.info("Reverting from snapshot named '{0}'".format(name))
         if self._env is not None:
             self._env.revert(name=name)
+            LOG.info("Resuming environment after revert")
             self._env.resume()
         else:
             raise exc.EnvironmentIsNotSet()
