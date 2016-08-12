@@ -34,24 +34,24 @@ class K8sPersistentVolumeManager(K8sBaseManager):
 
     def _get(self, name, **kwargs):
         return self.api.read_namespaced_persistent_volume(
-            namespace=self._namespace, name=name, **kwargs)
+            name=name, **kwargs)
 
     def _list(self, **kwargs):
         return self.api.list_namespaced_persistent_volume(
-            namespace=self._namespace, **kwargs)
+            **kwargs)
 
     def _create(self, body, **kwargs):
         return self.api.create_namespaced_persistent_volume(
-            body, namespace=self._namespace, **kwargs)
+            body, **kwargs)
 
     def _replace(self, body, name, **kwargs):
         return self.api.replace_namespaced_persistent_volume(
-            body=body, namespace=self._namespace, name=name, **kwargs)
+            body=body, name=name, **kwargs)
 
     def _delete(self, body, name, **kwargs):
         return self.api.delete_namespaced_persistent_volume(
-            namespace=self._namespace, name=name, **kwargs)
+            body=body, name=name, **kwargs)
 
     def _deletecollection(self, **kwargs):
         return self.api.deletecollection_namespaced_persistent_volume(
-            namespace=self._namespace, **kwargs)
+            **kwargs)

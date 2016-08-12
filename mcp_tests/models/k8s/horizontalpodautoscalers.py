@@ -32,29 +32,38 @@ class K8sHorizontalPodAutoscalerManager(K8sBaseManager):
 
     resource_class = K8sHorizontalPodAutoscaler
 
-    def _get(self, name, **kwargs):
-        return self.api.read_namespaced_pod_autoscaler(name=name, **kwargs)
+    def _get(self, name, namespace=None, **kwargs):
+        namespace = namespace or self.namespace
+        return self.api.read_namespaced_horizontal_pod_autoscaler(
+            name=name, namespace=namespace, **kwargs)
 
-    def _list(self, **kwargs):
-        return self.api.list_namespaced_pod_autoscaler(**kwargs)
+    def _list(self, namespace=None, **kwargs):
+        namespace = namespace or self.namespace
+        return self.api.list_namespaced_horizontal_pod_autoscaler(
+            namespace=namespace, **kwargs)
 
     def _full_list(self, **kwargs):
-        return self.api.list_pod_autoscaler(**kwargs)
+        return self.api.list_horizontal_pod_autoscaler(**kwargs)
 
-    def _create(self, body, **kwargs):
-        return self.api.create_namespaced_pod_autoscaler(
-            body=body, **kwargs)
+    def _create(self, body, namespace=None, **kwargs):
+        namespace = namespace or self.namespace
+        return self.api.create_namespaced_horizontal_pod_autoscaler(
+            body=body, namespace=namespace, **kwargs)
 
-    def _replace(self, body, name, **kwargs):
-        return self.api.replace_namespaced_pod_autoscaler(
-            body=body, name=name, **kwargs)
+    def _replace(self, body, name, namespace=None, **kwargs):
+        namespace = namespace or self.namespace
+        return self.api.replace_namespaced_horizontal_pod_autoscaler(
+            body=body, name=name, namespace=namespace, **kwargs)
 
-    def _delete(self, body, name, **kwargs):
-        return self.api.delete_namespaced_pod_autoscaler(
-            body=body, name=name, **kwargs)
+    def _delete(self, body, name, namespace=None, **kwargs):
+        namespace = namespace or self.namespace
+        return self.api.delete_namespaced_horizontal_pod_autoscaler(
+            body=body, name=name, namespace=namespace, **kwargs)
 
-    def _deletecollection(self, **kwargs):
-        return self.api.deletecollection_namespaced_pod_autoscaler(**kwargs)
+    def _deletecollection(self, namespace=None, **kwargs):
+        namespace = namespace or self.namespace
+        return self.api.deletecollection_namespaced_horizontal_pod_autoscaler(
+            namespace=namespace, **kwargs)
 
     def full_list(self, *args, **kwargs):
         lst = self._full_list(*args, **kwargs)
