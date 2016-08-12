@@ -11,32 +11,38 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+
 import pytest
 
 from mcp_tests import settings
-from mcp_tests.models.k8s import cluster
-
-from mcp_tests.managers.k8s import K8SManager
+from mcp_tests.models import k8smanager
 
 
 @pytest.fixture(scope='session')
-def env_with_k8s(env):
+def k8scluster(request, config, hardware, underlay):
     """Fixture to install k8s on environment
 
     :param env: envmanager.EnvironmentManager
     """
-    K8SManager.install_k8s(env)
-
-
-@pytest.fixture(scope='session')
-def k8sclient(env):
     """Fixture to get K8sCluster instance for session
 
     :param env: envmanager.EnvironmentManager
     :rtype: cluster.K8sCluster
     """
-    admin_ip = env.node_ip(env.k8s_nodes[0])
-    k8s = cluster.K8sCluster(user=settings.KUBE_ADMIN_USER,
-                             password=settings.KUBE_ADMIN_PASS,
-                             host=admin_ip)
-    return k8s
+
+    if config.k8s.kube_host is None:
+        kube_settings = getattr(request.instance, 'kube_settings',
+                                settings.DEFAULT_CUSTOM_YAML)
+        admin_ip = k8smanager.K8SManager.install_k8s(underlay, custom_yaml=kube_settings)
+        config.k8s.kube_host = admin_ip
+        hardware.create_snapshot('k8s_deployed')
+
+    k8sclient = k8smanager.K8SManager.get_k8scluster(config)
+    return k8sclient
+
+
+@pytest.fixture(scope='session')
+def k8s_actions(k8scluster):
+    """Fixture that provides various actions for K8S using SSH
+    """
+    return K8SManager()

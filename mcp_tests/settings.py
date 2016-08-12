@@ -37,8 +37,6 @@ SSH_PASSWORD = os.environ.get('SSH_PASSWORD', 'vagrant')
 SSH_NODE_CREDENTIALS = {"login": SSH_LOGIN,
                         "password": SSH_PASSWORD}
 
-ENV_NAME = os.environ.get('ENV_NAME', 'mcp_qa-test')
-IMAGE_PATH = os.environ.get('IMAGE_PATH', None)
 CONF_PATH = os.environ.get('CONF_PATH', os.path.abspath(_default_conf))
 SUSPEND_ENV_ON_TEARDOWN = get_var_as_bool('SUSPEND_ENV_ON_TEARDOWN', True)
 DEPLOY_SCRIPT = os.environ.get("DEPLOY_SCRIPT", None)
@@ -64,6 +62,8 @@ HYPERKUBE_IMAGE_REPO = os.environ.get('HYPERKUBE_IMAGE_REPO',
                                       "quay.io/coreos/hyperkube")
 HYPERKUBE_IMAGE_TAG = os.environ.get('HYPERKUBE_IMAGE_TAG',
                                      "{0}_coreos.0".format(KUBE_VERSION))
+ETCD_IMAGE_REPO = os.environ.get('ETCD_IMAGE_REPO', "quay.io/coreos/etcd")
+ETCD_IMAGE_TAG = os.environ.get("ETCD_IMAGE_TAG", 'v3.0.1')
 ETCD_DEPLOYMENT_TYPE = os.environ.get('ETCD_DEPLOYMENT_TYPE', "docker")
 IPIP_USAGE = get_var_as_bool('IPIP_USAGE', True)
 
