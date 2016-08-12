@@ -32,25 +32,39 @@ class K8sReplicationControllerManager(K8sBaseManager):
 
     resource_class = K8sReplicationController
 
-    def _get(self, name, **kwargs):
+    def _get(self, name, namespace=None, **kwargs):
+        namespace = namespace or self.namespace
         return self.api.read_namespaced_replication_controller(
-            name=name, **kwargs)
+            name=name, namespace=namespace, **kwargs)
 
-    def _list(self, **kwargs):
-        return self.api.list_namespaced_replication_controller(**kwargs)
+    def _list(self, namespace=None, **kwargs):
+        namespace = namespace or self.namespace
+        return self.api.list_namespaced_replication_controller(
+            namespace=namespace, **kwargs)
 
-    def _create(self, body, **kwargs):
+    def _create(self, body, namespace=None, **kwargs):
+        namespace = namespace or self.namespace
         return self.api.create_namespaced_replication_controller(
-            body=body, **kwargs)
+            body=body, namespace=namespace, **kwargs)
 
-    def _replace(self, body, name, **kwargs):
+    def _replace(self, body, name, namespace=None, **kwargs):
+        namespace = namespace or self.namespace
         return self.api.replace_namespaced_replication_controller(
-            body=body, name=name, **kwargs)
+            body=body, name=name, namespace=namespace, **kwargs)
 
-    def _delete(self, body, name, **kwargs):
+    def _delete(self, body, name, namespace=None, **kwargs):
+        namespace = namespace or self.namespace
         return self.api.delete_namespaced_replication_controller(
-            body=body, name=name, **kwargs)
+            body=body, name=name, namespace=namespace, **kwargs)
 
-    def _deletecollection(self, **kwargs):
+    def _deletecollection(self, namespace=None, **kwargs):
+        namespace = namespace or self.namespace
         return self.api.deletecollection_namespaced_replication_controller(
-            **kwargs)
+            namespace=namespace, **kwargs)
+
+    def full_list(self, *args, **kwargs):
+        lst = self._full_list(*args, **kwargs)
+        return [self.resource_class(self, item) for item in lst.items]
+
+    def _full_list(self, **kwargs):
+        return self.api.list_replication_controller(**kwargs)
