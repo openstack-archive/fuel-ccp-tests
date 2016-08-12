@@ -15,6 +15,8 @@ import pytest
 
 from mcp_tests import logger
 from mcp_tests import settings
+from mcp_tests.managers.k8s import K8SManager
+
 import base_test
 
 LOG = logger.logger
@@ -89,7 +91,7 @@ class TestFuelCCPInstaller(base_test.SystemBaseTest,
             6. Check created pod is reached
             7. Delete pod.
         """
-        self.ccp_install_k8s(env)
+        K8SManager.install_k8s(env)
         self.check_number_kube_nodes(env, k8sclient)
         self.check_list_required_images(env, required_images=self.base_images)
         self.calico_ipip_exists(env)
@@ -124,7 +126,7 @@ class TestFuelCCPInstaller(base_test.SystemBaseTest,
             lambda x: x != kube_settings.get(
                 'etcd_image_repo', settings.ETCD_IMAGE_REPO),
             self.custom_yaml_images)
-        self.ccp_install_k8s(env, custom_yaml=kube_settings)
+        K8SManager.install_k8s(env, custom_yaml=kube_settings)
         self.check_number_kube_nodes(env, k8sclient)
         self.check_list_required_images(env,
                                         required_images=required_images)
@@ -161,7 +163,7 @@ class TestFuelCCPInstaller(base_test.SystemBaseTest,
         })
         required_images = list(self.base_images)
         required_images.append(kube_settings['etcd_image_repo'])
-        self.ccp_install_k8s(env, custom_yaml=kube_settings)
+        K8SManager.install_k8s(env, custom_yaml=kube_settings)
         self.check_number_kube_nodes(env, k8sclient)
         self.check_list_required_images(env,
                                         required_images=required_images)
@@ -191,7 +193,7 @@ class TestFuelCCPInstaller(base_test.SystemBaseTest,
         add_var = {
             "WORKSPACE": ssh_keys_dir
         }
-        self.ccp_install_k8s(env, env_var=add_var)
+        K8SManager.install_k8s(env, env_var=add_var)
         self.check_number_kube_nodes(env, k8sclient)
         self.check_list_required_images(env, required_images=self.base_images)
         self.calico_ipip_exists(env)

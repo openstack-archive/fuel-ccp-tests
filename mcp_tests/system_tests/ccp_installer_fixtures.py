@@ -13,9 +13,18 @@
 #    under the License.
 import pytest
 
+from mcp_tests.managers.ccp import CCPManager
 from mcp_tests import settings
 
 INSTALL_ACTION = "ccp_install_k8s"
+
+@pytest.fixture(scope='session')
+def env_with_k8s_and_ccp(env, env_with_k8s):
+    """Fixture to install fuel-ccp on k8s environment
+
+    :param env_with_k8s: envmanager.EnvironmentManager
+    """
+    CCPManager.install_ccp(env)
 
 
 @pytest.fixture(scope='function')

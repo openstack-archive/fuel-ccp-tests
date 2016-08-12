@@ -16,6 +16,17 @@ import pytest
 from mcp_tests import settings
 from mcp_tests.models.k8s import cluster
 
+from mcp_tests.managers.k8s import K8SManager
+
+
+@pytest.fixture(scope='session')
+def env_with_k8s(env):
+    """Fixture to install k8s on environment
+
+    :param env: envmanager.EnvironmentManager
+    """
+    K8SManager.install_k8s(env)
+
 
 @pytest.fixture(scope='session')
 def k8sclient(env):
