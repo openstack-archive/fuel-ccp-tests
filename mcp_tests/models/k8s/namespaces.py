@@ -45,7 +45,7 @@ class K8sNamespaceManager(K8sBaseManager):
         return self.api.replace_namespaced_namespace(body, name, **kwargs)
 
     def _delete(self, body, name, **kwargs):
-        return self.api.delete_namespaced_namespace(name, **kwargs)
+        return self.api.delete_namespaced_namespace(body, name, **kwargs)
 
     def _deletecollection(self, **kwargs):
         return self.api.deletecollection_namespaced_namespace(**kwargs)

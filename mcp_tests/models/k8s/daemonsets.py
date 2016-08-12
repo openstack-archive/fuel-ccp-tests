@@ -32,28 +32,38 @@ class K8sDaemonSetManager(K8sBaseManager):
 
     resource_class = K8sDaemonSet
 
-    def _get(self, name, **kwargs):
-        return self.api.read_namespaced_daemon_set(name=name, **kwargs)
+    def _get(self, name, namespace=None, **kwargs):
+        namespace = namespace or self.namespace
+        return self.api.read_namespaced_daemon_set(
+            name=name, namespace=namespace, **kwargs)
 
-    def _list(self, **kwargs):
-        return self.api.list_namespaced_daemon_set(**kwargs)
+    def _list(self, namespace=None, **kwargs):
+        namespace = namespace or self.namespace
+        return self.api.list_namespaced_daemon_set(
+            namespace=namespace, **kwargs)
 
     def _full_list(self, **kwargs):
         return self.api.list_daemon_set(**kwargs)
 
-    def _create(self, body, **kwargs):
-        return self.api.create_namespaced_daemon_set(body=body, **kwargs)
+    def _create(self, body, namespace=None, **kwargs):
+        namespace = namespace or self.namespace
+        return self.api.create_namespaced_daemon_set(
+            body=body, namespace=namespace, **kwargs)
 
-    def _replace(self, body, name, **kwargs):
+    def _replace(self, body, name, namespace=None, **kwargs):
+        namespace = namespace or self.namespace
         return self.api.replace_namespaced_daemon_set(
-            body=body, name=name, **kwargs)
+            body=body, name=name, namespace=namespace, **kwargs)
 
-    def _delete(self, body, name, **kwargs):
+    def _delete(self, body, name, namespace=None, **kwargs):
+        namespace = namespace or self.namespace
         return self.api.delete_namespaced_daemon_set(
-            body=body, name=name, **kwargs)
+            body=body, name=name, namespace=namespace, **kwargs)
 
-    def _deletecollection(self, **kwargs):
-        return self.api.deletecollection_namespaced_daemon_set(**kwargs)
+    def _deletecollection(self, namespace=None, **kwargs):
+        namespace = namespace or self.namespace
+        return self.api.deletecollection_namespaced_daemon_set(
+            namespace=namespace, **kwargs)
 
     def full_list(self, *args, **kwargs):
         lst = self._full_list(*args, **kwargs)

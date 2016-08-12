@@ -32,22 +32,32 @@ class K8sLimitRangeManager(K8sBaseManager):
 
     resource_class = K8sLimitRange
 
-    def _get(self, name, **kwargs):
-        return self.api.read_namespaced_limit_range(name=name, **kwargs)
+    def _get(self, name, namespace=None, **kwargs):
+        namespace = namespace or self.namespace
+        return self.api.read_namespaced_limit_range(
+            name=name, namespace=namespace, **kwargs)
 
-    def _list(self, **kwargs):
-        return self.api.list_namespaced_limit_range(**kwargs)
+    def _list(self, namespace=None, **kwargs):
+        namespace = namespace or self.namespace
+        return self.api.list_namespaced_limit_range(
+            namespace=namespace, **kwargs)
 
-    def _create(self, body, **kwargs):
-        return self.api.create_namespaced_limit_range(body=body, **kwargs)
+    def _create(self, body, namespace=None, **kwargs):
+        namespace = namespace or self.namespace
+        return self.api.create_namespaced_limit_range(
+            body=body, namespace=namespace, **kwargs)
 
-    def _replace(self, body, name, **kwargs):
+    def _replace(self, body, name, namespace=None, **kwargs):
+        namespace = namespace or self.namespace
         return self.api.replace_namespaced_limit_range(
-            body=body, name=name, **kwargs)
+            body=body, name=name, namespace=namespace, **kwargs)
 
-    def _delete(self, body, name, **kwargs):
+    def _delete(self, body, name, namespace=None, **kwargs):
+        namespace = namespace or self.namespace
         return self.api.delete_namespaced_limit_range(
-            body=body, name=name, **kwargs)
+            body=body, name=name, namespace=namespace, **kwargs)
 
-    def _deletecollection(self, **kwargs):
-        return self.api.deletecollection_namespaced_limit_range(**kwargs)
+    def _deletecollection(self, namespace=None, **kwargs):
+        namespace = namespace or self.namespace
+        return self.api.deletecollection_namespaced_limit_range(
+            namespace=namespace, **kwargs)
