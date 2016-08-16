@@ -66,4 +66,4 @@ class K8sPodManager(K8sBaseManager):
         return [self.resource_class(self, item) for item in lst.items]
 
     def _full_list(self, **kwargs):
-        return self.api.list_pods(**kwargs)
+        return self.api.list_pod(**kwargs)
