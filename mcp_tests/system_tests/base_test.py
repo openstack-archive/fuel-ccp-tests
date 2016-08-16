@@ -11,13 +11,11 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-import copy
-import subprocess
-import os
+import yaml
+
+import pytest
 
 from devops.helpers import helpers
-import pytest
-import yaml
 
 from mcp_tests import logger
 from mcp_tests import settings
@@ -138,43 +136,6 @@ class SystemBaseTest(object):
         assert int(etcd_nodes) == len(devops_nodes),\
             "Number of etcd nodes is {0}," \
             " should be {1}".format(int(etcd_nodes), len(devops_nodes))
-
-    def ccp_install_k8s(self, env, custom_yaml=None, env_var=None):
-        """Action to deploy k8s by fuel-ccp-installer script
-
-        :param env: mcp_tests.managers.envmanager.EnvironmentManager
-        """
-        current_env = copy.deepcopy(os.environ)
-        environment_variables = {
-            "SLAVE_IPS": " ".join(env.k8s_ips),
-            "ADMIN_IP": env.k8s_ips[0],
-            "ADMIN_USER": settings.SSH_LOGIN,
-            "ADMIN_PASSWORD": settings.SSH_PASSWORD,
-            "KARGO_REPO": settings.KARGO_REPO,
-            "KARGO_COMMIT": settings.KARGO_COMMIT,
-        }
-        if custom_yaml:
-            environment_variables.update(
-                {"CUSTOM_YAML": yaml.dump(
-                    custom_yaml, default_flow_style=False)}
-            )
-        if env_var:
-            environment_variables.update(env_var)
-        current_env.update(dict=environment_variables)
-        self.deploy_k8s(environ=current_env)
-
-    def deploy_k8s(self, environ=None):
-        """Base action to deploy k8s by external deployment script"""
-        try:
-            process = subprocess.Popen([settings.DEPLOY_SCRIPT],
-                                       env=environ,
-                                       shell=True,
-                                       bufsize=0,
-                                       )
-            assert process.wait() == 0, "k8s deployment failed!"
-        except (SystemExit, KeyboardInterrupt) as err:
-            process.terminate()
-            raise err
 
     def create_env_snapshot(self, name, env, description=None):
         env.create_snapshot(name, description=description)
