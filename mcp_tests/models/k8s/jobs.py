@@ -66,4 +66,4 @@ class K8sJobManager(K8sBaseManager):
         return [self.resource_class(self, item) for item in lst.items]
 
     def _full_list(self, **kwargs):
-        return self.api.list_endpoints(**kwargs)
+        return self.api.list_job(**kwargs)
