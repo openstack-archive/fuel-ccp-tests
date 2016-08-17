@@ -1,0 +1,11 @@
+Code-Review+2: Dennis Dmitriev <ddmitriev@mirantis.com>
+Code-Review+1: Sergey Lebedev <slebedev@mirantis.com>
+Verified+1: Mirantis CCP CI <mirantis-fuel-ccp-ci@mirantis.com>
+Code-Review+1: Egor Kotko <ykotko@mirantis.com>
+Workflow+1: Dennis Dmitriev <ddmitriev@mirantis.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Wed, 17 Aug 2016 15:22:50 +0000
+Reviewed-on: https://review.openstack.org/342175
+Project: openstack/fuel-ccp-tests
+Branch: refs/heads/master
