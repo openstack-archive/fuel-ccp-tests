@@ -109,12 +109,12 @@ class TestDeployOpenstack(base_test.SystemBaseTest):
         remote = env.node_ssh_client(
             k8s_node,
             **settings.SSH_NODE_CREDENTIALS)
-        self.pre_build_deploy_step(remote, k8s_node)
+        self.pre_build_deploy_step(remote)
 
         registry = None
         if settings.BUILD_IMAGES:
             registry = '127.0.0.1:31500'
-            self.create_registry(remote, k8s_node)
+            self.create_registry(remote)
             exclude_list = ['deploy']
             yaml_path = os.getcwd() + '/mcp_tests/templates/' \
                                       'k8s_templates/build-deploy_cluster.yaml'
