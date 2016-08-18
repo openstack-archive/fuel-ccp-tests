@@ -14,9 +14,8 @@
 import pytest
 
 from mcp_tests.managers import ccp
+from mcp_tests.managers import k8s
 from mcp_tests import settings
-
-INSTALL_ACTION = "ccp_install_k8s"
 
 
 @pytest.fixture(scope='session')
@@ -42,12 +41,6 @@ def k8s_installed(request, env):
     :param request: pytest.python.FixtureRequest
     :param env: envmanager.EnvironmentManager
     """
-    install_action = getattr(request.instance, INSTALL_ACTION, None)
     kube_settings = getattr(request.instance, 'kube_settings',
                             settings.DEFAULT_CUSTOM_YAML)
-    if install_action is None:
-        pytest.fail(msg="Test instance hasn't attribute '{0}'".format(
-            INSTALL_ACTION
-        ))
-    else:
-        install_action(env, custom_yaml=kube_settings)
+    k8s.K8SManager.install_k8s(env, custom_yaml=kube_settings)
