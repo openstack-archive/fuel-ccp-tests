@@ -13,11 +13,11 @@
 #    under the License.
 import pytest
 
+import base_test
 from mcp_tests import logger
 from mcp_tests import settings
-from mcp_tests.managers import k8s
-
-import base_test
+from mcp_tests.helpers import ext
+from mcp_tests.managers import k8smanager
 
 LOG = logger.logger
 
@@ -61,25 +61,21 @@ class TestFuelCCPInstaller(base_test.SystemBaseTest,
         return pod
 
     @staticmethod
-    def check_nginx_pod_is_reached(env, ip, node=None):
+    def check_nginx_pod_is_reached(underlay, ip, node_name=None):
         """Simple check that nginx could be reached
 
-        :param env: mcp_tests.managers.envmanager.EnvironmentManager
+        :param env: mcp_tests.models.envmanager.EnvironmentManager
         :param ip: string
         :param node: devops.models.node.Node
         """
-        env_node = node or env.k8s_nodes[0]
-        remote = env.node_ssh_client(
-            env_node,
-            **settings.SSH_NODE_CREDENTIALS
-        )
+        env_node = node_name or underlay.node_names()[0]
         cmd = "curl http://{}".format(ip)
-        remote.check_call(command=cmd, verbose=True)
+        underlay.sudo_check_call(command=cmd, node_name=env_node, verbose=True)
 
     @pytest.mark.snapshot_needed
-    @pytest.mark.revert_snapshot
+    @pytest.mark.revert_snapshot(ext.SNAPSHOT.initial)
     @pytest.mark.fail_snapshot
-    def test_k8s_installed_default(self, env, k8sclient):
+    def test_k8s_installed_default(self, config, underlay):
         """Test for deploying an k8s environment and check it
 
         Scenario:
@@ -91,20 +87,22 @@ class TestFuelCCPInstaller(base_test.SystemBaseTest,
             6. Check created pod is reached
             7. Delete pod.
         """
-        k8s.K8SManager.install_k8s(env)
-        self.check_number_kube_nodes(env, k8sclient)
-        self.check_list_required_images(env, required_images=self.base_images)
-        self.calico_ipip_exists(env)
-        self.check_etcd_health(env)
+        config.k8s.kube_host = k8smanager.K8SManager.install_k8s(underlay)
+        k8sclient = k8smanager.K8SManager.get_k8sclient(config)
+        self.check_number_kube_nodes(underlay, k8sclient)
+        self.check_list_required_images(
+            underlay, required_images=self.base_images)
+        self.calico_ipip_exists(underlay)
+        self.check_etcd_health(underlay)
         nginx = self.get_nginx_spec()
         pod = self.check_pod_create(body=nginx, k8sclient=k8sclient)
-        self.check_nginx_pod_is_reached(env, pod.status.pod_ip)
+        self.check_nginx_pod_is_reached(underlay, pod.status.pod_ip)
         self.check_pod_delete(pod, k8sclient)
 
     @pytest.mark.snapshot_needed
-    @pytest.mark.revert_snapshot
+    @pytest.mark.revert_snapshot(ext.SNAPSHOT.initial)
     @pytest.mark.fail_snapshot
-    def test_k8s_installed_with_etcd_on_host(self, env, k8sclient):
+    def test_k8s_installed_with_etcd_on_host(self, config, underlay):
         """Test for deploying an k8s environment and check it
 
         Scenario:
@@ -126,22 +124,23 @@ class TestFuelCCPInstaller(base_test.SystemBaseTest,
             lambda x: x != kube_settings.get(
                 'etcd_image_repo', settings.ETCD_IMAGE_REPO),
             self.custom_yaml_images)
-        k8s.K8SManager.install_k8s(env, custom_yaml=kube_settings)
-        self.check_number_kube_nodes(env, k8sclient)
-        self.check_list_required_images(env,
+        config.k8s.kube_host = k8smanager.K8SManager.install_k8s(
+            underlay, custom_yaml=kube_settings)
+        k8sclient = k8smanager.K8SManager.get_k8sclient(config)
+        self.check_number_kube_nodes(underlay, k8sclient)
+        self.check_list_required_images(underlay,
                                         required_images=required_images)
-        self.calico_ipip_exists(env)
-        self.check_etcd_health(env)
+        self.calico_ipip_exists(underlay)
+        self.check_etcd_health(underlay)
         nginx = self.get_nginx_spec()
         pod = self.check_pod_create(body=nginx, k8sclient=k8sclient)
-        self.check_nginx_pod_is_reached(env, pod.status.pod_ip)
+        self.check_nginx_pod_is_reached(underlay, pod.status.pod_ip)
         self.check_pod_delete(pod, k8sclient)
 
     @pytest.mark.snapshot_needed
-    @pytest.mark.revert_snapshot
+    @pytest.mark.revert_snapshot(ext.SNAPSHOT.initial)
     @pytest.mark.fail_snapshot
-    def test_k8s_installed_with_etcd_in_container(self, env,
-                                                  k8sclient):
+    def test_k8s_installed_with_etcd_in_container(self, config, underlay):
         """Test for deploying an k8s environment and check it
 
         Scenario:
@@ -163,22 +162,24 @@ class TestFuelCCPInstaller(base_test.SystemBaseTest,
         })
         required_images = list(self.base_images)
         required_images.append(kube_settings['etcd_image_repo'])
-        k8s.K8SManager.install_k8s(env, custom_yaml=kube_settings)
-        self.check_number_kube_nodes(env, k8sclient)
-        self.check_list_required_images(env,
+        config.k8s.kube_host = k8smanager.K8SManager.install_k8s(
+            underlay, custom_yaml=kube_settings)
+        k8sclient = k8smanager.K8SManager.get_k8sclient(config)
+        self.check_number_kube_nodes(underlay, k8sclient)
+        self.check_list_required_images(underlay,
                                         required_images=required_images)
-        self.calico_ipip_exists(env)
-        self.check_etcd_health(env)
+        self.calico_ipip_exists(underlay)
+        self.check_etcd_health(underlay)
         nginx = self.get_nginx_spec()
         pod = self.check_pod_create(body=nginx, k8sclient=k8sclient)
-        self.check_nginx_pod_is_reached(env, pod.status.pod_ip)
+        self.check_nginx_pod_is_reached(underlay, pod.status.pod_ip)
         self.check_pod_delete(pod, k8sclient)
 
     @pytest.mark.snapshot_needed
-    @pytest.mark.revert_snapshot
+    @pytest.mark.revert_snapshot(ext.SNAPSHOT.initial)
     @pytest.mark.fail_snapshot
-    def test_k8s_installed_with_ready_ssh_keys(self, ssh_keys_dir, env,
-                                               k8sclient):
+    def test_k8s_installed_with_ready_ssh_keys(self, ssh_keys_dir,
+                                               config, underlay):
         """Test for deploying an k8s environment and check it
 
         Scenario:
@@ -193,12 +194,15 @@ class TestFuelCCPInstaller(base_test.SystemBaseTest,
         add_var = {
             "WORKSPACE": ssh_keys_dir
         }
-        k8s.K8SManager.install_k8s(env, env_var=add_var)
-        self.check_number_kube_nodes(env, k8sclient)
-        self.check_list_required_images(env, required_images=self.base_images)
-        self.calico_ipip_exists(env)
-        self.check_etcd_health(env)
+        config.k8s.kube_host = k8smanager.K8SManager.install_k8s(
+            underlay, env_var=add_var)
+        k8sclient = k8smanager.K8SManager.get_k8sclient(config)
+        self.check_number_kube_nodes(underlay, k8sclient)
+        self.check_list_required_images(
+            underlay, required_images=self.base_images)
+        self.calico_ipip_exists(underlay)
+        self.check_etcd_health(underlay)
         nginx = self.get_nginx_spec()
         pod = self.check_pod_create(body=nginx, k8sclient=k8sclient)
-        self.check_nginx_pod_is_reached(env, pod.status.pod_ip)
+        self.check_nginx_pod_is_reached(underlay, pod.status.pod_ip)
         self.check_pod_delete(pod, k8sclient)
