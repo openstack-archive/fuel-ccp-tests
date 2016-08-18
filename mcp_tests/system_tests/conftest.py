@@ -11,57 +11,9 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-from __future__ import division
-import time
 
-import pytest
-
-from mcp_tests import logger
-from mcp_tests.helpers import utils
-
-LOG = logger.logger
-
-
-pytest_plugins = ['k8s_fixtures', 'env_fixtures', 'ccp_installer_fixtures']
-
-
-@pytest.yield_fixture(scope='session')
-def ssh_keys_dir(request):
-    ssh_keys_dir = utils.generate_keys()
-    LOG.info("SSH keys were generated in {}".format(ssh_keys_dir))
-    yield ssh_keys_dir
-    utils.clean_dir(ssh_keys_dir)
-    LOG.info("Tmp dir {} with generated ssh keys was cleaned".format(
-        ssh_keys_dir))
-
-
-@pytest.hookimpl(tryfirst=True, hookwrapper=True)
-def pytest_runtest_makereport(item, call):
-    outcome = yield
-    rep = outcome.get_result()
-    setattr(item, "rep_" + rep.when, rep)
-
-
-def pytest_runtest_setup(item):
-    item.cls._current_test = item.function
-    item._start_time = time.time()
-    head = "<" * 5 + "#" * 30 + "[ {} ]" + "#" * 30 + ">" * 5
-    head = head.format(item.function.__name__)
-    start_step = "\n{head}".format(head=head)
-    LOG.info(start_step)
-
-
-def pytest_runtest_teardown(item):
-    step_name = item.function.__name__
-    if hasattr(item, '_start_time'):
-        spent_time = time.time() - item._start_time
-    else:
-        spent_time = 0
-    minutes = spent_time // 60
-    seconds = int(round(spent_time)) % 60
-    finish_step = "FINISH {} TEST. TOOK {} min {} sec".format(
-        step_name, minutes, seconds
-    )
-    foot = "\n" + "<" * 5 + "#" * 30 + "[ {} ]" + "#" * 30 + ">" * 5
-    foot = foot.format(finish_step)
-    LOG.info(foot)
+pytest_plugins = ['mcp_tests.system_tests.common_fixtures',
+                  'mcp_tests.system_tests.config_fixtures',
+                  'mcp_tests.system_tests.underlay_fixtures',
+                  'mcp_tests.system_tests.k8s_fixtures',
+                  'mcp_tests.system_tests.ccp_fixtures',]

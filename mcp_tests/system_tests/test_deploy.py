@@ -19,10 +19,10 @@ from mcp_tests import logger
 from mcp_tests import settings
 from mcp_tests.helpers import post_install_k8s_checks
 from mcp_tests.helpers import post_os_deploy_checks
-from mcp_tests.managers import k8s
-from mcp_tests.managers import ccp
-
-import base_test
+from mcp_tests.helpers import ext
+from mcp_tests.managers import k8smanager
+from mcp_tests.managers import ccpmanager
+from mcp_tests.system_tests import base_test
 
 LOG = logger.logger
 
@@ -30,7 +30,6 @@ LOG = logger.logger
 class TestDeployOpenstack(base_test.SystemBaseTest):
     """Create VMs for mcpinstaller"""
 
-    snapshot_microservices_build = 'snapshot_microservices_build'
     snapshot_microservices_deployed = 'snapshot_microservices_deployed'
     kube_settings = {
         "kube_network_plugin": "calico",
@@ -64,9 +63,9 @@ class TestDeployOpenstack(base_test.SystemBaseTest):
         ]
         for cmd in command:
             LOG.info(
-                "Running command '{cmd}' on node {node_name}".format(
+                "Running command '{cmd}' on node {node}".format(
                     cmd=cmd,
-                    node_name=remote.hostname
+                    node=remote.hostname
                 )
             )
             result = remote.execute(cmd)
@@ -79,19 +78,18 @@ class TestDeployOpenstack(base_test.SystemBaseTest):
         command = '>/var/log/microservices.log'
         with remote.get_sudo(remote):
             LOG.info(
-                "Running command '{cmd}' on node {node_name}".format(
+                "Running command '{cmd}' on node {node}".format(
                     cmd=command,
-                    node_name=remote.hostname
+                    node=remote.hostname
                 )
             )
             result = remote.check_call(command, verbose=True)
             assert result['exit_code'] == 0
 
     @pytest.mark.snapshot_needed(name=snapshot_microservices_deployed)
-    @pytest.mark.revert_snapshot(name=snapshot_microservices_build,
-                                 strict=False)
+    @pytest.mark.revert_snapshot(ext.SNAPSHOT.initial)
     @pytest.mark.fail_snapshot
-    def test_fuel_ccp_deploy_microservices(self, env, k8sclient):
+    def test_fuel_ccp_deploy_microservices(self, config, underlay):
         """Deploy base environment
 
         Scenario:
@@ -102,13 +100,12 @@ class TestDeployOpenstack(base_test.SystemBaseTest):
 
         Duration 30 min
         """
-        k8s.K8SManager.install_k8s(env, custom_yaml=self.kube_settings)
-        ccp.CCPManager.install_ccp(env)
+        config.k8s.kube_host = k8smanager.K8SManager.install_k8s(
+            underlay, custom_yaml=self.kube_settings)
+        ccpmanager.CCPManager.install_ccp(underlay, config)
+        k8sclient = k8smanager.K8SManager.get_k8sclient(config)
 
-        k8s_node = env.k8s_nodes[0]
-        remote = env.node_ssh_client(
-            k8s_node,
-            **settings.SSH_NODE_CREDENTIALS)
+        remote = underlay.remote(host=config.k8s.kube_host)
         self.pre_build_deploy_step(remote)
 
         registry = None
@@ -131,14 +128,14 @@ class TestDeployOpenstack(base_test.SystemBaseTest):
             with remote.get_sudo(remote):
                 for cmd in command:
                     LOG.info(
-                        "Running command '{cmd}' on node {node_name}".format(
+                        "Running command '{cmd}' on node {node}".format(
                             cmd=cmd,
-                            node_name=k8s_node.name
+                            node=remote.hostname
                         )
                     )
                     result = remote.execute(cmd)
                     assert result['exit_code'] == 0
-            post_install_k8s_checks.check_calico_network(remote, env)
+            post_install_k8s_checks.check_calico_network(remote, k8sclient)
         else:
             registry = settings.REGISTRY
             if not registry:
@@ -164,9 +161,9 @@ class TestDeployOpenstack(base_test.SystemBaseTest):
         with remote.get_sudo(remote):
             for cmd in command:
                 LOG.info(
-                    "Running command '{cmd}' on node {node_name}".format(
+                    "Running command '{cmd}' on node {node}".format(
                         cmd=cmd,
-                        node_name=k8s_node.name
+                        node=remote.hostname
                     )
                 )
                 result = remote.execute(cmd)
