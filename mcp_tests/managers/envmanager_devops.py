@@ -11,76 +11,108 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+
+from devops import error
 from devops.helpers import helpers
 from devops import models
 from django import db
 
+from mcp_tests import settings
+from mcp_tests.helpers import env_config
 from mcp_tests.helpers import ext
 from mcp_tests.helpers import mcp_tests_exceptions as exc
 from mcp_tests import logger
-from mcp_tests.models import manager
 
 
 LOG = logger.logger
 
 
-class EnvironmentManager(manager.Manager):
+class EnvironmentManager(object):
     """Class-helper for creating VMs via devops environments"""
 
-    def __init__(self, config_file=None, env_name=None, master_image=None,
-                 node_image=None, *args, **kwargs):
-        """Initializing class instance
+    def __init__(self, config=None):
+        """Initializing class instance and create the environment
 
-        :param env_name: environment name string
-        :param master_image: path to master image string
-        :param node_image: path to node image string
+        :param config: oslo.config object
+        :param config.hardware.conf_path: path to devops YAML template
+        :param config.hardware.current_snapshot: name of the snapshot that
+                                                 descriebe environment status.
         """
-        super(EnvironmentManager, self).__init__(*args, **kwargs)
-        if config_file is not None:
-            self.devops_config.load_template(config_file)
-        self.env_name = env_name
-        self.master_image = master_image
-        self.node_image = node_image
+        self.__devops_config = env_config.EnvironmentConfig()
+        self._env = None
+        self.__config = config
 
-    def merge_config_params(self):
-        """Merging config with instance defined params"""
-        if self.devops_config.config is None:
-            raise exc.DevopsConfigIsNone
-        conf = self.devops_config
-        node_group = conf['groups'][0]
-        if self.env_name is not None:
-            conf.set_value_by_keypath('env_name', self.env_name)
-            LOG.debug('env_name redefined to {0}'.format(self.env_name))
-        if self.master_image is not None or self.node_image is not None:
-            LOG.debug('Current node_group settings:\n{0}'.format(
-                node_group))
+        if config.hardware.conf_path is not None:
+            self._devops_config.load_template(config.hardware.conf_path)
+        else:
+            raise Exception("Devops YAML template is not set in config object")
 
-            for node in node_group['nodes']:
-                volume = node['params']['volumes'][0]
-                if (node['role'] == ext.NODE_ROLE.master and
-                        self.master_image is not None):
-                    volume['source_image'] = self.master_image
-                elif (node['role'] == ext.NODE_ROLE.slave and
-                      self.node_image is not None):
-                    volume['source_image'] = self.node_image
-
-            conf.set_value_by_keypath('group[0]', node_group)
-            LOG.debug('Node group updated to:\n{0}'.format(node_group))
+        try:
+            self._get_env_by_name(self._d_env_name)
+        except error.DevopsObjNotFound:
+            LOG.info("Environment doesn't exist, creating a new one")
+            self._create_environment()
+            self.create_snapshot(config.hardware.current_snapshot)
+            LOG.info("Environment created with initial snapshot: {}"
+                     .format(config.hardware.current_snapshot))
 
     @property
-    def d_env_name(self):
+    def _devops_config(self):
+        return self.__devops_config
+
+    @_devops_config.setter
+    def _devops_config(self, conf):
+        """Setter for self.__devops_config
+
+        :param conf: mcp_tests.helpers.env_config.EnvironmentConfig
+        """
+        if not isinstance(conf, env_config.EnvironmentConfig):
+            msg = ("Unexpected type of devops config. Got '{0}' " +
+                   "instead of '{1}'")
+            raise TypeError(
+                msg.format(
+                    type(conf).__name__,
+                    env_config.EnvironmentConfig.__name__
+                )
+            )
+        self.__devops_config = conf
+
+    @property
+    def _d_env_name(self):
         """Get environment name from fuel devops config
 
         :rtype: string
         """
-        return self.devops_config['env_name']
+        return self._devops_config['env_name']
 
-    def get_env_by_name(self, name):
+    def _get_env_by_name(self, name):
         """Set existing environment by name
 
         :param name: string
         """
         self._env = models.Environment.get(name=name)
+
+    def _get_default_node_group(self):
+        return self._env.get_group(name='default')
+
+    def _get_network_pool(self, net_pool_name):
+        default_node_group = self._get_default_node_group()
+        network_pool = default_node_group.get_network_pool(name=net_pool_name)
+        return network_pool
+
+    def get_ssh_data(self):
+        config_ssh = []
+        for d_node in self.k8s_nodes:
+            ssh_data = {
+                'node_name': d_node.name,
+                'address_pool': self._get_network_pool(
+                    ext.NETWORK_TYPE.public).address_pool.name,
+                'host': self.node_ip(d_node),
+                'login': settings.SSH_NODE_CREDENTIALS['login'],
+                'password': settings.SSH_NODE_CREDENTIALS['password'],
+            }
+            config_ssh.append(ssh_data)
+        return config_ssh
 
     def create_snapshot(self, name, description=None):
         """Create named snapshot of current env.
@@ -88,6 +120,7 @@ class EnvironmentManager(manager.Manager):
         :name: string
         """
         LOG.info("Creating snapshot named '{0}'".format(name))
+        self.__config.hardware.current_snapshot = name
         if self._env is not None:
             self._env.suspend()
             self._env.snapshot(name, description=description, force=True)
@@ -107,17 +140,17 @@ class EnvironmentManager(manager.Manager):
             self._env.resume()
         else:
             raise exc.EnvironmentIsNotSet()
+        self.__config.hardware.current_snapshot = name
 
-    def create_environment(self):
+    def _create_environment(self):
         """Create environment and start VMs.
 
         If config was provided earlier, we simply create and start VMs,
         otherwise we tries to generate config from self.config_file,
         """
-        if self.devops_config.config is None:
+        if self._devops_config.config is None:
             raise exc.DevopsConfigPathIsNotSet()
-        self.merge_config_params()
-        settings = self.devops_config
+        settings = self._devops_config
         env_name = settings['env_name']
         LOG.debug(
             'Preparing to create environment named "{0}"'.format(env_name)
@@ -135,12 +168,12 @@ class EnvironmentManager(manager.Manager):
             )
             raise exc.EnvironmentAlreadyExists(env_name)
         self._env.define()
-        self.start_environment()
+        self._start_environment()
         LOG.info(
             'Environment "{0}" created and started'.format(env_name)
         )
 
-    def start_environment(self):
+    def _start_environment(self):
         """Method for start environment
 
         """
