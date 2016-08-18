@@ -14,19 +14,14 @@
 
 import pytest
 
-from mcp_tests import settings
 from mcp_tests.logger import logger
 
 
 @pytest.yield_fixture(scope='module')
-def admin_node(env, env_with_k8s_and_ccp):
+def admin_node(config, underlay, ccpcluster):
     logger.info("Get SSH access to admin node")
-    remote = env.node_ssh_client(
-        env.k8s_nodes[0],
-        login=settings.SSH_NODE_CREDENTIALS['login'],
-        password=settings.SSH_NODE_CREDENTIALS['password'])
-    yield remote
-    remote.close()
+    with underlay.remote(host=config.k8s.kube_host) as remote:
+        yield remote
 
 
 def clean_repos(node):
