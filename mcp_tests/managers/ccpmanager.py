@@ -25,13 +25,10 @@ class CCPManager(object):
         super(CCPManager, self).__init__()
 
     @classmethod
-    def install_ccp(cls, env):
+    def install_ccp(cls, underlay, config):
         """Base action to deploy k8s by external deployment script"""
         LOG.info("Trying to install fuel-ccp on admin node")
-        remote = env.node_ssh_client(
-            env.k8s_nodes[0],
-            login=settings.SSH_NODE_CREDENTIALS['login'],
-            password=settings.SSH_NODE_CREDENTIALS['password'])
+        remote = underlay.remote(host=config.k8s.kube_host)
 
         ccp_repo_url = settings.CCP_REPO
         cmd = ('pip install --upgrade git+{}'.format(ccp_repo_url))
