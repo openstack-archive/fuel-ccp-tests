@@ -19,6 +19,7 @@ import yaml
 
 from mcp_tests import logger
 from mcp_tests import settings
+from mcp_tests.models.k8s import cluster
 
 
 LOG = logger.logger
@@ -27,11 +28,13 @@ LOG = logger.logger
 class K8SManager(object):
     """docstring for K8SManager"""
 
-    def __init__(self):
+    def __init__(self, arg):
         super(K8SManager, self).__init__()
+        self.arg = arg
 
     @classmethod
-    def install_k8s(cls, env, custom_yaml=None, env_var=None):
+    def install_k8s(cls, underlay, custom_yaml=None, env_var=None,
+                    k8s_admin_ip=None, k8s_slave_ips=None):
         """Action to deploy k8s by fuel-ccp-installer script
 
         Additional steps:
@@ -43,36 +46,37 @@ class K8SManager(object):
             with environment settings, or put you own
         """
         LOG.info("Trying to install k8s")
-        snapshot_name = 'k8s_deployed'
-        if not env.has_snapshot(snapshot_name):
-            current_env = copy.deepcopy(os.environ)
-            environment_variables = {
-                "SLAVE_IPS": " ".join(env.k8s_ips),
-                "ADMIN_IP": env.k8s_ips[0],
-                "KARGO_REPO": settings.KARGO_REPO,
-                "KARGO_COMMIT": settings.KARGO_COMMIT
-            }
-            if custom_yaml:
-                environment_variables.update(
-                    {"CUSTOM_YAML": yaml.dump(
-                        custom_yaml, default_flow_style=False)}
-                )
-            if env_var:
-                environment_variables.update(env_var)
-            current_env.update(dict=environment_variables)
-            cls.deploy_k8s(environ=current_env)
-            remote = env.node_ssh_client(
-                env.k8s_nodes[0],
-                login=settings.SSH_NODE_CREDENTIALS['login'],
-                password=settings.SSH_NODE_CREDENTIALS['password'])
-            LOG.info("Add vagrant to docker group")
-            remote.check_call('sudo usermod -aG docker vagrant')
-            remote.close()
-            env.create_snapshot(snapshot_name)
-        else:
-            LOG.info("Snapshot '{}' found, trying to revert".format(
-                snapshot_name))
-            env.revert_snapshot(snapshot_name)
+        current_env = copy.deepcopy(os.environ)
+
+        k8s_nodes = underlay.node_names()
+        if k8s_admin_ip is None:
+            k8s_admin_ip = underlay.host_by_node_name(k8s_nodes[0])
+        if k8s_slave_ips is None:
+            k8s_slave_ips = [underlay.host_by_node_name(k8s_node)
+                             for k8s_node in k8s_nodes]
+
+        environment_variables = {
+            "SLAVE_IPS": " ".join(k8s_slave_ips),
+            "ADMIN_IP": k8s_admin_ip,
+            "KARGO_REPO": settings.KARGO_REPO,
+            "KARGO_COMMIT": settings.KARGO_COMMIT
+        }
+        if custom_yaml:
+            environment_variables.update(
+                {"CUSTOM_YAML": yaml.dump(
+                    custom_yaml, default_flow_style=False)}
+            )
+        if env_var:
+            environment_variables.update(env_var)
+        current_env.update(dict=environment_variables)
+        cls.deploy_k8s(environ=current_env)
+
+        for node_name in k8s_nodes:
+            with underlay.remote(node_name=node_name) as remote:
+                LOG.info("Add vagrant to docker group")
+                remote.check_call('sudo usermod -aG docker vagrant')
+
+        return k8s_admin_ip
 
     @classmethod
     def deploy_k8s(cls, environ=os.environ):
@@ -88,3 +92,10 @@ class K8SManager(object):
         except (SystemExit, KeyboardInterrupt) as err:
             process.terminate()
             raise err
+
+    @classmethod
+    def get_k8sclient(cls, config, default_namespace=None):
+        k8sclient = cluster.K8sCluster(user=config.k8s.kube_admin_user,
+                                        password=config.k8s.kube_admin_pass,
+                                        host=config.k8s.kube_host)
+        return k8sclient

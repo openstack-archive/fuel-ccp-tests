@@ -11,22 +11,15 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+import os
+import pytest
+from mcp_tests import settings_oslo
 
-from mcp_tests.helpers import containers
-from mcp_tests.helpers import ssh_manager
 
+@pytest.fixture(scope='session')
+def config(request):
 
-class TestBasic(object):
-    """Basic test case class for tests.
+    config_files = []
+    config_opts = settings_oslo.load_config(config_files)
 
-    """
-    def __init__(self):
-        self._devops_config = None
-
-    @property
-    def ssh_manager(self):
-        return ssh_manager.SSHManager()
-
-    @property
-    def container_engine(self):
-        return containers.ContainerEngine()
+    return config_opts

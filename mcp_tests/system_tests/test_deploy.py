@@ -19,10 +19,9 @@ from mcp_tests import logger
 from mcp_tests import settings
 from mcp_tests.helpers import post_install_k8s_checks
 from mcp_tests.helpers import post_os_deploy_checks
-from mcp_tests.managers import k8s
-from mcp_tests.managers import ccp
-
-import base_test
+from mcp_tests.managers import k8smanager
+from mcp_tests.managers import ccpmanager
+from mcp_tests.system_tests import base_test
 
 LOG = logger.logger
 
@@ -30,7 +29,6 @@ LOG = logger.logger
 class TestDeployOpenstack(base_test.SystemBaseTest):
     """Create VMs for mcpinstaller"""
 
-    snapshot_microservices_build = 'snapshot_microservices_build'
     snapshot_microservices_deployed = 'snapshot_microservices_deployed'
     kube_settings = {
         "kube_network_plugin": "calico",
@@ -88,10 +86,9 @@ class TestDeployOpenstack(base_test.SystemBaseTest):
             assert result['exit_code'] == 0
 
     @pytest.mark.snapshot_needed(name=snapshot_microservices_deployed)
-    @pytest.mark.revert_snapshot(name=snapshot_microservices_build,
-                                 strict=False)
+    @pytest.mark.revert_snapshot('initial')
     @pytest.mark.fail_snapshot
-    def test_fuel_ccp_deploy_microservices(self, env, k8sclient):
+    def test_fuel_ccp_deploy_microservices(self, config, underlay):
         """Deploy base environment
 
         Scenario:
@@ -102,13 +99,12 @@ class TestDeployOpenstack(base_test.SystemBaseTest):
 
         Duration 30 min
         """
-        k8s.K8SManager.install_k8s(env, custom_yaml=self.kube_settings)
-        ccp.CCPManager.install_ccp(env)
+        config.k8s.kube_host = k8smanager.K8SManager.install_k8s(
+            underlay, custom_yaml=self.kube_settings)
+        ccpmanager.CCPManager.install_ccp(underlay, config)
+        k8sclient = k8smanager.K8SManager.get_k8sclient(config)
 
-        k8s_node = env.k8s_nodes[0]
-        remote = env.node_ssh_client(
-            k8s_node,
-            **settings.SSH_NODE_CREDENTIALS)
+        remote = underlay.remote(host=config.k8s.kube_host)
         self.pre_build_deploy_step(remote)
 
         registry = None
@@ -138,7 +134,7 @@ class TestDeployOpenstack(base_test.SystemBaseTest):
                     )
                     result = remote.execute(cmd)
                     assert result['exit_code'] == 0
-            post_install_k8s_checks.check_calico_network(remote, env)
+            post_install_k8s_checks.check_calico_network(remote, k8sclient)
         else:
             registry = settings.REGISTRY
             if not registry:
