@@ -21,20 +21,22 @@ LOG = logger.logger
 class CCPManager(object):
     """docstring for CCPManager"""
 
-    def __init__(self):
+    __config = None
+    __underlay = None
+
+    def __init__(self, config, underlay):
+        self.__config = config
+        self.__underlay = underlay
         super(CCPManager, self).__init__()
 
-    @classmethod
-    def install_ccp(cls, env):
+    def install_ccp(self):
         """Base action to deploy k8s by external deployment script"""
         LOG.info("Trying to install fuel-ccp on admin node")
-        remote = env.node_ssh_client(
-            env.k8s_nodes[0],
-            login=settings.SSH_NODE_CREDENTIALS['login'],
-            password=settings.SSH_NODE_CREDENTIALS['password'])
+        with self.__underlay.remote(
+                host=self.__config.k8s.kube_host) as remote:
 
-        ccp_repo_url = settings.CCP_REPO
-        cmd = ('pip install --upgrade git+{}'.format(ccp_repo_url))
-        with remote.get_sudo(remote):
-            remote.check_call(cmd, verbose=True)
-        remote.close()
+            ccp_repo_url = settings.CCP_REPO
+            cmd = ('pip install --upgrade git+{}'.format(ccp_repo_url))
+            with remote.get_sudo(remote):
+                # TODO(ddmitriev): log output
+                remote.check_call(cmd, verbose=True)
