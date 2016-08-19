@@ -55,7 +55,7 @@ underlay_opts = [
 # Deploy options for a new K8S cluster
 k8s_deploy_opts = [
     ct.Cfg('kube_version', ct.String(),
-           help="", default="v1.3.0"),
+           help="", default="v1.3.5"),
     ct.Cfg('ipip_usage', ct.Boolean(),
            help="", default=True),
     ct.Cfg('deploy_script', ct.String(),
