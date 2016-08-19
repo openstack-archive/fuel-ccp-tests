@@ -33,10 +33,13 @@ class FuelCCPInstallerConfigMixin:
 
     custom_yaml_images = base_images + [kube_settings['hyperkube_image_repo']]
 
-
+@pytest.mark.fuel_ccp_installer
 class TestFuelCCPInstaller(base_test.SystemBaseTest,
                            FuelCCPInstallerConfigMixin):
-    """Test class for testing k8s deployed by fuel-ccp-installer"""
+    """Test class for testing k8s deployed by fuel-ccp-installer
+
+       pytest.mark: fuel_ccp_installer
+    """
 
     @staticmethod
     def get_nginx_spec(k8s_node=None):
@@ -72,11 +75,14 @@ class TestFuelCCPInstaller(base_test.SystemBaseTest,
         cmd = "curl http://{}".format(ip)
         underlay.sudo_check_call(command=cmd, node_name=env_node, verbose=True)
 
+    @pytest.mark.k8s_installed_default
     @pytest.mark.snapshot_needed
     @pytest.mark.revert_snapshot(ext.SNAPSHOT.initial)
     @pytest.mark.fail_snapshot
     def test_k8s_installed_default(self, config, underlay):
         """Test for deploying an k8s environment and check it
+
+        pytest.mark: k8s_installed_default
 
         Scenario:
             1. Install k8s.
@@ -99,11 +105,14 @@ class TestFuelCCPInstaller(base_test.SystemBaseTest,
         self.check_nginx_pod_is_reached(underlay, pod.status.pod_ip)
         self.check_pod_delete(pod, k8sclient)
 
+    @pytest.mark.k8s_installed_with_etcd_on_host
     @pytest.mark.snapshot_needed
     @pytest.mark.revert_snapshot(ext.SNAPSHOT.initial)
     @pytest.mark.fail_snapshot
     def test_k8s_installed_with_etcd_on_host(self, config, underlay):
         """Test for deploying an k8s environment and check it
+
+        pytest.mark: k8s_installed_with_etcd_on_host
 
         Scenario:
             1. Install k8s with forced etcd on host.
@@ -137,11 +146,14 @@ class TestFuelCCPInstaller(base_test.SystemBaseTest,
         self.check_nginx_pod_is_reached(underlay, pod.status.pod_ip)
         self.check_pod_delete(pod, k8sclient)
 
+    @pytest.mark.k8s_installed_with_etcd_in_container
     @pytest.mark.snapshot_needed
     @pytest.mark.revert_snapshot(ext.SNAPSHOT.initial)
     @pytest.mark.fail_snapshot
     def test_k8s_installed_with_etcd_in_container(self, config, underlay):
         """Test for deploying an k8s environment and check it
+
+        pytest.mark: k8s_installed_with_etcd_in_container
 
         Scenario:
             1. Install k8s with forced etcd in container.
@@ -175,12 +187,15 @@ class TestFuelCCPInstaller(base_test.SystemBaseTest,
         self.check_nginx_pod_is_reached(underlay, pod.status.pod_ip)
         self.check_pod_delete(pod, k8sclient)
 
+    @pytest.mark.k8s_installed_with_ready_ssh_keys
     @pytest.mark.snapshot_needed
     @pytest.mark.revert_snapshot(ext.SNAPSHOT.initial)
     @pytest.mark.fail_snapshot
     def test_k8s_installed_with_ready_ssh_keys(self, ssh_keys_dir,
                                                config, underlay):
         """Test for deploying an k8s environment and check it
+
+        pytest.mark: k8s_installed_with_ready_ssh_keys
 
         Scenario:
             1. Install k8s (with prepared ssh keys).
