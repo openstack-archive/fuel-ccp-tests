@@ -54,7 +54,7 @@ KUBE_HOSTPATH_DYNAMIC_PROVISIONER = get_var_as_bool(
 KUBE_ADMIN_USER = os.environ.get('KUBE_ADMIN_USER', 'root')
 KUBE_ADMIN_PASS = os.environ.get('KUBE_ADMIN_PASS', 'changeme')
 KUBE_HOST = os.environ.get('KUBE_HOST', None)
-KUBE_VERSION = os.environ.get("KUBE_VERSION", "v1.3.0")
+KUBE_VERSION = os.environ.get("KUBE_VERSION", "v1.3.5")
 
 KUBE_NETWORK_PLUGIN = os.environ.get("KUBE_NETWORK_PLUGIN", "calico")
 KUBE_PROXY_MODE = os.environ.get("KUBE_PROXY_MODE", "iptables")
