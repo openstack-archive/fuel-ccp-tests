@@ -24,7 +24,8 @@ def env_with_k8s_and_ccp(env, env_with_k8s):
 
     :param env_with_k8s: envmanager.EnvironmentManager
     """
-    ccp.CCPManager.install_ccp(env)
+    manager = ccp.CCPManager(env.k8s_nodes[0])
+    manager.install_ccp()
 
 
 @pytest.fixture(scope='function')

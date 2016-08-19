@@ -95,3 +95,10 @@ IMAGES_NAMESPACE = os.environ.get('IMAGES_NAMESPACE', 'mcp')
 IMAGES_TAG = os.environ.get('IMAGES_TAG', 'test_latest')
 UPSTREAM_DNS = os.environ.get('UPSTREAM_DNS', '8.8.8.8').split(',')
 SERVICE_PATH = os.environ.get('SERVICE_PATH')
+
+EXTERNAL_REGISTRY = os.environ.get('EXTERNAL_REGISTRY',
+                                   'registry.mcp.fuel-infra.org')
+EXTERNAL_REGISTRY_NAMESPACE = os.environ.get('EXTERNAL_REGISTRY_NAMESPACE',
+                                             'mcp')
+FUEL_CCP_KEYSTONE_LOCAL_REPO = os.environ.get('FUEL_CCP_KEYSTONE_LOCAL_REPO',
+                                              None)
