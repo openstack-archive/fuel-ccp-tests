@@ -11,6 +11,7 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+import os
 import pytest
 from fuel_ccp_tests import settings_oslo
 
@@ -19,6 +20,12 @@ from fuel_ccp_tests import settings_oslo
 def config(request):
 
     config_files = []
+
+    tests_configs = os.environ.get('TESTS_CONFIGS', None)
+    if tests_configs:
+        for test_config in tests_configs.split(','):
+            config_files.append(test_config)
+
     config_opts = settings_oslo.load_config(config_files)
 
     return config_opts
