@@ -27,8 +27,12 @@ from fuel_ccp_tests.managers import ccpmanager
 LOG = logger.logger
 
 
+@pytest.mark.deploy_openstack
 class TestDeployOpenstack(base_test.SystemBaseTest):
-    """Create VMs for mcpinstaller"""
+    """Deploy OpenStack with CCP
+
+       pytest.mark: deploy_openstack
+    """
 
     snapshot_microservices_deployed = 'snapshot_microservices_deployed'
     kube_settings = {
