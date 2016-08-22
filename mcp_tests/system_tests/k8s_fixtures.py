@@ -25,7 +25,9 @@ def env_with_k8s(env):
 
     :param env: envmanager.EnvironmentManager
     """
-    k8s.K8SManager.install_k8s(env)
+    manager = k8s.K8SManager(env)
+    manager.install_k8s()
+    return manager
 
 
 @pytest.fixture(scope='session')
