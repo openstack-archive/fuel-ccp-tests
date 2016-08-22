@@ -100,7 +100,8 @@ class K8SManager(object):
         k8sclient = cluster.K8sCluster(
             user=self.__config.k8s.kube_admin_user,
             password=self.__config.k8s.kube_admin_pass,
-            host=self.__config.k8s.kube_host)
+            host=self.__config.k8s.kube_host,
+            default_namespace=default_namespace)
         return k8sclient
 
     def create_registry(self):
