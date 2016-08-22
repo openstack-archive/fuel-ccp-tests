@@ -12,13 +12,25 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 from devops.helpers import helpers
+from fuel_ccp_tests import logger
+
+LOG = logger.logger
 
 
 # TODO: replace check with deployment status request
 def check_pods_status(k8sclient, timeout=600, namespace='ccp'):
+    LOG.info("Check pods status")
+
     def is_pod_running(cluster, pod_name, namespace=namespace):
-        return lambda: (cluster.pods.get(name=pod_name, namespace=namespace)
-                        ._data).to_dict()['status']['phase'] == 'Running'
+        def temporary_status():
+            pod = cluster.pods.get(name=pod_name, namespace=namespace)
+            if pod.status.phase in ['Running', 'Succeeded']:
+                return True
+            elif pod.status.phase == "Failed":
+                if pod.status.reason == 'NodeSelectorMismatching':
+                    return True
+            return False
+        return temporary_status
     pod_names = [pod.name for pod in k8sclient.pods.list(namespace=namespace)]
     for pod_name in pod_names:
         predicate = is_pod_running(k8sclient, pod_name)
@@ -29,9 +41,11 @@ def check_pods_status(k8sclient, timeout=600, namespace='ccp'):
 
 # TODO: replace check with deployment status request
 def check_jobs_status(k8sclient, timeout=600, namespace='ccp'):
+    LOG.info("Check jobs status")
+
     def is_job_running(cluster, job_name, namespace=namespace):
-        return lambda: (cluster.jobs.get(name=job_name, namespace=namespace)
-                        ._data).to_dict()['status']['succeeded'] == 'Running'
+        return lambda: (cluster.jobs.get(
+            name=job_name, namespace=namespace)).status.succeeded == 1
     job_names = [job.name for job in k8sclient.jobs.list(namespace=namespace)]
     for job_name in job_names:
         predicate = is_job_running(k8sclient, job_name)
