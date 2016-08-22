@@ -25,7 +25,6 @@ import yaml
 from fuel_ccp_tests import logger
 from fuel_ccp_tests import settings
 
-
 LOG = logger.logger
 
 
@@ -35,7 +34,6 @@ def get_test_method_name():
 
 def update_yaml(yaml_tree=None, yaml_value='', is_uniq=True,
                 yaml_file=settings.TIMESTAT_PATH_YAML):
-
     """Store/update a variable in YAML file.
 
     yaml_tree - path to the variable in YAML file, will be created if absent,
@@ -120,6 +118,18 @@ class TimeStat(object):
     @property
     def spent_time(self):
         return time.time() - self.begin_time
+
+
+class StringHelper():
+    @staticmethod
+    def reduce_occurrences(items, text):
+        for item in items:
+            LOG.debug(
+                "Verifying string {} is shown in "
+                "\"\"\"\n{}\n\"\"\"".format(item, text))
+            assert text.count(item) != 0
+            text = text.replace(item, "", 1)
+        return text
 
 
 def generate_keys():
