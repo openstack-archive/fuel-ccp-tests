@@ -31,7 +31,7 @@ class TestServiceHorizon(base_test.ServiceBase):
     FROM {registry}/{tag}/horizon
     RUN apt-get install -y xvfb
     RUN apt-get install -y firefox-esr
-    COPY local-horizon.conf
+    COPY local-horizon.conf \
      /horizon-master/openstack_dashboard/test/integration_tests
     '''.format(registry=settings.REGISTRY, tag='ccp')
 
