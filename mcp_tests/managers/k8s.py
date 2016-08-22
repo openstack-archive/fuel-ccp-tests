@@ -89,20 +89,52 @@ class K8SManager(object):
             process.terminate()
             raise err
 
-    @classmethod
-    def create_registry(cls, remote):
+    def create_registry(self):
+        """Create Pod and SErvice for K8S registry
+
+        TODO:
+            Migrate to k8sclient
+        """
         registry_pod = os.getcwd() + '/mcp_tests/templates/' \
                                      'registry_templates/registry-pod.yaml'
         service_registry = os.getcwd() + '/mcp_tests/templates/' \
                                          'registry_templates/' \
                                          'service-registry.yaml'
+        remote = self._env.node_ssh_client(
+            self._env.k8s_nodes[0],
+            login=settings.SSH_NODE_CREDENTIALS['login'],
+            password=settings.SSH_NODE_CREDENTIALS['password'])
+
         for item in registry_pod, service_registry:
             remote.upload(item, './')
         command = [
             'kubectl create -f ~/{0}'.format(registry_pod.split('/')[-1]),
-            'kubectl create'
-            ' -f ~/{0}'.format(service_registry.split('/')[-1]), ]
-        with remote.get_sudo(remote):
-            for cmd in command:
-                result = remote.execute(cmd)
-                assert result['exit_code'] == 0, "Registry wasn't created"
+            'kubectl create -f ~/{0}'.format(
+                service_registry.split('/')[-1]),
+        ]
+        for cmd in command:
+            LOG.info(
+                "Running command '{cmd}' on node {node_name}".format(
+                    cmd=cmd,
+                    node_name=remote.hostname
+                )
+            )
+            result = remote.execute(cmd)
+            # assert result['exit_code'] == 0
+            if result['exit_code'] != 0:
+                raise SystemError(
+                    "Registry wasn't created. "
+                    "Command '{}' returned non-zero exit code({}). Err: "
+                    "{}".format(
+                        cmd, result['exit_code'], result['stderr_str']))
+
+    @property
+    def api(self):
+        if self._api_client is None:
+            admin_ip = self._env.node_ip(self._env.k8s_nodes[0])
+            k8s = cluster.K8sCluster(user=settings.KUBE_ADMIN_USER,
+                                     password=settings.KUBE_ADMIN_PASS,
+                                     host=admin_ip)
+            self._api_client = k8s
+            return k8s
+        return self._api_client
