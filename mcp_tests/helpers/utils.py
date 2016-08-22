@@ -25,7 +25,6 @@ import yaml
 from mcp_tests import logger
 from mcp_tests import settings
 
-
 LOG = logger.logger
 
 
@@ -35,7 +34,6 @@ def get_test_method_name():
 
 def update_yaml(yaml_tree=None, yaml_value='', is_uniq=True,
                 yaml_file=settings.TIMESTAT_PATH_YAML):
-
     """Store/update a variable in YAML file.
 
     yaml_tree - path to the variable in YAML file, will be created if absent,
