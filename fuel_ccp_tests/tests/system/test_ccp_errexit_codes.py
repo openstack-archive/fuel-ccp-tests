@@ -103,3 +103,22 @@ class TestCppCliDeploy(object):
         cmd = 'ccp deploy --components example'
         admin_node.check_call(cmd, expected=[1], verbose=True)
         clean_repos(admin_node)
+
+
+class TestCppCliErrorInShowDep(object):
+    """Check exit codes when show-dep is failing"""
+
+    @pytest.mark.fail_snapshot
+    def test_nonexistent_component_given(self, admin_node):
+        logger.info("Error code for nonexistent component name")
+        component = ["wrong_component"]
+        expected = 1
+        cmd = "ccp show-dep {}".format(component[0])
+        admin_node.check_call(cmd, expected=[expected])
+
+    @pytest.mark.fail_snapshot
+    def test_no_components_given(self, admin_node):
+        logger.info("Error code for no component")
+        cmd = "ccp show-dep"
+        expected = 2
+        admin_node.check_call(cmd, expected=[expected])
