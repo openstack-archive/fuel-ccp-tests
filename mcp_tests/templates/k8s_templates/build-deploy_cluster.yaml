@@ -1,17 +1,15 @@
 ccp-microservices-options:
-- --images-base-distro debian
-- --images-maintainer mos-microservices@mirantis.com
-- --repositories-protocol https
-- --repositories-port 443
-- --builder-push
-- --registry-address {registry_address}
-- --logfile /var/log/microservices.log
-- --verbose
-- --debug
-- --builder-workers 1
-- --registry-insecure
-- --images-tag {images_tag}
-- --deploy-config ~/k8s_topology.yaml
-- --images-namespace {images_namespace}
-- build
-- deploy
+- images-base-distro: debian
+- images-maintainer: mos-microservices@mirantis.com
+- repositories-protocol: https
+- repositories-port: 443
+- builder-push
+- registry-address: {registry_address}
+- logfile: /var/log/microservices.log
+- verbose
+- debug
+- builder-workers: 1
+- registry-insecure
+- images-tag: {images_tag}
+- deploy-config: {deploy_config}
+- images-namespace: {images_namespace}

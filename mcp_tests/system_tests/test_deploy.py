@@ -45,8 +45,15 @@ class TestDeployOpenstack(base_test.SystemBaseTest):
         "upstream_dns_servers": settings.UPSTREAM_DNS,
     }
 
-    def get_params(self, params_list, exclude_list):
-        params = [param for param in params_list if param not in exclude_list]
+    def get_params(self, params_list, exclude_list=None):
+        params = []
+        for item in params_list:
+            if isinstance(item, dict):
+                if item.keys()[0] not in exclude_list:
+                    params.append(item)
+            else:
+                if item not in exclude_list:
+                    params.append(item)
         return params
 
     def create_registry(self, remote):
@@ -115,29 +122,17 @@ class TestDeployOpenstack(base_test.SystemBaseTest):
         if settings.BUILD_IMAGES:
             registry = '127.0.0.1:31500'
             self.create_registry(remote)
-            exclude_list = ['deploy']
             yaml_path = os.getcwd() + '/mcp_tests/templates/' \
                                       'k8s_templates/build-deploy_cluster.yaml'
             with open(yaml_path, 'r') as yaml_path:
-                params_list = yaml.load(yaml_path)['ccp-microservices-options']
-                params = self.get_params(params_list, exclude_list)
-                data = ' '.join(params)
+                data = yaml_path.read()
                 data = data.format(registry_address=registry,
                                    images_namespace=settings.IMAGES_NAMESPACE,
-                                   images_tag=settings.IMAGES_TAG)
-            command = [
-                'ccp {0}'.format(data)
-            ]
+                                   images_tag=settings.IMAGES_TAG,
+                                   deploy_config='~/k8s_topology.yaml')
+                params_list = yaml.load(data)['ccp-microservices-options']
             with remote.get_sudo(remote):
-                for cmd in command:
-                    LOG.info(
-                        "Running command '{cmd}' on node {node_name}".format(
-                            cmd=cmd,
-                            node_name=k8s_node.name
-                        )
-                    )
-                    result = remote.execute(cmd)
-                    assert result['exit_code'] == 0
+                ccp.CCPManager.do_build(remote, **params_list)
             post_install_k8s_checks.check_calico_network(remote, env)
         else:
             registry = settings.REGISTRY
@@ -146,31 +141,26 @@ class TestDeployOpenstack(base_test.SystemBaseTest):
                                  "external registry address, "
                                  "current value {0}".format(settings.REGISTRY))
 
-        exclude_list = ['build', '--builder-push', '--builder-workers 1']
+        exclude_list = ['builder-push', 'builder-workers']
         yaml_path = os.getcwd() + '/mcp_tests/templates/k8s_templates/' \
                                   'build-deploy_cluster.yaml'
 
         with open(yaml_path, 'r') as yaml_path:
-            params_list = yaml.load(yaml_path)['ccp-microservices-options']
+            data = yaml_path.read()
+            data = data.format(registry_address=registry,
+                               images_namespace=settings.IMAGES_NAMESPACE,
+                               images_tag=settings.IMAGES_TAG,
+                               deploy_config='~/k8s_topology.yaml')
+            params_list = yaml.load(data)['ccp-microservices-options']
             params = self.get_params(params_list, exclude_list)
-            data = ' '.join(params)
-            data = data.format(
-                registry_address=registry,
-                images_namespace=settings.IMAGES_NAMESPACE,
-                images_tag=settings.IMAGES_TAG)
-        command = [
-            'ccp {0}'.format(data),
-        ]
+            params_dict = {}
+            for item in filter(
+                    lambda x: isinstance(x, dict), params):
+                params_dict.update(item)
+            params_list = [item for item in params if not isinstance(
+                           item, dict)]
         with remote.get_sudo(remote):
-            for cmd in command:
-                LOG.info(
-                    "Running command '{cmd}' on node {node_name}".format(
-                        cmd=cmd,
-                        node_name=k8s_node.name
-                    )
-                )
-                result = remote.execute(cmd)
-                assert result['exit_code'] == 0
+            ccp.CCPManager.do_deploy(remote, *params_list, **params_dict)
         post_os_deploy_checks.check_jobs_status(k8sclient, timeout=1500,
                                                 namespace='ccp')
         post_os_deploy_checks.check_pods_status(k8sclient, timeout=1500,
