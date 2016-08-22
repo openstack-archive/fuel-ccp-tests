@@ -62,12 +62,24 @@ class CCPManager(object):
         cmd = self.build_command(*args, **kwargs) + " build"
         with self.__underlay.remote(
                 host=self.__config.k8s.kube_host) as remote:
+            LOG.info(
+                "Running command '{cmd}' on node {node}".format(
+                    cmd=cmd,
+                    node=remote.hostname
+                )
+            )
             remote.execute(cmd)
 
     def do_deploy(self, *args, **kwargs):
         cmd = self.build_command(*args, **kwargs) + " deploy"
         with self.__underlay.remote(
                 host=self.__config.k8s.kube_host) as remote:
+            LOG.info(
+                "Running command '{cmd}' on node {node}".format(
+                    cmd=cmd,
+                    node=remote.hostname
+                )
+            )
             remote.execute(cmd)
 
     def update_service(self, service_name):
