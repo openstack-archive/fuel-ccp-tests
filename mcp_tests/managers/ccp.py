@@ -38,3 +38,27 @@ class CCPManager(object):
         with remote.get_sudo(remote):
             remote.check_call(cmd, verbose=True)
         remote.close()
+
+    @classmethod
+    def build_command(cls, *args, **kwargs):
+        command_list = ['ccp']
+        for arg in args:
+            command_list.append('--{}'.format(arg.replace('_', '-')))
+        for key in kwargs:
+            command_list.append('--{0} {1}'.format(key.replace('_', '-'), kwargs[key]))
+        return ' '.join(command_list)
+
+    @classmethod
+    def do_fetch(cls, remote, *args, **kwargs):
+        cmd = cls.build_command(*args, **kwargs) + " fetch"
+        remote.execute(cmd)
+
+    @classmethod
+    def do_build(cls, remote, *args, **kwargs):
+        cmd = cls.build_command(*args, **kwargs) + " build"
+        remote.execute(cmd)
+
+    @classmethod
+    def do_deploy(cls, remote, *args, **kwargs):
+        cmd = cls.build_command(*args, **kwargs) + " deploy"
+        remote.execute(cmd)

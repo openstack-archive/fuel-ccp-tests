@@ -88,3 +88,21 @@ class K8SManager(object):
         except (SystemExit, KeyboardInterrupt) as err:
             process.terminate()
             raise err
+
+    @classmethod
+    def create_registry(cls, remote):
+        registry_pod = os.getcwd() + '/mcp_tests/templates/' \
+                                     'registry_templates/registry-pod.yaml'
+        service_registry = os.getcwd() + '/mcp_tests/templates/' \
+                                         'registry_templates/' \
+                                         'service-registry.yaml'
+        for item in registry_pod, service_registry:
+            remote.upload(item, './')
+        command = [
+            'kubectl create -f ~/{0}'.format(registry_pod.split('/')[-1]),
+            'kubectl create -f ~/{0}'.format(service_registry.split('/')
+            [-1]), ]
+        with remote.get_sudo(remote):
+            for cmd in command:
+                result = remote.execute(cmd)
+                assert result['exit_code'] == 0, "Registry wasn't created"
