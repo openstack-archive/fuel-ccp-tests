@@ -122,6 +122,20 @@ class TimeStat(object):
         return time.time() - self.begin_time
 
 
+class StringHelper():
+    @staticmethod
+    def extract_string_from_iter(iterable):
+        return "".join(iterable)
+
+    @staticmethod
+    def reduce_occurrences(items, text):
+        for item in items:
+            LOG.debug("Verifying string {} is shown in \"\"\"\n{}\n\"\"\"".format(item, text))
+            assert text.count(item) != 0
+            text = text.replace(item, "", 1)
+        return text
+
+
 def generate_keys():
     key = paramiko.RSAKey.generate(1024)
     public = key.get_base64()
