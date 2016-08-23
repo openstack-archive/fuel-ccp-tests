@@ -61,7 +61,7 @@ KUBE_VERSION = os.environ.get("KUBE_VERSION", "v1.3.0")
 KUBE_NETWORK_PLUGIN = os.environ.get("KUBE_NETWORK_PLUGIN", "calico")
 KUBE_PROXY_MODE = os.environ.get("KUBE_PROXY_MODE", "iptables")
 IPIP_USAGE = get_var_as_bool('IPIP_USAGE', True)
-DOCKER_VERSION = float(os.environ.get("DOCKER_VERSION", "1.11"))
+DOCKER_VERSION = float(os.environ.get("DOCKER_VERSION", "1.12"))
 
 KARGO_REPO = os.environ.get('KARGO_REPO',
                             "https://github.com/kubespray/kargo.git")
