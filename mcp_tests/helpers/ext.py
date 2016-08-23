@@ -31,3 +31,9 @@ NETWORK_TYPE = enum(
     'private',
     'public'
 )
+
+SNAPSHOT = enum(
+    'initial',
+    'k8s_deployed',
+    'ccp_deployed',
+)
