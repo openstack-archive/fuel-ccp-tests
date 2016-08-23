@@ -37,8 +37,6 @@ SSH_PASSWORD = os.environ.get('SSH_PASSWORD', 'vagrant')
 SSH_NODE_CREDENTIALS = {"login": SSH_LOGIN,
                         "password": SSH_PASSWORD}
 
-ENV_NAME = os.environ.get('ENV_NAME', 'mcp_qa-test')
-IMAGE_PATH = os.environ.get('IMAGE_PATH', None)
 CONF_PATH = os.environ.get('CONF_PATH', os.path.abspath(_default_conf))
 SUSPEND_ENV_ON_TEARDOWN = get_var_as_bool('SUSPEND_ENV_ON_TEARDOWN', True)
 DEPLOY_SCRIPT = os.environ.get("DEPLOY_SCRIPT", None)
