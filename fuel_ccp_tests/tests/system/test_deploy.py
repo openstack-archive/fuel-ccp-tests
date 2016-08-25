@@ -13,7 +13,6 @@
 #    under the License.
 import os
 import pytest
-import yaml
 
 import base_test
 from fuel_ccp_tests import logger
@@ -77,35 +76,18 @@ class TestDeployOpenstack(base_test.SystemBaseTest):
 
         Duration 35 min
         """
-        k8sclient = k8scluster.get_k8sclient()
+        k8sclient = k8scluster.api
         remote = underlay.remote(host=config.k8s.kube_host)
-        self.pre_build_deploy_step(remote)
-        yaml_path = os.path.join(
-            os.getcwd(),
-            'fuel_ccp_tests/templates/k8s_templates/build-deploy_cluster.yaml')
-        with open(yaml_path, 'r') as yaml_path:
-            data = yaml_path.read()
-            data = data.format(registry_address='127.0.0.1:31500'
-                               if settings.BUILD_IMAGES else settings.REGISTRY,
-                               images_namespace=settings.IMAGES_NAMESPACE,
-                               images_tag=settings.IMAGES_TAG,
-                               deploy_config='~/k8s_topology.yaml')
-            data_params = yaml.load(data)['ccp-microservices-options']
         if settings.BUILD_IMAGES:
-            k8scluster.create_registry(remote)
-            params_list, params_dict = self.get_params(data_params, [])
-            with remote.get_sudo(remote):
-                ccpcluster.do_build(remote, *params_list, **params_dict)
+            k8scluster.create_registry()
+            ccpcluster.build()
             post_install_k8s_checks.check_calico_network(remote, k8sclient)
         else:
             if not settings.REGISTRY:
                 raise ValueError("The REGISTRY variable should be set with "
                                  "external registry address, "
                                  "current value {0}".format(settings.REGISTRY))
-        exclude_list = ['builder-push', 'builder-workers']
-        params_list, params_dict = self.get_params(data_params, exclude_list)
-        with remote.get_sudo(remote):
-            ccpcluster.do_deploy(*params_list, **params_dict)
+        ccpcluster.deploy()
         post_os_deploy_checks.check_jobs_status(k8sclient, timeout=1500,
                                                 namespace='ccp')
         post_os_deploy_checks.check_pods_status(k8sclient, timeout=2500,
