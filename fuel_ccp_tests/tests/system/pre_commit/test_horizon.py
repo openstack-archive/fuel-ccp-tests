@@ -50,20 +50,18 @@ class TestServiceHorizon(object):
         9. Run horizon tests from docker
         Duration 60 min
         """
-        k8sclient = k8scluster.get_k8sclient()
+        k8sclient = k8scluster.api
 
         remote = underlay.remote(host=config.k8s.kube_host)
 
-        ccpcluster.do_fetch()
+        ccpcluster.fetch()
         ccpcluster.update_service('horizon')
         k8scluster.create_registry(remote)
-        ccpcluster.do_build('builder_push',
-                            registry_address=settings.REGISTRY)
+        ccpcluster.build()
         topology_path = os.getcwd() + '/fuel_ccp_tests/templates/' \
                                       'k8s_templates/k8s_topology.yaml'
-        remote.upload(topology_path, './')
-        ccpcluster.do_deploy(registry_address=settings.REGISTRY,
-                             deploy_config='~/k8s_topology.yaml')
+        remote.upload(topology_path, settings.CCP_CLI_PARAMS['deploy-config'])
+        ccpcluster.deploy()
         post_os_deploy_checks.check_jobs_status(k8sclient, timeout=1500,
                                                 namespace='ccp')
         post_os_deploy_checks.check_pods_status(k8sclient, timeout=1500,

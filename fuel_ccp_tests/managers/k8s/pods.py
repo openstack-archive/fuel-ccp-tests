@@ -26,6 +26,10 @@ class K8sPod(K8sBaseResource):
     def name(self):
         return self.metadata.name
 
+    @property
+    def phase(self):
+        return self.status.phase
+
 
 class K8sPodManager(K8sBaseManager):
     """docstring for ClassName"""
