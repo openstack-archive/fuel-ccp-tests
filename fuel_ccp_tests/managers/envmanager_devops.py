@@ -124,9 +124,14 @@ class EnvironmentManager(object):
         """
         LOG.info("Creating snapshot named '{0}'".format(name))
         self.__config.hardware.current_snapshot = name
+        LOG.info("current config '{0}'".format(
+            self.__config.hardware.current_snapshot))
         if self._env is not None:
+            LOG.info('trying to suspend ....')
             self._env.suspend()
+            LOG.info('trying to snapshot ....')
             self._env.snapshot(name, description=description, force=True)
+            LOG.info('trying to resume ....')
             self._env.resume()
         else:
             raise exceptions.EnvironmentIsNotSet()
