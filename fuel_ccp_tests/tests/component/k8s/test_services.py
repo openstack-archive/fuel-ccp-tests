@@ -19,5 +19,4 @@ expected_services = ('kubernetes',)
 
 @pytest.mark.parametrize('service', expected_services)
 def test_exist_service(k8scluster, service):
-    k8sclient = k8scluster.get_k8sclient()
-    k8sclient.services.get(name=service)
+    k8scluster.api.services.get(name=service)
