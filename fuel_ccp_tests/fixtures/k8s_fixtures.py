@@ -14,10 +14,12 @@
 
 import pytest
 
+from fuel_ccp_tests import logger
 from fuel_ccp_tests.helpers import ext
 from fuel_ccp_tests import settings
 from fuel_ccp_tests.managers import k8smanager
 
+LOG = logger.logger
 
 @pytest.fixture(scope='function')
 def k8s_actions(config, underlay):
@@ -66,6 +68,7 @@ def k8scluster(revert_snapshot, request, config,
     if config.k8s.kube_host == '0.0.0.0':
         kube_settings = getattr(request.instance, 'kube_settings',
                                 settings.DEFAULT_CUSTOM_YAML)
+        LOG.info('Kube settings are {}'.format(kube_settings))
         k8s_actions.install_k8s(custom_yaml=kube_settings)
 
         hardware.create_snapshot(ext.SNAPSHOT.k8s_deployed)
