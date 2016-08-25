@@ -69,7 +69,7 @@ class TestFuelCCPInstaller(base_test.SystemBaseTest,
         """
         env_node = node_name or underlay.node_names()[0]
         cmd = "curl http://{}".format(ip)
-        underlay.sudo_check_call(command=cmd, node_name=env_node, verbose=True)
+        underlay.sudo_check_call(cmd=cmd, node_name=env_node, verbose=True)
 
     @pytest.mark.snapshot_needed
     @pytest.mark.revert_snapshot(ext.SNAPSHOT.initial)
