@@ -96,17 +96,25 @@ class K8SManager(object):
             process.terminate()
             raise err
 
-    def get_k8sclient(self, default_namespace=None):
-        k8sclient = cluster.K8sCluster(
-            user=self.__config.k8s.kube_admin_user,
-            password=self.__config.k8s.kube_admin_pass,
-            host=self.__config.k8s.kube_host)
-        return k8sclient
+    @property
+    def api(self):
+        if self._api_client is None:
+            self._api_client = cluster.K8sCluster(
+                user=self.__config.k8s.kube_admin_user,
+                password=self.__config.k8s.kube_admin_pass,
+                host=self.__config.k8s.kube_host)
+            return self._api_client
+        return self._api_client
 
     def create_registry(self):
-        registry_pod = os.getcwd() + '/fuel_ccp_tests/templates/' \
+        """Create Pod and SErvice for K8S registry
+
+        TODO:
+            Migrate to k8sclient
+        """
+        registry_pod = os.getcwd() + '/mcp_tests/templates/' \
                                      'registry_templates/registry-pod.yaml'
-        service_registry = os.getcwd() + '/fuel_ccp_tests/templates/' \
+        service_registry = os.getcwd() + '/mcp_tests/templates/' \
                                          'registry_templates/' \
                                          'service-registry.yaml'
 
@@ -117,9 +125,18 @@ class K8SManager(object):
                 remote.upload(item, './')
             command = [
                 'kubectl create -f ~/{0}'.format(registry_pod.split('/')[-1]),
-                'kubectl create'
-                ' -f ~/{0}'.format(service_registry.split('/')[-1]), ]
-            with remote.get_sudo(remote):
-                for cmd in command:
-                    result = remote.execute(cmd)
-                    assert result['exit_code'] == 0, "Registry wasn't created"
+                'kubectl create -f ~/{0}'.format(
+                    service_registry.split('/')[-1]),
+            ]
+            for cmd in command:
+                LOG.info(
+                    "Running command '{cmd}' on node {node_name}".format(
+                        cmd=cmd,
+                        node_name=remote.hostname))
+                result = remote.execute(cmd)
+                if result['exit_code'] != 0:
+                    raise SystemError(
+                        "Registry wasn't created. "
+                        "Command '{}' returned non-zero exit code({}). Err: "
+                        "{}".format(
+                            cmd, result['exit_code'], result['stderr_str']))

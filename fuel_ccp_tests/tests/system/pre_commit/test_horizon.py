@@ -50,7 +50,7 @@ class TestServiceHorizon(object):
         9. Run horizon tests from docker
         Duration 60 min
         """
-        k8sclient = k8scluster.get_k8sclient()
+        k8sclient = k8scluster.api
 
         remote = underlay.remote(host=config.k8s.kube_host)
 
