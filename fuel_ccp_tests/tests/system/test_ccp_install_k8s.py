@@ -87,7 +87,7 @@ class TestFuelCCPInstaller(base_test.SystemBaseTest,
             7. Delete pod.
         """
         k8s_actions.install_k8s()
-        k8sclient = k8s_actions.get_k8sclient()
+        k8sclient = k8s_actions.api
 
         self.check_number_kube_nodes(underlay, k8sclient)
         self.check_list_required_images(
@@ -126,7 +126,7 @@ class TestFuelCCPInstaller(base_test.SystemBaseTest,
             self.custom_yaml_images)
 
         k8s_actions.install_k8s(custom_yaml=kube_settings)
-        k8sclient = k8s_actions.get_k8sclient()
+        k8sclient = k8s_actions.api
 
         self.check_number_kube_nodes(underlay, k8sclient)
         self.check_list_required_images(underlay,
@@ -165,7 +165,7 @@ class TestFuelCCPInstaller(base_test.SystemBaseTest,
         required_images.append(kube_settings['etcd_image_repo'])
 
         k8s_actions.install_k8s(custom_yaml=kube_settings)
-        k8sclient = k8s_actions.get_k8sclient()
+        k8sclient = k8s_actions.api
 
         self.check_number_kube_nodes(underlay, k8sclient)
         self.check_list_required_images(underlay,
@@ -198,7 +198,7 @@ class TestFuelCCPInstaller(base_test.SystemBaseTest,
         }
 
         k8s_actions.install_k8s(env_var=add_var)
-        k8sclient = k8s_actions.get_k8sclient()
+        k8sclient = k8s_actions.api
 
         self.check_number_kube_nodes(underlay, k8sclient)
         self.check_list_required_images(

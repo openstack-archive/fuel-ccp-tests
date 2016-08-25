@@ -56,6 +56,12 @@ def ccpcluster(config, hardware, underlay, k8scluster, ccp_actions):
     """
     if config.ccp.os_host is None:
         ccp_actions.install_ccp()
+        if config.ccp_deploy.ccp_globals is not None:
+            ccp_globals = config.ccp_deploy.ccp_globals
+            ccp_actions.put_yaml_config('/tmp/ccp-globals.yaml', ccp_globals)
+        if config.ccp_deploy.ccp_params is not None:
+            ccp_actions.default_params = config.ccp_deploy.ccp_params
+        ccp_actions.init_default_config()
         config.ccp.os_host = "TODO: get OpenStack endpoints"
         hardware.create_snapshot(ext.SNAPSHOT.ccp_deployed)
 
