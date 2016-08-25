@@ -11,13 +11,20 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-import os
+import yaml
+
+from devops.error import DevopsCalledProcessError
 
 from fuel_ccp_tests.helpers import exceptions
 from fuel_ccp_tests import settings
 from fuel_ccp_tests import logger
 
 LOG = logger.logger
+
+CCP_CONF = """
+[DEFAULT]
+use_stderr = False
+"""
 
 
 class CCPManager(object):
@@ -31,19 +38,68 @@ class CCPManager(object):
         self.__underlay = underlay
         super(CCPManager, self).__init__()
 
-    def install_ccp(self):
+    def install_ccp(self, use_defaults=True):
         """Base action to deploy k8s by external deployment script"""
         LOG.info("Trying to install fuel-ccp on admin node")
         with self.__underlay.remote(
                 host=self.__config.k8s.kube_host) as remote:
 
             ccp_repo_url = settings.CCP_REPO
-            cmd = ('pip install --upgrade git+{}'.format(ccp_repo_url))
+            LOG.info("Fetch ccp from github")
+            cmd = 'git clone {}'.format(ccp_repo_url)
+            remote.check_call(cmd, verbose=True)
+
+            LOG.info('Install fuel-ccp from local path')
+            cmd = 'pip install --upgrade fuel-ccp/'
             with remote.get_sudo(remote):
                 LOG.debug("*** Run cmd={0}".format(cmd))
                 result = remote.check_call(cmd, verbose=True)
                 LOG.debug("*** Result STDOUT:\n{0}".format(result.stdout_str))
                 LOG.debug("*** Result STDERR:\n{0}".format(result.stderr_str))
+
+            if use_defaults:
+                LOG.info("Use defaults config from ccp")
+                cmd = ('cat fuel-ccp/etc/topology-example.yaml '
+                       '>> /tmp/ccp-globals.yaml')
+                remote.check_call(cmd, verbose=True)
+
+    @property
+    def default_params(self):
+        if hasattr(self, '_default_params'):
+            return self._default_params.copy()
+        return None
+
+    @default_params.setter
+    def default_params(self, v):
+        self._default_params = v.copy()
+
+    def init_default_config(self):
+        self.put_raw_config('~/ccp.conf', CCP_CONF)
+
+    def put_raw_config(self, path, content):
+        """Put config content to file on admin node at path
+
+        :param path: path to config file
+        :param config: raw configuration data
+        """
+        cmd = "cat > {path} << EOF\n{content}\nEOF".format(
+            path=path, content=content)
+        with self.__underlay.remote(
+                host=self.__config.k8s.kube_host) as remote:
+            remote.execute(cmd)
+
+    def put_yaml_config(self, path, config):
+        """Convert config dict to yaml and put it to admin node at path
+
+        :param path: path to config file
+        :param config: dict with configuration data
+        """
+        content = yaml.dump(config, default_flow_style=False)
+        cmd = "cat >> {path} << EOF\n{content}\nEOF".format(
+            path=path, content=content)
+        with self.__underlay.remote(
+                host=self.__config.k8s.kube_host) as remote:
+            remote.execute(cmd)
 
     @classmethod
     def build_command(cls, *args, **kwargs):
@@ -63,80 +119,91 @@ class CCPManager(object):
                 '--{0} {1}'.format(key.replace('_', '-'), kwargs[key]))
         return ' '.join(command_list)
 
-    def do_fetch(self, *args, **kwargs):
-        cmd = self.build_command(*args, **kwargs) + " fetch"
+    def __build_param_string(self, params=None):
+        if params is None:
+            params = self.default_params
+        else:
+            merge = self.default_params.copy()
+            merge.update(params)
+            params = merge
+
+        return ' '.join(["--{}={}".format(
+            k, v) if v else "--{}".format(k) for (k, v) in params.items()])
+
+    def run(self, cmd, components=None, params=None, suppress_output=False):
+        params = self.__build_param_string(params)
+        params = params or ''
+        if components:
+            if isinstance(components, str):
+                components = [components]
+            components = '-c {}'.format(' '.join(components))
+        else:
+            components = ''
+        if suppress_output:
+            ccp_out_redirect = ("> >(tee ccp.out.log > /dev/null) "
+                                "2> >(tee ccp.err.log >/dev/null)")
+        else:
+            ccp_out_redirect = ""
+
+        cmd = "ccp {params} {cmd} {components} {ccp_out_redirect}".format(
+            params=params, cmd=cmd, components=components,
+            ccp_out_redirect=ccp_out_redirect)
+
+        LOG.info("Running {cmd}".format(cmd=cmd))
         with self.__underlay.remote(
                 host=self.__config.k8s.kube_host) as remote:
-            remote.execute(cmd)
+            remote.check_call(cmd)
 
-    def do_build(self, *args, **kwargs):
-        cmd = self.build_command(*args, **kwargs) + " build"
-        with self.__underlay.remote(
-                host=self.__config.k8s.kube_host) as remote:
-            LOG.info(
-                "Running command '{cmd}' on node {node}".format(
-                    cmd=cmd,
-                    node=remote.hostname
-                )
-            )
-            remote.execute(cmd)
+    def fetch(self, components=None, params=None):
+        self.run('fetch',
+                 components=components,
+                 params=params)
 
-    def do_deploy(self, *args, **kwargs):
-        cmd = self.build_command(*args, **kwargs) + " deploy"
-        with self.__underlay.remote(
-                host=self.__config.k8s.kube_host) as remote:
-            LOG.info(
-                "Running command '{cmd}' on node {node}".format(
-                    cmd=cmd,
-                    node=remote.hostname
-                )
-            )
-            remote.execute(cmd)
+    def build(self, components=None, params=None, suppress_output=True):
+        try:
+            self.run('build',
+                     components=components,
+                     params=params, suppress_output=suppress_output)
+        except DevopsCalledProcessError as e:
+            LOG.warning(e)
+            LOG.info("Retry build command")
+            self.run('build',
+                     components=components,
+                     params=params, suppress_output=suppress_output)
 
-    def update_service(self, service_name):
-        if not settings.SERVICE_PATH:
+    def deploy(self, components=None, params=None):
+        self.run('deploy',
+                 components=components,
+                 params=params)
+
+    def dry_deploy(self, export_dir, components=None, params=None):
+        self.run('deploy --dry-run --export-dir={export_dir}'.format(
+                 export_dir=export_dir),
+                 components=components,
+                 params=params)
+
+    def cleanup(self, components=None, params=None):
+        self.run('cleanup',
+                 components=components,
+                 params=params)
+
+    def show_dep(self, components=None, params=None):
+        self.run('show-dep',
+                 components=components,
+                 params=params)
+
+    def update_service(self, service_name, path=None):
+        if not settings.SERVICE_PATH and not path:
             raise exceptions.VariableNotSet('SERVICE_PATH')
+
+        path = path or settings.SERVICE_PATH
         with self.__underlay.remote(
                 host=self.__config.k8s.kube_host) as remote:
             remote.execute(
                 'rm -rf ./microservices-repos/fuel-ccp-{}'
                 .format(service_name))
             remote.upload(
-                settings.SERVICE_PATH,
-                "./microservices-repos/")
-
-    def do_dry_run(self, *args, **kwargs):
-        """Create yaml templates, make registry
-
-        :param args: passed into build_command()
-        :param kwargs: passed into build_command()
-        :param export_dir: taken from kwargs, contains dir for yaml templates
-        :param: base_command: should be empty for getting 'dry_run'
-        params without 'ccp'
-        :return: None
-        """
-        try:
-            export_dir = kwargs.pop("export_dir")
-        except KeyError:
-            raise ValueError("Variable 'export_dir' is not set")
-        command_list = [
-            self.build_command(*args, **kwargs),
-            "deploy",
-            "--dry-run",
-            self.build_command(export_dir=export_dir, base_command='')
-        ]
-        command_list = ' '.join(command_list)
-        command = [
-            command_list,
-            'kubectl create -f {0}/configmaps/ -f {0}'.format(
-                os.path.join('~/', export_dir))
-        ]
-        with self.__underlay.remote(
-                host=self.__config.k8s.kube_host) as remote:
-            for cmd in command:
-                LOG.info("Running command '{cmd}' on node {node}".format(
-                    cmd=cmd,
-                    node=remote.hostname)
-                )
-                result = remote.execute(cmd)
-                assert result['exit_code'] == 0
+                path,
+                "/home/{user}/microservices-repos/fuel-ccp-{service}".format(
+                    user=settings.SSH_LOGIN,
+                    service=service_name))
