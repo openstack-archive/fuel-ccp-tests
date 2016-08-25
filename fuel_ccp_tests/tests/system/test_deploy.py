@@ -104,7 +104,7 @@ class TestDeployOpenstack(base_test.SystemBaseTest):
         """
         k8s_actions.install_k8s(custom_yaml=self.kube_settings)
         ccp_actions.install_ccp()
-        k8sclient = k8s_actions.get_k8sclient()
+        k8sclient = k8s_actions.api
 
         remote = underlay.remote(host=config.k8s.kube_host)
         self.pre_build_deploy_step(remote)
