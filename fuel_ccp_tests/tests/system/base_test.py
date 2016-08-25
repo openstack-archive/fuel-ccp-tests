@@ -122,4 +122,4 @@ class SystemBaseTest(object):
     def teardown_class(cls, hardware):
         """Suspend environment"""
         LOG.info("Suspending environment")
-        hardware.suspend()
+        hardware.stop()
