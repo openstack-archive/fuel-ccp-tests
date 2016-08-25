@@ -19,5 +19,4 @@ expected_namespaces = ('default', 'kube-system')
 
 @pytest.mark.parametrize('ns', expected_namespaces)
 def test_exist_namespace(k8scluster, ns):
-    k8sclient = k8scluster.get_k8sclient()
-    k8sclient.namespaces.get(name=ns)
+    k8scluster.api.namespaces.get(name=ns)

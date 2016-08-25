@@ -15,6 +15,7 @@ import pytest
 
 from fuel_ccp_tests.helpers import ext
 from fuel_ccp_tests.managers import ccpmanager
+from fuel_ccp_tests import settings
 
 
 @pytest.fixture(scope='session')
@@ -56,6 +57,11 @@ def ccpcluster(config, hardware, underlay, k8scluster, ccp_actions):
     """
     if config.ccp.os_host is None:
         ccp_actions.install_ccp()
+        ccp_actions.put_yaml_config(
+            settings.CCP_CLI_PARAMS['deploy-config'],
+            settings.CCP_DEFAULT_GLOBALS)
+        ccp_actions.default_params = settings.CCP_CLI_PARAMS
+        ccp_actions.init_default_config()
         config.ccp.os_host = "TODO: get OpenStack endpoints"
         hardware.create_snapshot(ext.SNAPSHOT.ccp_deployed)
 
