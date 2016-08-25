@@ -38,7 +38,7 @@ SSH_NODE_CREDENTIALS = {"login": SSH_LOGIN,
                         "password": SSH_PASSWORD}
 
 CONF_PATH = os.environ.get('CONF_PATH', os.path.abspath(_default_conf))
-SUSPEND_ENV_ON_TEARDOWN = get_var_as_bool('SUSPEND_ENV_ON_TEARDOWN', True)
+SHUTDOWN_ENV_ON_TEARDOWN = get_var_as_bool('SHUTDOWN_ENV_ON_TEARDOWN', True)
 DEPLOY_SCRIPT = os.environ.get("DEPLOY_SCRIPT", None)
 
 PRIVATE_REGISTRY = os.environ.get('PRIVATE_REGISTRY', None)
