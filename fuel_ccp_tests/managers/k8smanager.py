@@ -16,6 +16,8 @@ import os
 
 import yaml
 
+from devops.helpers import helpers
+
 from fuel_ccp_tests.helpers import exceptions
 from fuel_ccp_tests.helpers import _subprocess_runner
 from fuel_ccp_tests import logger
@@ -34,6 +36,7 @@ class K8SManager(object):
     def __init__(self, config, underlay):
         self.__config = config
         self.__underlay = underlay
+        self._api_client = None
         super(K8SManager, self).__init__()
 
     def install_k8s(self, custom_yaml=None, env_var=None,
@@ -107,14 +110,22 @@ class K8SManager(object):
 
         return result
 
-    def get_k8sclient(self, default_namespace=None):
-        k8sclient = cluster.K8sCluster(
-            user=self.__config.k8s.kube_admin_user,
-            password=self.__config.k8s.kube_admin_pass,
-            host=self.__config.k8s.kube_host)
-        return k8sclient
+    @property
+    def api(self):
+        if self._api_client is None:
+            self._api_client = cluster.K8sCluster(
+                user=self.__config.k8s.kube_admin_user,
+                password=self.__config.k8s.kube_admin_pass,
+                host=self.__config.k8s.kube_host,
+                default_namespace='default')
+        return self._api_client
 
     def create_registry(self):
+        """Create Pod and SErvice for K8S registry
+
+        TODO:
+            Migrate to k8sclient
+        """
         registry_pod = os.getcwd() + '/fuel_ccp_tests/templates/' \
                                      'registry_templates/registry-pod.yaml'
         service_registry = os.getcwd() + '/fuel_ccp_tests/templates/' \
@@ -128,9 +139,45 @@ class K8SManager(object):
                 remote.upload(item, './')
             command = [
                 'kubectl create -f ~/{0}'.format(registry_pod.split('/')[-1]),
-                'kubectl create'
-                ' -f ~/{0}'.format(service_registry.split('/')[-1]), ]
-            with remote.get_sudo(remote):
-                for cmd in command:
-                    result = remote.execute(cmd)
-                    assert result['exit_code'] == 0, "Registry wasn't created"
+                'kubectl create -f ~/{0}'.format(
+                    service_registry.split('/')[-1]),
+            ]
+            for cmd in command:
+                LOG.info(
+                    "Running command '{cmd}' on node {node_name}".format(
+                        cmd=cmd,
+                        node_name=remote.hostname))
+                result = remote.execute(cmd)
+                if result['exit_code'] != 0:
+                    raise SystemError(
+                        "Registry wasn't created. "
+                        "Command '{}' returned non-zero exit code({}). Err: "
+                        "{}".format(
+                            cmd, result['exit_code'], result['stderr_str']))
+
+        self.wait_pod_phase('registry', 'default', 'Running', timeout=60)
+
+    def get_pod_phase(self, pod_name, namespace):
+        return self.api.pods.get(
+            name=pod_name, namespace=namespace).phase
+
+    def wait_pod_phase(self, pod_name, namespace, phase, timeout=60):
+        """Wait phase of pod_name from namespace while timeout
+
+        :param str: pod_name
+        :param str: namespace
+        :param list or str: phase
+        :param int: timeout
+
+        :rtype: None
+        """
+        if isinstance(phase, str):
+            phase = [phase]
+
+        def check():
+            return self.get_pod_phase(pod_name, namespace) in phase
+
+        helpers.wait(check, timeout=timeout,
+                     timeout_msg='Timeout waiting, pod {pod_name} is not in '
+                                 '"{phase}" phase'.format(
+                                     pod_name=pod_name, phase=phase))
