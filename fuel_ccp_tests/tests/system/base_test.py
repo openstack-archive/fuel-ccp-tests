@@ -115,11 +115,11 @@ class SystemBaseTest(object):
     def create_env_snapshot(self, name, hardware, description=None):
         hardware.create_snapshot(name, description=description)
 
-    @pytest.mark.skipif(not settings.SUSPEND_ENV_ON_TEARDOWN,
+    @pytest.mark.skipif(not settings.SHUTDOWN_ENV_ON_TEARDOWN,
                         reason="Suspend isn't needed"
                         )
     @classmethod
     def teardown_class(cls, hardware):
         """Suspend environment"""
         LOG.info("Suspending environment")
-        hardware.suspend()
+        hardware.stop()
