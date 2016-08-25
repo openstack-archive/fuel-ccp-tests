@@ -12,9 +12,19 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-pytest_plugins = ['fuel_ccp_tests.fixtures.common_fixtures',
-                  'fuel_ccp_tests.fixtures.config_fixtures',
-                  'fuel_ccp_tests.fixtures.underlay_fixtures',
-                  'fuel_ccp_tests.fixtures.k8s_fixtures',
-                  'fuel_ccp_tests.fixtures.rally_fixtures',
-                  'fuel_ccp_tests.fixtures.ccp_fixtures']
+import pytest
+
+from fuel_ccp_tests.managers import rallymanager
+
+
+@pytest.fixture(scope='function')
+def rally(underlay):
+    """Fixture that provides various actions for K8S
+
+    :param config: fixture provides oslo.config
+    :param underlay: fixture provides underlay manager
+    :rtype: K8SManager
+
+    For use in tests or fixtures to deploy a custom K8S
+    """
+    return rallymanager.RallyManager(underlay, 'master')

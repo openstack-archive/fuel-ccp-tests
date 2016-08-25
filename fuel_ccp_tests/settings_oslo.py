@@ -90,6 +90,10 @@ k8s_opts = [
 ccp_deploy_opts = [
     ct.Cfg('private_registry', ct.String(),
            help="", default=None),
+    ct.Cfg('ccp_globals', ct.JSONDict(),
+           help="", default=None),
+    ct.Cfg('ccp_params', ct.JSONDict(),
+           help="", default=None)
 ]
 
 # Access credentials to a ready CCP
