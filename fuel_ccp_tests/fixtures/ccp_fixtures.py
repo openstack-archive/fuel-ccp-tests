@@ -15,6 +15,7 @@ import pytest
 
 from fuel_ccp_tests.helpers import ext
 from fuel_ccp_tests.managers import ccpmanager
+from fuel_ccp_tests import settings
 
 
 @pytest.fixture(scope='function')
@@ -62,6 +63,11 @@ def ccpcluster(revert_snapshot, config, hardware,
     # Install CCP
     if config.ccp.os_host == '0.0.0.0':
         ccp_actions.install_ccp()
+        ccp_actions.put_yaml_config(
+            settings.CCP_CLI_PARAMS['deploy-config'],
+            settings.CCP_DEFAULT_GLOBALS)
+        ccp_actions.default_params = settings.CCP_CLI_PARAMS
+        ccp_actions.init_default_config()
         config.ccp.os_host = config.k8s.kube_host
 
         hardware.create_snapshot(ext.SNAPSHOT.ccp_deployed)
