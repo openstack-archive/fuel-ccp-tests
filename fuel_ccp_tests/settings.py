@@ -94,3 +94,26 @@ IMAGES_NAMESPACE = os.environ.get('IMAGES_NAMESPACE', 'mcp')
 IMAGES_TAG = os.environ.get('IMAGES_TAG', 'latest')
 UPSTREAM_DNS = os.environ.get('UPSTREAM_DNS', '8.8.8.8').split(',')
 SERVICE_PATH = os.environ.get('SERVICE_PATH')
+
+FUEL_CCP_KEYSTONE_LOCAL_REPO = os.environ.get('FUEL_CCP_KEYSTONE_LOCAL_REPO',
+                                              None)
+
+CCP_CLI_PARAMS = {
+    "config-file": "~/ccp.conf",
+    "debug": "",
+    "log-file": "ccp.log",
+    "builder-workers": "1",
+    "builder-push": "",
+    "registry-address": "127.0.0.1:31500",
+    "kubernetes-namespace": "demo",
+    "repositories-skip-empty": "",
+    "deploy-config": "/tmp/ccp-globals.yaml"
+}
+
+CCP_DEFAULT_GLOBALS = {
+    "configs": {
+        "private_interface": "eth0",
+        "public_interface": "eth1",
+        "neutron_external_interface": "eth2"
+    }
+}
