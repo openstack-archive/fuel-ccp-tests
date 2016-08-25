@@ -12,9 +12,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 from devops.helpers import helpers
+
 from fuel_ccp_tests import logger
 
 LOG = logger.logger
+LOG.addHandler(logger.console)
 
 
 # TODO: replace check with deployment status request
@@ -33,6 +35,7 @@ def check_pods_status(k8sclient, timeout=600, namespace='ccp'):
             return False
         return temporary_status
     pod_names = [pod.name for pod in k8sclient.pods.list(namespace=namespace)]
+    LOG.info('Pods names {}'.format(pod_names))
     for pod_name in pod_names:
         predicate = is_pod_running(k8sclient, pod_name)
         helpers.wait(predicate, timeout=timeout,
