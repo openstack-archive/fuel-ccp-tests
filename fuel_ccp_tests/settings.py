@@ -121,3 +121,10 @@ CCP_DEFAULT_GLOBALS = {
         "neutron_external_interface": "eth2"
     }
 }
+
+NETCHECKER_SERVER_DIR = os.environ.get(
+    'NETCHECKER_SERVER_DIR', os.path.join(os.getcwd(), 'mcp-netchecker-server')
+)
+NETCHECKER_AGENT_DIR = os.environ.get(
+    'NETCHECKER_AGENT_DIR', os.path.join(os.getcwd(), 'mcp-netchecker-agent')
+)
