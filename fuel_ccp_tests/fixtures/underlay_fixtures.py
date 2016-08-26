@@ -14,6 +14,7 @@
 import pytest
 
 from fuel_ccp_tests import logger
+from fuel_ccp_tests import settings
 from fuel_ccp_tests.managers import envmanager_devops
 from fuel_ccp_tests.managers import envmanager_empty
 from fuel_ccp_tests.managers import underlay_ssh_manager
@@ -36,7 +37,7 @@ def extract_name_from_mark(mark):
 
 
 @pytest.fixture(scope="session")
-def hardware(config):
+def hardware(request, config):
     """Fixture for manage the hardware layer.
 
        - start/stop/reboot libvirt/IPMI(/MaaS?) nodes
@@ -80,6 +81,12 @@ def hardware(config):
     else:
         raise Exception("Unknown hardware manager: '{}'".format(manager))
 
+    def fin():
+        if settings.SHUTDOWN_ENV_ON_TEARDOWN:
+            LOG.info("Shutdown environment...")
+            env.stop()
+
+    request.addfinalizer(fin)
     return env
 
 
