@@ -114,12 +114,3 @@ class SystemBaseTest(object):
 
     def create_env_snapshot(self, name, hardware, description=None):
         hardware.create_snapshot(name, description=description)
-
-    @pytest.mark.skipif(not settings.SHUTDOWN_ENV_ON_TEARDOWN,
-                        reason="Shutdown isn't needed"
-                        )
-    @classmethod
-    def teardown_class(cls, hardware):
-        """Shutdown environment"""
-        LOG.info("Shutdown environment")
-        hardware.stop()
