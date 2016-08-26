@@ -14,6 +14,8 @@
 
 import yaml
 
+from devops.helpers.helpers import wait
+
 from fuel_ccp_tests import logger
 
 LOG = logger.logger
@@ -70,11 +72,21 @@ class SystemBaseTest(object):
         LOG.debug("Timeout for creation is set to {}".format(timeout))
         LOG.debug("Checking interval is set to {}".format(interval))
         pod = k8sclient.pods.create(body=body)
-        pod.wait_running()
+        pod.wait_running(timeout=300, interval=5)
         LOG.info("Pod '{}' is created".format(pod.metadata.name))
         return k8sclient.pods.get(name=pod.metadata.name)
 
-    def check_pod_delete(self, k8s_pod, k8sclient):
+    @staticmethod
+    def wait_pod_deleted(k8sclient, podname, timeout=60, interval=5):
+        wait(
+            lambda: podname not in [pod.name for pod in k8sclient.pods.list()],
+            timeout=timeout,
+            interval=interval,
+            timeout_msg="Pod deletion timeout reached!"
+        )
+
+    @staticmethod
+    def check_pod_delete(k8s_pod, k8sclient, timeout=300, interval=5):
         """Deleting pod from k8s
 
         :param k8s_pod: fuel_ccp_tests.managers.k8s.nodes.K8sNode
@@ -82,8 +94,46 @@ class SystemBaseTest(object):
         """
         LOG.info("Deleting pod '{}'".format(k8s_pod.name))
         LOG.debug("Pod status:\n{}".format(k8s_pod.status))
+        LOG.debug("Timeout for deletion is set to {}".format(timeout))
+        LOG.debug("Checking interval is set to {}".format(interval))
         k8sclient.pods.delete(body=k8s_pod, name=k8s_pod.name)
+        SystemBaseTest.wait_pod_deleted(k8sclient, k8s_pod.name, timeout,
+                                        interval)
         LOG.debug("Pod '{}' is deleted".format(k8s_pod.name))
+
+    @staticmethod
+    def check_service_create(body, k8sclient):
+        """Check creating k8s service
+
+        :param body: dict, service spec
+        :param k8sclient: K8sCluster object
+        :rtype: K8sService object
+        """
+        LOG.info("Creating service in k8s cluster")
+        LOG.debug(
+            "Service spec to create:\n{}".format(
+                yaml.dump(body, default_flow_style=False))
+        )
+        service = k8sclient.services.create(body=body)
+        LOG.info("Service '{}' is created".format(service.metadata.name))
+        return k8sclient.services.get(name=service.metadata.name)
+
+    @staticmethod
+    def check_ds_create(body, k8sclient):
+        """Check creating k8s DaemonSet
+
+        :param body: dict, DaemonSet spec
+        :param k8sclient: K8sCluster object
+        :rtype: K8sDaemonSet object
+        """
+        LOG.info("Creating DaemonSet in k8s cluster")
+        LOG.debug(
+            "DaemonSet spec to create:\n{}".format(
+                yaml.dump(body, default_flow_style=False))
+        )
+        ds = k8sclient.daemonsets.create(body=body)
+        LOG.info("DaemonSet '{}' is created".format(ds.metadata.name))
+        return k8sclient.daemonsets.get(name=ds.metadata.name)
 
     def check_number_kube_nodes(self, underlay, k8sclient):
         """Check number of slaves"""

@@ -31,7 +31,7 @@ class K8sPod(K8sBaseResource):
     def phase(self):
         return self.status.phase
 
-    def wait_phase(self, phase, timeout=60):
+    def wait_phase(self, phase, timeout=60, interval=5):
         """Wait phase of pod_name from namespace while timeout
 
         :param list or str: phase
@@ -46,15 +46,15 @@ class K8sPod(K8sBaseResource):
             self._add_details(self._manager.get(name=self.name))
             return self.phase in phase
 
-        helpers.wait(check, timeout=timeout,
+        helpers.wait(check, timeout=timeout, interval=interval,
                      timeout_msg='Timeout waiting({timeout}s), pod {pod_name} '
                                  'is not in "{phase}" phase'.format(
                                      timeout=timeout,
                                      pod_name=self.name,
                                      phase=phase))
 
-    def wait_running(self, timeout=60):
-        self.wait_phase(['Running'], timeout=timeout)
+    def wait_running(self, timeout=60, interval=5):
+        self.wait_phase(['Running'], timeout=timeout, interval=interval)
 
 
 class K8sPodManager(K8sBaseManager):
