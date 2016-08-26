@@ -12,11 +12,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 import copy
-import subprocess
 import os
 
 import yaml
 
+from fuel_ccp_tests.helpers import _subprocess_runner
 from fuel_ccp_tests import logger
 from fuel_ccp_tests import settings
 from fuel_ccp_tests.managers.k8s import cluster
@@ -72,7 +72,20 @@ class K8SManager(object):
         if env_var:
             environment_variables.update(env_var)
         current_env.update(dict=environment_variables)
-        self.deploy_k8s(environ=current_env)
+
+        # TODO(ddmitriev): replace with check_call(...,env=current_env)
+        # when migrate to fuel-devops-3.0.2
+        environ_str = ';'.join([
+            "export {0}='{1}'".format(key, value)
+            for key, value in current_env.items()])
+        cmd = environ_str + ' ; ' + settings.DEPLOY_SCRIPT
+
+        LOG.info("Run k8s deployment")
+        LOG.debug("*** Run host cmd={0}".format(cmd))
+        result = _subprocess_runner.Subprocess.check_call(cmd, verbose=True,
+                                                          timeout=2400)
+        LOG.debug("*** Result STDOUT:\n{0}".format(result.stdout_str))
+        LOG.debug("*** Result STDERR:\n{0}".format(result.stderr_str))
 
         for node_name in k8s_nodes:
             with self.__underlay.remote(node_name=node_name) as remote:
@@ -81,20 +94,7 @@ class K8SManager(object):
 
         self.__config.k8s.kube_host = k8s_admin_ip
 
-    @classmethod
-    def deploy_k8s(cls, environ=os.environ):
-        """Base action to deploy k8s by external deployment script"""
-        LOG.info("Run k8s deployment")
-        try:
-            process = subprocess.Popen([settings.DEPLOY_SCRIPT],
-                                       env=environ,
-                                       shell=True,
-                                       bufsize=0,
-                                       )
-            assert process.wait() == 0
-        except (SystemExit, KeyboardInterrupt) as err:
-            process.terminate()
-            raise err
+        return result
 
     def get_k8sclient(self, default_namespace=None):
         k8sclient = cluster.K8sCluster(
