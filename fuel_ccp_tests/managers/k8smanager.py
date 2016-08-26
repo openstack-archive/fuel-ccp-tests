@@ -12,11 +12,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 import copy
-import subprocess
 import os
 
 import yaml
 
+from fuel_ccp_tests.helpers import exceptions
+from fuel_ccp_tests.helpers import _subprocess_runner
 from fuel_ccp_tests import logger
 from fuel_ccp_tests import settings
 from fuel_ccp_tests.managers.k8s import cluster
@@ -36,7 +37,8 @@ class K8SManager(object):
         super(K8SManager, self).__init__()
 
     def install_k8s(self, custom_yaml=None, env_var=None,
-                    k8s_admin_ip=None, k8s_slave_ips=None):
+                    k8s_admin_ip=None, k8s_slave_ips=None,
+                    expected_ec=None, verbose=True):
         """Action to deploy k8s by fuel-ccp-installer script
 
         Additional steps:
@@ -72,7 +74,29 @@ class K8SManager(object):
         if env_var:
             environment_variables.update(env_var)
         current_env.update(dict=environment_variables)
-        self.deploy_k8s(environ=current_env)
+
+        # TODO(ddmitriev): replace with check_call(...,env=current_env)
+        # when migrate to fuel-devops-3.0.2
+        environ_str = ';'.join([
+            "export {0}='{1}'".format(key, value)
+            for key, value in current_env.items()])
+        cmd = environ_str + ' ; ' + settings.DEPLOY_SCRIPT
+
+        LOG.info("Run k8s deployment")
+
+        # Use Subprocess.execute instead of Subprocess.check_call until
+        # check_call is not fixed (fuel-devops3.0.2)
+        result = _subprocess_runner.Subprocess.execute(cmd, verbose=verbose,
+                                                       timeout=2400)
+        if expected_ec is None:
+            expected_ec = [0]
+        if result.exit_code not in expected_ec:
+            raise exceptions.UnexpectedExitCode(
+                cmd,
+                result.exit_code,
+                expected_ec,
+                stdout=result.stdout_brief,
+                stderr=result.stdout_brief)
 
         for node_name in k8s_nodes:
             with self.__underlay.remote(node_name=node_name) as remote:
@@ -81,20 +105,7 @@ class K8SManager(object):
 
         self.__config.k8s.kube_host = k8s_admin_ip
 
-    @classmethod
-    def deploy_k8s(cls, environ=os.environ):
-        """Base action to deploy k8s by external deployment script"""
-        LOG.info("Run k8s deployment")
-        try:
-            process = subprocess.Popen([settings.DEPLOY_SCRIPT],
-                                       env=environ,
-                                       shell=True,
-                                       bufsize=0,
-                                       )
-            assert process.wait() == 0
-        except (SystemExit, KeyboardInterrupt) as err:
-            process.terminate()
-            raise err
+        return result
 
     def get_k8sclient(self, default_namespace=None):
         k8sclient = cluster.K8sCluster(

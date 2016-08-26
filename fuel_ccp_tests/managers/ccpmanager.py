@@ -39,8 +39,10 @@ class CCPManager(object):
             ccp_repo_url = settings.CCP_REPO
             cmd = ('pip install --upgrade git+{}'.format(ccp_repo_url))
             with remote.get_sudo(remote):
-                # TODO(ddmitriev): log output
-                remote.check_call(cmd, verbose=True)
+                LOG.debug("*** Run cmd={0}".format(cmd))
+                result = remote.check_call(cmd, verbose=True)
+                LOG.debug("*** Result STDOUT:\n{0}".format(result.stdout_str))
+                LOG.debug("*** Result STDERR:\n{0}".format(result.stderr_str))
 
     @classmethod
     def build_command(cls, *args, **kwargs):
