@@ -118,7 +118,7 @@ class K8SManager(object):
             host=self.__config.k8s.kube_host)
         return k8sclient
 
-    def create_registry(self):
+    def create_registry(self, node_name=None):
         registry_pod = os.getcwd() + '/fuel_ccp_tests/templates/' \
                                      'registry_templates/registry-pod.yaml'
         service_registry = os.getcwd() + '/fuel_ccp_tests/templates/' \
@@ -126,7 +126,8 @@ class K8SManager(object):
                                          'service-registry.yaml'
 
         with self.__underlay.remote(
-                host=self.__config.k8s.kube_host) as remote:
+                host=self.__config.k8s.kube_host,
+                node_name=node_name) as remote:
 
             for item in registry_pod, service_registry:
                 remote.upload(item, './')
