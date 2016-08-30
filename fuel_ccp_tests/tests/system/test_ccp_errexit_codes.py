@@ -19,6 +19,7 @@ from fuel_ccp_tests.logger import logger
 
 @pytest.yield_fixture(scope='module')
 def admin_node(config, underlay, ccpcluster):
+    """Return <remote> object to k8s admin node"""
     logger.info("Get SSH access to admin node")
     with underlay.remote(host=config.k8s.kube_host) as remote:
         yield remote
@@ -29,8 +30,14 @@ def clean_repos(node):
     node.execute(cmd, verbose=True)
 
 
+@pytest.mark.ccp_cli_errexit_codes
+@pytest.mark.ccp_cli_error_in_fetch
 class TestCppCliErrorInFetch(object):
-    """Check exit codes when fetch is failing"""
+    """Check exit codes when fetch is failing
+
+       pytest.mark: ccp_cli_error_in_fetch
+       module pytest.mark: ccp_cli_errexit_codes
+    """
 
     @pytest.mark.fail_snapshot
     def test_wrong_repo_name(self, admin_node):
@@ -52,8 +59,14 @@ class TestCppCliErrorInFetch(object):
         clean_repos(admin_node)
 
 
-class TestCppCliBuild(object):
-    """Check exit codes when build is failing"""
+@pytest.mark.ccp_cli_errexit_codes
+@pytest.mark.ccp_cli_build_exit_code
+class TestCppCliBuildExitCode(object):
+    """Check exit codes when build is failing
+
+       pytest.mark: ccp_cli_build_exit_code
+       module pytest.mark: ccp_cli_errexit_codes
+    """
 
     @pytest.mark.fail_snapshot
     def test_nonexistent_repo_name(self, admin_node):
@@ -73,8 +86,14 @@ class TestCppCliBuild(object):
         clean_repos(admin_node)
 
 
+@pytest.mark.ccp_cli_errexit_codes
+@pytest.mark.ccp_cli_deploy_exit_code
 class TestCppCliDeploy(object):
-    """Check exit codes when deploy is failing"""
+    """Check exit codes when deploy is failing
+
+       pytest.mark: ccp_cli_deploy_exit_code
+       module pytest.mark: ccp_cli_errexit_codes
+    """
 
     @pytest.mark.fail_snapshot
     def test_nonexistent_repo_name(self, admin_node):
