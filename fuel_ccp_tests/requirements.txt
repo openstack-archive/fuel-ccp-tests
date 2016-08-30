@@ -8,4 +8,4 @@ docker-py
 docker-compose==1.7.1
 urllib3
 psycopg2
-git+git://github.com/openstack/python-k8sclient.git@c8852d9
+python-k8sclient==0.3.0
