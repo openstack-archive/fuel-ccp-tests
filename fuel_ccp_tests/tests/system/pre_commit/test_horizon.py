@@ -38,6 +38,9 @@ class TestServiceHorizon(object):
     def test_horizon_component(self, config, underlay,
                                k8scluster, ccpcluster):
         """Horizon pre-commit test
+
+        pytest.mark: horizon_component
+
         Scenario:
         1. Fetch all repos
         2. Update horizon source form local path
