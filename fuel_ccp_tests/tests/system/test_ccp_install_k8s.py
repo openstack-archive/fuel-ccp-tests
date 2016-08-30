@@ -225,3 +225,153 @@ class TestFuelCCPInstaller(base_test.SystemBaseTest,
         pod = self.check_pod_create(body=nginx, k8sclient=k8sclient)
         self.check_nginx_pod_is_reached(underlay, pod.status.pod_ip)
         self.check_pod_delete(pod, k8sclient)
+
+
+@pytest.mark.fuel_ccp_installer_idempotency
+class TestFuelCCPInstallerIdempotency(base_test.SystemBaseTest,
+                                      FuelCCPInstallerConfigMixin):
+
+    @staticmethod
+    def get_ansible_changes_count(stdout_str):
+        offset = 0
+        result = 0
+        while "changed=" in stdout_str[offset:]:
+            offset = stdout_str.find("changed=", offset) + 8
+            changed = stdout_str[offset: stdout_str.find(" ", offset)]
+            result += int(changed)
+        return result
+
+    @pytest.mark.ccp_idempotency_default
+    @pytest.mark.snapshot_needed
+    @pytest.mark.revert_snapshot(ext.SNAPSHOT.initial)
+    @pytest.mark.fail_snapshot
+    def test_k8s_ccp_idempotency_default(self, config, underlay, k8s_actions):
+        """Test for deploying an k8s environment and check it
+
+        pytest.mark: k8s_installed_default
+
+        Scenario:
+            1. Install k8s.
+            2. Check number of nodes.
+            3. Basic check of running containers on nodes.
+            4. Check requirement base settings.
+            5. Create nginx pod.
+            6. Check created pod is reached
+            7. Delete pod.
+        """
+        result = k8s_actions.install_k8s(verbose=False)
+        changed = self.get_ansible_changes_count(result.stdout_str)
+        assert changed != 0, "No changes during k8s install!"
+        result = k8s_actions.install_k8s(verbose=False)
+        changed = self.get_ansible_changes_count(result.stdout_str)
+        assert changed == 0, (
+            "Should be no changes during the second install "
+            "of k8s while there are '{0}' changes!".format(changed))
+
+    @pytest.mark.ccp_idempotency_with_etcd_on_host
+    @pytest.mark.snapshot_needed
+    @pytest.mark.revert_snapshot(ext.SNAPSHOT.initial)
+    @pytest.mark.fail_snapshot
+    def test_ccp_idempotency_with_etcd_on_host(self, config, underlay,
+                                               k8s_actions):
+        """Test for deploying an k8s environment and check it
+
+        pytest.mark: k8s_installed_with_etcd_on_host
+
+        Scenario:
+            1. Install k8s with forced etcd on host.
+            2. Check number of nodes.
+            3. Basic check of running containers on nodes.
+            4. Check requirement base settings.
+            5. Create nginx pod.
+            6. Check created pod is reached
+            7. Delete pod.
+        """
+        kube_settings = dict()
+        kube_settings.update(self.kube_settings)
+        kube_settings.update({
+            'etcd_deployment_type': 'host',
+            'kube_network_plugin': 'calico'
+        })
+        result = k8s_actions.install_k8s(custom_yaml=kube_settings,
+                                         verbose=False)
+        changed = self.get_ansible_changes_count(result.stdout_str)
+        assert changed != 0, "No changes during k8s install!"
+        result = k8s_actions.install_k8s(custom_yaml=kube_settings,
+                                         verbose=False)
+        changed = self.get_ansible_changes_count(result.stdout_str)
+        assert changed == 0, (
+            "Should be no changes during the second install "
+            "of k8s while there are '{0}' changes!".format(changed))
+
+    @pytest.mark.ccp_idempotency_with_etcd_in_container
+    @pytest.mark.snapshot_needed
+    @pytest.mark.revert_snapshot(ext.SNAPSHOT.initial)
+    @pytest.mark.fail_snapshot
+    def test_ccp_idempotency_with_etcd_in_container(self, config, underlay,
+                                                    k8s_actions):
+        """Test for deploying an k8s environment and check it
+
+        pytest.mark: k8s_installed_with_etcd_in_container
+
+        Scenario:
+            1. Install k8s with forced etcd in container.
+            2. Check number of nodes.
+            3. Basic check of running containers on nodes.
+            4. Check requirement base settings.
+            5. Create nginx pod.
+            6. Check created pod is reached
+            7. Delete pod.
+        """
+        kube_settings = dict()
+        kube_settings.update(self.kube_settings)
+        kube_settings.update({
+            'etcd_deployment_type': 'docker',
+            'kube_network_plugin': 'calico',
+            'etcd_image_repo': settings.ETCD_IMAGE_REPO,
+            'etcd_image_tag': settings.ETCD_IMAGE_TAG,
+        })
+        result = k8s_actions.install_k8s(custom_yaml=kube_settings,
+                                         verbose=False)
+        changed = self.get_ansible_changes_count(result.stdout_str)
+        assert changed != 0, "No changes during k8s install!"
+        result = k8s_actions.install_k8s(custom_yaml=kube_settings,
+                                         verbose=False)
+        changed = self.get_ansible_changes_count(result.stdout_str)
+        assert changed == 0, (
+            "Should be no changes during the second install "
+            "of k8s while there are '{0}' changes!".format(changed))
+
+    @pytest.mark.ccp_idempotency_with_ready_ssh_keys
+    @pytest.mark.snapshot_needed
+    @pytest.mark.revert_snapshot(ext.SNAPSHOT.initial)
+    @pytest.mark.fail_snapshot
+    def test_ccp_idempotency_with_ready_ssh_keys(self, ssh_keys_dir,
+                                                 config, underlay,
+                                                 k8s_actions):
+        """Test for deploying an k8s environment and check it
+
+        pytest.mark: k8s_installed_with_ready_ssh_keys
+
+        Scenario:
+            1. Install k8s (with prepared ssh keys).
+            2. Check number of nodes.
+            3. Basic check of running containers on nodes.
+            4. Check requirement base settings.
+            5. Create nginx pod.
+            6. Check created pod is reached
+            7. Delete pod.
+        """
+        add_var = {
+            "WORKSPACE": ssh_keys_dir
+        }
+        result = k8s_actions.install_k8s(env_var=add_var,
+                                         verbose=False)
+        changed = self.get_ansible_changes_count(result.stdout_str)
+        assert changed != 0, "No changes during k8s install!"
+        result = k8s_actions.install_k8s(env_var=add_var,
+                                         verbose=False)
+        changed = self.get_ansible_changes_count(result.stdout_str)
+        assert changed == 0, (
+            "Should be no changes during the second install "
+            "of k8s while there are '{0}' changes!".format(changed))
