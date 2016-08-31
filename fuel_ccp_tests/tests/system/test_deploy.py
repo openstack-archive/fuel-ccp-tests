@@ -108,5 +108,5 @@ class TestDeployOpenstack(base_test.SystemBaseTest):
             ccpcluster.do_deploy(*params_list, **params_dict)
         post_os_deploy_checks.check_jobs_status(k8sclient, timeout=1500,
                                                 namespace='ccp')
-        post_os_deploy_checks.check_pods_status(k8sclient, timeout=1500,
+        post_os_deploy_checks.check_pods_status(k8sclient, timeout=2500,
                                                 namespace='ccp')
