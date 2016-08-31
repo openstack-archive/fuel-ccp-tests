@@ -25,6 +25,7 @@ from fuel_ccp_tests.helpers import ext
 LOG = logger.logger
 
 
+@pytest.mark.revert_snapshot(ext.SNAPSHOT.ccp_deployed)
 class TestDeployOpenstack(base_test.SystemBaseTest):
     """Create VMs for mcpinstaller"""
     snapshot_microservices_deployed = 'snapshot_microservices_deployed'
@@ -63,7 +64,6 @@ class TestDeployOpenstack(base_test.SystemBaseTest):
             assert result['exit_code'] == 0
 
     @pytest.mark.snapshot_needed(name=snapshot_microservices_deployed)
-    @pytest.mark.revert_snapshot(ext.SNAPSHOT.initial)
     @pytest.mark.fail_snapshot
     def test_fuel_ccp_deploy_microservices(self, config, underlay, ccpcluster,
                                            k8scluster):
