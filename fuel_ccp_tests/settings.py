@@ -91,6 +91,6 @@ DEFAULT_CUSTOM_YAML = {
 BUILD_IMAGES = get_var_as_bool('BUILD_IMAGES', True)
 REGISTRY = os.environ.get('REGISTRY', None)
 IMAGES_NAMESPACE = os.environ.get('IMAGES_NAMESPACE', 'mcp')
-IMAGES_TAG = os.environ.get('IMAGES_TAG', 'test_latest')
+IMAGES_TAG = os.environ.get('IMAGES_TAG', 'latest')
 UPSTREAM_DNS = os.environ.get('UPSTREAM_DNS', '8.8.8.8').split(',')
 SERVICE_PATH = os.environ.get('SERVICE_PATH')
