@@ -51,7 +51,9 @@ class K8sCluster(object):
     """docstring for K8sCluster"""
 
     def __init__(self, schema="https", user=None, password=None,
-                 host='localhost', port='443', default_namespace='default'):
+                 host='localhost', port='443', default_namespace=None):
+        if default_namespace is None:
+            default_namespace = 'default'
         if user and password:
             auth = base64.encodestring('%s:%s' % (user, password))[:-1]
             auth = "Basic {}".format(auth)
