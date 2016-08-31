@@ -18,4 +18,5 @@ pytest_plugins = ['fuel_ccp_tests.fixtures.common_fixtures',
                   'fuel_ccp_tests.fixtures.k8s_fixtures',
                   'fuel_ccp_tests.fixtures.rally_fixtures',
                   'fuel_ccp_tests.fixtures.ccp_fixtures',
-                  'fuel_ccp_tests.fixtures.influxdb_fixtures']
+                  'fuel_ccp_tests.fixtures.influxdb_fixtures',
+                  'fuel_ccp_tests.fixtures.os_fixtures']
