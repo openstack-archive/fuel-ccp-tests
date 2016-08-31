@@ -16,10 +16,11 @@ import pytest
 
 from fuel_ccp_tests.helpers import ext
 from fuel_ccp_tests import settings
+from fuel_ccp_tests import settings_oslo
 from fuel_ccp_tests.managers import k8smanager
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='function')
 def k8s_actions(config, underlay):
     """Fixture that provides various actions for K8S
 
@@ -32,8 +33,9 @@ def k8s_actions(config, underlay):
     return k8smanager.K8SManager(config, underlay)
 
 
-@pytest.fixture(scope='session')
-def k8scluster(request, config, hardware, underlay, k8s_actions):
+@pytest.fixture(scope='function')
+def k8scluster(revert_snapshot_name, request, config,
+               hardware, underlay, k8s_actions):
     """Fixture to get or install k8s on environment
 
     :param request: fixture provides pytest data
@@ -56,11 +58,38 @@ def k8scluster(request, config, hardware, underlay, k8s_actions):
     If you want to revert 'k8s_deployed' snapshot, please use mark:
     @pytest.mark.revert_snapshot("k8s_deployed")
     """
+    if revert_snapshot_name and hardware.has_snapshot(revert_snapshot_name):
+        # Load 'config' object from 'config_<revert_snapshot_name>.ini' file
+        settings_oslo.reload_snapshot_config(config, revert_snapshot_name)
+
+        if revert_snapshot_name == ext.SNAPSHOT.k8s_deployed:
+            hardware.revert_snapshot(ext.SNAPSHOT.k8s_deployed)
+
+            # Try to guess environment config for reverted snapshot
+            if config.k8s.kube_host is None:
+                config.k8s.kube_host = underlay.host_by_node_name(
+                    underlay.node_names()[0])
+                settings_oslo.save_config(config, ext.SNAPSHOT.k8s_deployed)
 
     if config.k8s.kube_host is None:
         kube_settings = getattr(request.instance, 'kube_settings',
                                 settings.DEFAULT_CUSTOM_YAML)
         k8s_actions.install_k8s(custom_yaml=kube_settings)
-        hardware.create_snapshot(ext.SNAPSHOT.k8s_deployed)
+        # Save 'config' object to 'config_k8s_deployed.ini' file
+        settings_oslo.save_config(config, ext.SNAPSHOT.k8s_deployed)
+
+        if not hardware.has_snapshot(ext.SNAPSHOT.k8s_deployed):
+            hardware.create_snapshot(ext.SNAPSHOT.k8s_deployed)
+        else:
+            # TODO(ddmitriev): consider if the previous snapshot should be
+            # removed or not?
+            pass
+    else:
+        # 1. hardware environment created and powered on
+        # 2. config.underlay.ssh contains SSH access to provisioned nodes
+        #    (can be passed from external config with TESTS_CONFIGS variable)
+        # 3. config.k8s.* options contain access credentials to the already
+        #    installed k8s API endpoint
+        pass
 
     return k8s_actions

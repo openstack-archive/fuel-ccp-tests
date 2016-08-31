@@ -30,6 +30,8 @@ LOG = logger.logger
 class EnvironmentManager(object):
     """Class-helper for creating VMs via devops environments"""
 
+    __config = None
+
     def __init__(self, config=None):
         """Initializing class instance and create the environment
 
@@ -52,9 +54,6 @@ class EnvironmentManager(object):
         except error.DevopsObjNotFound:
             LOG.info("Environment doesn't exist, creating a new one")
             self._create_environment()
-            self.create_snapshot(config.hardware.current_snapshot)
-            LOG.info("Environment created with initial snapshot: {}"
-                     .format(config.hardware.current_snapshot))
 
     @property
     def _devops_config(self):
@@ -168,12 +167,12 @@ class EnvironmentManager(object):
             )
             raise exceptions.EnvironmentAlreadyExists(env_name)
         self._env.define()
-        self._start_environment()
+
         LOG.info(
             'Environment "{0}" created and started'.format(env_name)
         )
 
-    def _start_environment(self):
+    def start(self):
         """Method for start environment
 
         """
