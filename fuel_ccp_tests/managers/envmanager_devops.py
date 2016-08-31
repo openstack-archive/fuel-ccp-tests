@@ -16,19 +16,22 @@ from devops import error
 from devops.helpers import helpers
 from devops import models
 from django import db
+from oslo_config import cfg
 
 from fuel_ccp_tests import settings
+from fuel_ccp_tests import settings_oslo
 from fuel_ccp_tests.helpers import env_config
 from fuel_ccp_tests.helpers import ext
 from fuel_ccp_tests.helpers import exceptions
 from fuel_ccp_tests import logger
-
 
 LOG = logger.logger
 
 
 class EnvironmentManager(object):
     """Class-helper for creating VMs via devops environments"""
+
+    __config = None
 
     def __init__(self, config=None):
         """Initializing class instance and create the environment
@@ -52,9 +55,6 @@ class EnvironmentManager(object):
         except error.DevopsObjNotFound:
             LOG.info("Environment doesn't exist, creating a new one")
             self._create_environment()
-            self.create_snapshot(config.hardware.current_snapshot)
-            LOG.info("Environment created with initial snapshot: {}"
-                     .format(config.hardware.current_snapshot))
 
     @property
     def _devops_config(self):
@@ -117,6 +117,9 @@ class EnvironmentManager(object):
     def create_snapshot(self, name, description=None):
         """Create named snapshot of current env.
 
+        - Create a libvirt snapshots for all nodes in the environment
+        - Save 'config' object to a file 'config_<name>.ini'
+
         :name: string
         """
         LOG.info("Creating snapshot named '{0}'".format(name))
@@ -127,9 +130,15 @@ class EnvironmentManager(object):
             self._env.resume()
         else:
             raise exceptions.EnvironmentIsNotSet()
+        settings_oslo.save_config(self.__config, name)
 
     def revert_snapshot(self, name):
         """Revert snapshot by name
+
+        - Revert a libvirt snapshots for all nodes in the environment
+        - Try to reload 'config' object from a file 'config_<name>.ini'
+          If the file not found, then pass with defaults.
+        - Set <name> as the current state of the environment after reload
 
         :param name: string
         """
@@ -140,6 +149,13 @@ class EnvironmentManager(object):
             self._env.resume()
         else:
             raise exceptions.EnvironmentIsNotSet()
+
+        try:
+            settings_oslo.reload_snapshot_config(self.__config, name)
+        except cfg.ConfigFilesNotFoundError as conf_err:
+            LOG.error("Config file(s) {0} not found!".format(
+                conf_err.config_files))
+
         self.__config.hardware.current_snapshot = name
 
     def _create_environment(self):
@@ -168,12 +184,12 @@ class EnvironmentManager(object):
             )
             raise exceptions.EnvironmentAlreadyExists(env_name)
         self._env.define()
-        self._start_environment()
+
         LOG.info(
             'Environment "{0}" created and started'.format(env_name)
         )
 
-    def _start_environment(self):
+    def start(self):
         """Method for start environment
 
         """
