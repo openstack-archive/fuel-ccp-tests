@@ -33,7 +33,7 @@ class TestServiceHorizon(object):
      /horizon-master/openstack_dashboard/test/integration_tests
     '''.format(registry=settings.REGISTRY, tag='ccp')
 
-    @pytest.mark.revert_snapshot(ext.SNAPSHOT.initial)
+    @pytest.mark.revert_snapshot(ext.SNAPSHOT.ccp_deployed)
     @pytest.mark.horizon_component
     def test_horizon_component(self, config, underlay,
                                k8scluster, ccpcluster):

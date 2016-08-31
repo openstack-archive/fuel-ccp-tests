@@ -33,7 +33,7 @@ NETWORK_TYPE = enum(
 )
 
 SNAPSHOT = enum(
-    'initial',
+    'underlay',
     'k8s_deployed',
     'ccp_deployed',
 )
