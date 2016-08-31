@@ -36,7 +36,8 @@ def check_pods_status(k8sclient, timeout=600, namespace='ccp'):
         predicate = is_pod_running(k8sclient, pod_name)
         helpers.wait(predicate, timeout=timeout,
                      timeout_msg='Timeout waiting, pod {0}'
-                     'is not in \"Running\" state'.format(pod_name))
+                     'is not in \"Running\" state'.format(
+                         pod_name))
 
 
 # TODO: replace check with deployment status request
