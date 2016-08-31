@@ -12,9 +12,15 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from oslo_config import cfg
+
+from fuel_ccp_tests import settings_oslo
+
 
 class EnvironmentManagerEmpty(object):
     """Class-helper for creating VMs via devops environments"""
+
+    __config = None
 
     def __init__(self, config=None):
         """Initializing class instance and create the environment
@@ -31,13 +37,38 @@ class EnvironmentManagerEmpty(object):
                         "Please provide SSH details in config.underlay.ssh")
 
     def create_snapshot(self, name, description=None):
+        """Store environmetn state into the config object
+
+        - Store the state of the environment <name> to the 'config' object
+        - Save 'config' object to a file 'config_<name>.ini'
+        """
         self.__config.hardware.current_snapshot = name
+        settings_oslo.save_config(self.__config, name)
 
     def revert_snapshot(self, name):
+        """Check the current state <name> of the environment
+
+        - Check that the <name> matches the current state of the environment
+          that is stored in the 'self.__config.hardware.current_snapshot'
+        - Try to reload 'config' object from a file 'config_<name>.ini'
+          If the file not found, then pass with defaults.
+        - Set <name> as the current state of the environment after reload
+
+        :param name: string
+        """
         if self.__config.hardware.current_snapshot != name:
             raise Exception(
                 "EnvironmentManagerEmpty cannot revert nodes from {} to {}"
                 .format(self.__config.hardware.current_snapshot, name))
+        try:
+            settings_oslo.reload_snapshot_config(self.__config, name)
+        except cfg.ConfigFilesNotFoundError:
+            pass
+        self.__config.hardware.current_snapshot = name
+
+    def start(self):
+        """Start environment"""
+        pass
 
     def resume(self):
         """Resume environment"""

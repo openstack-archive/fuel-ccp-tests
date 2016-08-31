@@ -14,10 +14,11 @@
 
 import pytest
 
+from fuel_ccp_tests.helpers import ext
 from fuel_ccp_tests.logger import logger
 
 
-@pytest.yield_fixture(scope='module')
+@pytest.yield_fixture(scope='function')
 def admin_node(config, underlay, ccpcluster):
     logger.info("Get SSH access to admin node")
     with underlay.remote(host=config.k8s.kube_host) as remote:
@@ -29,6 +30,7 @@ def clean_repos(node):
     node.execute(cmd, verbose=True)
 
 
+@pytest.mark.revert_snapshot(ext.SNAPSHOT.ccp_deployed)
 class TestCppCliErrorInFetch(object):
     """Check exit codes when fetch is failing"""
 
@@ -52,6 +54,7 @@ class TestCppCliErrorInFetch(object):
         clean_repos(admin_node)
 
 
+@pytest.mark.revert_snapshot(ext.SNAPSHOT.ccp_deployed)
 class TestCppCliBuild(object):
     """Check exit codes when build is failing"""
 
@@ -73,6 +76,7 @@ class TestCppCliBuild(object):
         clean_repos(admin_node)
 
 
+@pytest.mark.revert_snapshot(ext.SNAPSHOT.ccp_deployed)
 class TestCppCliDeploy(object):
     """Check exit codes when deploy is failing"""
 

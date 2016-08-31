@@ -17,7 +17,7 @@ from fuel_ccp_tests.helpers import ext
 from fuel_ccp_tests.managers import ccpmanager
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='function')
 def ccp_actions(config, underlay):
     """Fixture that provides various actions for CCP
 
@@ -30,8 +30,9 @@ def ccp_actions(config, underlay):
     return ccpmanager.CCPManager(config, underlay)
 
 
-@pytest.fixture(scope='session')
-def ccpcluster(config, hardware, underlay, k8scluster, ccp_actions):
+@pytest.fixture(scope='function')
+def ccpcluster(revert_snapshot, config, hardware,
+               underlay, k8scluster, ccp_actions):
     """Fixture to get or install fuel-ccp on k8s environment
 
     :param config: fixture provides oslo.config
@@ -54,9 +55,25 @@ def ccpcluster(config, hardware, underlay, k8scluster, ccp_actions):
     If you want to revert 'ccp_deployed' snapshot, please use mark:
     @pytest.mark.revert_snapshot("ccp_deployed")
     """
+    # Try to guess environment config for reverted snapshot
+    if revert_snapshot and config.ccp.os_host is None:
+        config.ccp.os_host = config.k8s.kube_host
+
+    # Install CCP
     if config.ccp.os_host is None:
         ccp_actions.install_ccp()
-        config.ccp.os_host = "TODO: get OpenStack endpoints"
+        config.ccp.os_host = config.k8s.kube_host
+
         hardware.create_snapshot(ext.SNAPSHOT.ccp_deployed)
+
+    else:
+        # 1. hardware environment created and powered on
+        # 2. config.underlay.ssh contains SSH access to provisioned nodes
+        #    (can be passed from external config with TESTS_CONFIGS variable)
+        # 3. config.k8s.* options contain access credentials to the already
+        #    installed k8s API endpoint
+        # 4. config.ccp.os_host contains an IP address of CCP admin node
+        #    (not used yet)
+        pass
 
     return ccp_actions
