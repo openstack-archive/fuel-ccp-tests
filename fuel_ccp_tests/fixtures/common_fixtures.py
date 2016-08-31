@@ -64,3 +64,17 @@ def pytest_runtest_teardown(item):
     foot = "\n" + "<" * 5 + "#" * 30 + "[ {} ]" + "#" * 30 + ">" * 5
     foot = foot.format(finish_step)
     LOG.info(foot)
+
+
+@pytest.fixture(scope='function')
+def revert_snapshot_name(request):
+    """Extract snapshot name from mark
+    """
+    revert_snapshot = request.keywords.get('revert_snapshot', None)
+    snapshot_name = None
+    if revert_snapshot:
+        if len(revert_snapshot.args) > 0:
+            snapshot_name = revert_snapshot.args[0]
+        elif 'name' in revert_snapshot.kwargs:
+            snapshot_name = revert_snapshot.kwargs['name']
+    return snapshot_name

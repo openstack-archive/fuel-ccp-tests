@@ -16,6 +16,8 @@
 class EnvironmentManagerEmpty(object):
     """Class-helper for creating VMs via devops environments"""
 
+    __config = None
+
     def __init__(self, config=None):
         """Initializing class instance and create the environment
 
