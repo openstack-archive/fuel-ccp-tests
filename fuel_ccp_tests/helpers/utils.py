@@ -19,11 +19,14 @@ import paramiko
 import shutil
 import tempfile
 import traceback
-
 import yaml
 
+from devops.helpers import helpers
 from fuel_ccp_tests import logger
 from fuel_ccp_tests import settings
+from elasticsearch import Elasticsearch
+
+from fuel_ccp_tests.helpers import ext
 
 LOG = logger.logger
 
@@ -151,3 +154,98 @@ def generate_keys():
 
 def clean_dir(dirpath):
     shutil.rmtree(dirpath)
+
+
+class ElasticClient(object):
+    def __init__(self, host='localhost', port=9200):
+        self.es = Elasticsearch([{'host': '{}'.format(host),
+                                  'port': port}])
+        self.host = host
+        self.port = port
+
+    def find(self, key, value):
+        LOG.info('Search for {} for {}'.format(key, value))
+        search_request_body = '{' +\
+            '  "query": {' +\
+            '   "simple_query_string": {' +\
+            '     "query": "{}",'.format(value) +\
+            '     "analyze_wildcard" : "true",' +\
+            '     "fields" : ["{}"],'.format(key) +\
+            '     "default_operator": "AND"' +\
+            '     }' +\
+            ' },' +\
+            '  "size": 1' +\
+            '}'
+        LOG.info('Search by {}'.format(search_request_body))
+
+        def is_found():
+            def temporary_status():
+                res = self.es.search(index='_all', body=search_request_body)
+                return res['hits']['total'] != 0
+            return temporary_status
+
+        predicate = is_found()
+        helpers.wait(predicate, timeout=300,
+                     timeout_msg='Timeout waiting, result from elastic')
+
+        es_raw = self.es.search(index='_all', body=search_request_body)
+        if es_raw['timed_out']:
+            raise RuntimeError('Elastic search timeout exception')
+
+        return ElasticSearchResult(key, value, es_raw['hits']['total'], es_raw)
+
+
+class ElasticSearchResult(object):
+    def __init__(self, key, value, count, raw):
+        self.key = key
+        self.value = value
+        self.count = count
+        self.raw = raw
+        if self.count != 0:
+            self.items = raw['hits']['hits']
+
+    def get(self, index):
+        if self.count != 0:
+            return self.items[index]['_source']
+        else:
+            None
+
+
+def create_file(node, pod, path, size,
+                namespace=ext.Namespace.BASE_NAMESPACE):
+    node.check_call(
+        'kubectl exec {} --namespace={} {}'.format(
+            pod.name,
+            namespace,
+            'dd -- if=/dev/zero -- of={} bs=1MB count={}'.format(path, size)),
+        expected=[ext.ExitCodes.EX_OK])
+
+
+def run_daily_cron(node, pod, task,
+                   namespace=ext.Namespace.BASE_NAMESPACE):
+    node.check_call(
+        'kubectl exec {} --namespace={} {}'.format(
+            pod.name,
+            namespace,
+            '/etc/cron.daily/{}'.format(task)),
+        expected=[ext.ExitCodes.EX_OK])
+
+
+def list_files(node, pod, path, mask,
+               namespace=ext.Namespace.BASE_NAMESPACE):
+    return "".join(node.check_call(
+        'kubectl exec {} --namespace={} {}'.format(
+            pod.name,
+            namespace,
+            'find {} -- -iname {}'.format(path, mask)),
+        expected=[ext.ExitCodes.EX_OK])['stdout']) \
+        .replace('\n', ' ').strip().split(" ")
+
+
+def rm_files(node, pod, path,
+             namespace=ext.Namespace.BASE_NAMESPACE):
+    node.execute(
+        'kubectl exec {} --namespace={} {}'.format(
+            pod.name,
+            namespace,
+            'rm -- {}'.format(path)))
