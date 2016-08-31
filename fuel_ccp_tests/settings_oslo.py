@@ -113,6 +113,11 @@ ccp_opts = [
            help="", default='0.0.0.0'),
 ]
 
+os_opts = [
+    ct.Cfg('running', ct.Boolean(),
+           help="", default=False),
+]
+
 
 _group_opts = [
     ('hardware', hardware_opts),
@@ -121,6 +126,7 @@ _group_opts = [
     ('k8s', k8s_opts),
     ('ccp_deploy', ccp_deploy_opts),
     ('ccp', ccp_opts),
+    ('os', os_opts),
 ]
 
 
@@ -148,6 +154,10 @@ def register_opts(config):
     config.register_group(cfg.OptGroup(name='ccp',
                           title="CCP config and credentials", help=""))
     config.register_opts(group='ccp', opts=ccp_opts)
+
+    config.register_group(cfg.OptGroup(name='os',
+                          title="Openstack config and credentials", help=""))
+    config.register_opts(group='os', opts=os_opts)
     return config
 
 
