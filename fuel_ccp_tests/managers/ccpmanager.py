@@ -11,6 +11,7 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+import os
 
 from fuel_ccp_tests.helpers import exceptions
 from fuel_ccp_tests import settings
@@ -44,7 +45,8 @@ class CCPManager(object):
 
     @classmethod
     def build_command(cls, *args, **kwargs):
-        command_list = ['ccp']
+        base_command = kwargs.pop('base_command', 'ccp')
+        command_list = [base_command]
         for arg in args:
             command_list.append('--{}'.format(arg.replace('_', '-')))
         for key in kwargs:
@@ -93,3 +95,30 @@ class CCPManager(object):
             remote.upload(
                 settings.SERVICE_PATH,
                 "./microservices-repos/")
+
+    def do_dry_run(self, *args, **kwargs):
+        try:
+            export_dir = kwargs.pop("export_dir")
+        except KeyError:
+            raise ValueError("Variable 'export_dir' is not set")
+        command_list = [
+            self.build_command(*args, **kwargs),
+            "deploy",
+            "--dry-run",
+            self.build_command(export_dir=export_dir, base_command='')
+        ]
+        command_list = ' '.join(command_list)
+        command = [
+            command_list,
+            'kubectl create -f {0}/configmaps/ -f {0}'.format(
+                os.path.join('~/', export_dir))
+        ]
+        with self.__underlay.remote(
+                host=self.__config.k8s.kube_host) as remote:
+            for cmd in command:
+                LOG.info("Running command '{cmd}' on node {node}".format(
+                    cmd=cmd,
+                    node=remote.hostname)
+                )
+                result = remote.execute(cmd)
+                assert result['exit_code'] == 0
