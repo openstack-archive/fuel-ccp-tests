@@ -27,7 +27,8 @@ def check_pods_status(k8sclient, timeout=600, namespace='ccp'):
             if pod.status.phase in ['Running', 'Succeeded']:
                 return True
             elif pod.status.phase == "Failed":
-                if pod.status.reason == 'NodeSelectorMismatching':
+                if pod.status.reason == 'NodeSelectorMismatching' \
+                        or 'MatchNodeSelector':
                     return True
             return False
         return temporary_status
@@ -36,7 +37,8 @@ def check_pods_status(k8sclient, timeout=600, namespace='ccp'):
         predicate = is_pod_running(k8sclient, pod_name)
         helpers.wait(predicate, timeout=timeout,
                      timeout_msg='Timeout waiting, pod {0}'
-                     'is not in \"Running\" state'.format(pod_name))
+                     'is not in the \"Running\", \"Succeeded\" state'.format(
+                         pod_name))
 
 
 # TODO: replace check with deployment status request
