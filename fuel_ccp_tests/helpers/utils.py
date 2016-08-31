@@ -19,11 +19,13 @@ import paramiko
 import shutil
 import tempfile
 import traceback
-
 import yaml
 
 from fuel_ccp_tests import logger
 from fuel_ccp_tests import settings
+from elasticsearch import Elasticsearch
+
+from fuel_ccp_tests.helpers import ext
 
 
 LOG = logger.logger
@@ -122,6 +124,16 @@ class TimeStat(object):
         return time.time() - self.begin_time
 
 
+def reduce_occurrences(items, text):
+    for item in items:
+        LOG.debug(
+            "Verifying string {} is shown in "
+            "\"\"\"\n{}\n\"\"\"".format(item, text))
+        assert text.count(item) != 0
+        text = text.replace(item, "", 1)
+    return text
+
+
 def generate_keys():
     key = paramiko.RSAKey.generate(1024)
     public = key.get_base64()
@@ -134,3 +146,87 @@ def generate_keys():
 
 def clean_dir(dirpath):
     shutil.rmtree(dirpath)
+
+
+class ElasticClient(object):
+    def __init__(self, host='localhost', port=9200):
+        self.es = Elasticsearch([{'host': '{}'.format(host),
+                                  'port': port}])
+        self.host = host
+        self.port = port
+
+    def find(self, key, value):
+        logger.debug('Search for {} for {}'.format(key, value))
+        search_request_body = '{' \
+            '  "query": {' \
+            '   "bool": {' \
+            '     "must": {' \
+            '       "match" : {' \
+            '         "{}": "{}"'.format(key, value) +\
+            '       }' \
+            '     }' \
+            '   }' \
+            ' },' \
+            '  "size": 1' \
+            '}'
+        res = self.es.search(index='_all', body=search_request_body)
+        if res['timed_out']:
+            raise RuntimeError('Elastic search timeout exception')
+        return ElasticSearchResult(key, value, res['hits']['total'], raw = res)
+
+
+class ElasticSearchResult(object):
+    def __init__(self, key, value, count, raw):
+        self.key = key
+        self.value = value
+        self.count = count
+        self.raw = raw
+        if self.count != 0:
+            self.items = raw['hits']['hits']
+
+    def get(self, index):
+        if self.count != 0:
+            return self.items[index]['_source']
+        else:
+            raise IndexError('Result not found')
+
+
+def create_file(node, pod, path, size,
+                namespace=ext.Namespace.BASE_NAMESPACE):
+    node.check_call(
+        'kubectl exec {} --namespace={} {}'.format(
+            pod.name,
+            namespace,
+            'dd -- if=/dev/zero -- of={} bs=1MB count={}'.format(path, size)),
+        expected=[ext.ExitCodes.EX_OK])
+
+
+def run_daily_cron(self, node, pod, task,
+                   namespace=ext.Namespace.BASE_NAMESPACE):
+    node.check_call(
+        'kubectl exec {} --namespace={} {}'.format(
+            pod.name,
+            namespace,
+            '/etc/cron.daily/{}'.format(task)),
+        expected=[ext.ExitCodes.EX_OK])
+
+
+def list_files(self,
+               node, pod, path,
+               namespace=ext.Namespace.BASE_NAMESPACE):
+    return "".join(node.check_call(
+        'kubectl exec {} --namespace={} {}'.format(
+            pod.name,
+            namespace,
+            'ls -- {}'.format(path)),
+        expected=[ext.ExitCodes.EX_OK])['stdout']) \
+        .replace('\n', ' ').strip().split(" ")
+
+
+def rm_files(self, node, pod, path,
+             namespace=ext.Namespace.BASE_NAMESPACE):
+    node.execute(
+        'kubectl exec {} --namespace={} {}'.format(
+            pod.name,
+            namespace,
+            'rm -- {}'.format(path)))
