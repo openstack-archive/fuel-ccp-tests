@@ -12,12 +12,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 import os
+
 import pytest
+
 from fuel_ccp_tests import settings_oslo
 
 
 @pytest.fixture(scope='session')
-def config(request):
+def config():
 
     config_files = []
 
