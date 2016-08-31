@@ -14,10 +14,11 @@
 import pytest
 
 from fuel_ccp_tests.helpers import ext
+from fuel_ccp_tests import settings_oslo
 from fuel_ccp_tests.managers import ccpmanager
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='function')
 def ccp_actions(config, underlay):
     """Fixture that provides various actions for CCP
 
@@ -30,8 +31,9 @@ def ccp_actions(config, underlay):
     return ccpmanager.CCPManager(config, underlay)
 
 
-@pytest.fixture(scope='session')
-def ccpcluster(config, hardware, underlay, k8scluster, ccp_actions):
+@pytest.fixture(scope='function')
+def ccpcluster(revert_snapshot_name, config, hardware,
+               underlay, k8scluster, ccp_actions):
     """Fixture to get or install fuel-ccp on k8s environment
 
     :param config: fixture provides oslo.config
@@ -54,9 +56,33 @@ def ccpcluster(config, hardware, underlay, k8scluster, ccp_actions):
     If you want to revert 'ccp_deployed' snapshot, please use mark:
     @pytest.mark.revert_snapshot("ccp_deployed")
     """
+    if revert_snapshot_name and hardware.has_snapshot(revert_snapshot_name):
+        # Load 'config' object from 'config_<revert_snapshot_name>.ini' file
+        settings_oslo.reload_snapshot_config(config, revert_snapshot_name)
+
+        if revert_snapshot_name == ext.SNAPSHOT.ccp_deployed:
+            hardware.revert_snapshot(ext.SNAPSHOT.ccp_deployed)
+
     if config.ccp.os_host is None:
         ccp_actions.install_ccp()
         config.ccp.os_host = "TODO: get OpenStack endpoints"
-        hardware.create_snapshot(ext.SNAPSHOT.ccp_deployed)
+        # Save 'config' object to 'config_ccp_deployed.ini' file
+        settings_oslo.save_config(config, ext.SNAPSHOT.ccp_deployed)
+
+        if not hardware.has_snapshot(ext.SNAPSHOT.ccp_deployed):
+            hardware.create_snapshot(ext.SNAPSHOT.ccp_deployed)
+        else:
+            # TODO(ddmitriev): consider if the previous snapshot should be
+            # removed or not?
+            pass
+    else:
+        # 1. hardware environment created and powered on
+        # 2. config.underlay.ssh contains SSH access to provisioned nodes
+        #    (can be passed from external config with TESTS_CONFIGS variable)
+        # 3. config.k8s.* options contain access credentials to the already
+        #    installed k8s API endpoint
+        # 4. config.ccp.os_host contains an IP address of CCP admin node
+        #    (not used yet)
+        pass
 
     return ccp_actions
