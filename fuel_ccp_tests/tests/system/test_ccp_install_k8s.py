@@ -72,7 +72,6 @@ class TestFuelCCPInstaller(base_test.SystemBaseTest,
         underlay.sudo_check_call(cmd=cmd, node_name=env_node, verbose=True)
 
     @pytest.mark.snapshot_needed
-    @pytest.mark.revert_snapshot(ext.SNAPSHOT.initial)
     @pytest.mark.fail_snapshot
     def test_k8s_installed_default(self, underlay, k8s_actions):
         """Test for deploying an k8s environment and check it
@@ -100,7 +99,7 @@ class TestFuelCCPInstaller(base_test.SystemBaseTest,
         self.check_pod_delete(pod, k8sclient)
 
     @pytest.mark.snapshot_needed
-    @pytest.mark.revert_snapshot(ext.SNAPSHOT.initial)
+    @pytest.mark.revert_snapshot(ext.SNAPSHOT.underlay)
     @pytest.mark.fail_snapshot
     def test_k8s_installed_with_etcd_on_host(self, underlay, k8s_actions):
         """Test for deploying an k8s environment and check it
@@ -139,7 +138,7 @@ class TestFuelCCPInstaller(base_test.SystemBaseTest,
         self.check_pod_delete(pod, k8sclient)
 
     @pytest.mark.snapshot_needed
-    @pytest.mark.revert_snapshot(ext.SNAPSHOT.initial)
+    @pytest.mark.revert_snapshot(ext.SNAPSHOT.underlay)
     @pytest.mark.fail_snapshot
     def test_k8s_installed_with_etcd_in_container(self, underlay, k8s_actions):
         """Test for deploying an k8s environment and check it
@@ -178,7 +177,7 @@ class TestFuelCCPInstaller(base_test.SystemBaseTest,
         self.check_pod_delete(pod, k8sclient)
 
     @pytest.mark.snapshot_needed
-    @pytest.mark.revert_snapshot(ext.SNAPSHOT.initial)
+    @pytest.mark.revert_snapshot(ext.SNAPSHOT.underlay)
     @pytest.mark.fail_snapshot
     def test_k8s_installed_with_ready_ssh_keys(self, ssh_keys_dir,
                                                underlay, k8s_actions):

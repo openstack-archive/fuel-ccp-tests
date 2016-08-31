@@ -16,6 +16,8 @@
 class EnvironmentManagerEmpty(object):
     """Class-helper for creating VMs via devops environments"""
 
+    __config = None
+
     def __init__(self, config=None):
         """Initializing class instance and create the environment
 
@@ -38,6 +40,10 @@ class EnvironmentManagerEmpty(object):
             raise Exception(
                 "EnvironmentManagerEmpty cannot revert nodes from {} to {}"
                 .format(self.__config.hardware.current_snapshot, name))
+
+    def start(self):
+        """Start environment"""
+        pass
 
     def resume(self):
         """Resume environment"""
