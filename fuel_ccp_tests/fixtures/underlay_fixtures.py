@@ -13,6 +13,7 @@
 #    under the License.
 import pytest
 
+from fuel_ccp_tests.helpers import ext
 from fuel_ccp_tests import logger
 from fuel_ccp_tests import settings
 from fuel_ccp_tests.managers import envmanager_devops
@@ -90,27 +91,22 @@ def hardware(request, config):
     return env
 
 
-@pytest.fixture(scope='function', autouse=True)
+@pytest.fixture(scope='function')
 def revert_snapshot(request, hardware):
-    """Fixture to revert environment to snapshot
+    """Extract snapshot name from mark
 
     Marks:
         revert_snapshot - if used this mark with 'name' parameter,
-        use given name as result
+                          use given name as result
 
-    :param request: pytest.python.FixtureRequest
-    :param env: envmanager.EnvironmentManager
+    :rtype string: name of the reverted snapshot or None
     """
     revert_snapshot = request.keywords.get('revert_snapshot', None)
     snapshot_name = extract_name_from_mark(revert_snapshot)
-    if revert_snapshot and snapshot_name:
-        if hardware.has_snapshot(snapshot_name):
-            LOG.info("Reverting snapshot {0}".format(snapshot_name))
-            hardware.revert_snapshot(snapshot_name)
-        else:
-            if revert_snapshot.kwargs.get('strict', True):
-                pytest.fail("Environment doesn't have snapshot "
-                            "named '{}'".format(snapshot_name))
+
+    if snapshot_name and hardware.has_snapshot(snapshot_name):
+        hardware.revert_snapshot(snapshot_name)
+        return snapshot_name
 
 
 @pytest.fixture(scope='function', autouse=True)
@@ -153,8 +149,8 @@ def snapshot(request, hardware):
     request.addfinalizer(test_fin)
 
 
-@pytest.fixture(scope="session")
-def underlay(config, hardware):
+@pytest.fixture(scope="function")
+def underlay(revert_snapshot, config, hardware):
     """Fixture that should provide SSH access to underlay objects.
 
        Input data:
@@ -166,8 +162,27 @@ def underlay(config, hardware):
                                - provide SSH access to underlay nodes using
                                  node names or node IPs.
     """
-
-    if not config.underlay.ssh:
+    # Try to guess environment config for reverted snapshot
+    if revert_snapshot and not config.underlay.ssh:
         config.underlay.ssh = hardware.get_ssh_data()
+
+    # Create Underlay
+    if not config.underlay.ssh:
+        # for devops manager: power on nodes and wait for SSH
+        # for empty manager: do nothing
+        # for maas manager: provision nodes and wait for SSH
+        hardware.start()
+
+        # If config.underlay.ssh wasn't provided from external config, then
+        # try to get necessary data from hardware manager (fuel-devops)
+        config.underlay.ssh = hardware.get_ssh_data()
+
+        hardware.create_snapshot(ext.SNAPSHOT.underlay)
+
+    else:
+        # 1. hardware environment created and powered on
+        # 2. config.underlay.ssh contains SSH access to provisioned nodes
+        #    (can be passed from external config with TESTS_CONFIGS variable)
+        pass
 
     return underlay_ssh_manager.UnderlaySSHManager(config.underlay.ssh)

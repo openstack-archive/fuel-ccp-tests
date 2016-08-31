@@ -26,6 +26,7 @@ LOG = logger.logger
 
 
 @pytest.mark.deploy_openstack
+@pytest.mark.revert_snapshot(ext.SNAPSHOT.ccp_deployed)
 class TestDeployOpenstack(base_test.SystemBaseTest):
     """Deploy OpenStack with CCP
 
@@ -67,7 +68,6 @@ class TestDeployOpenstack(base_test.SystemBaseTest):
             assert result['exit_code'] == 0
 
     @pytest.mark.snapshot_needed(name=snapshot_microservices_deployed)
-    @pytest.mark.revert_snapshot(ext.SNAPSHOT.initial)
     @pytest.mark.fail_snapshot
     def test_fuel_ccp_deploy_microservices(self, config, underlay, ccpcluster,
                                            k8scluster):

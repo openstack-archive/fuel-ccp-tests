@@ -14,10 +14,11 @@
 
 import pytest
 
+from fuel_ccp_tests.helpers import ext
 from fuel_ccp_tests.logger import logger
 
 
-@pytest.yield_fixture(scope='module')
+@pytest.yield_fixture(scope='function')
 def admin_node(config, underlay, ccpcluster):
     """Return <remote> object to k8s admin node"""
     logger.info("Get SSH access to admin node")
@@ -32,6 +33,7 @@ def clean_repos(node):
 
 @pytest.mark.ccp_cli_errexit_codes
 @pytest.mark.ccp_cli_error_in_fetch
+@pytest.mark.revert_snapshot(ext.SNAPSHOT.ccp_deployed)
 class TestCppCliErrorInFetch(object):
     """Check exit codes when fetch is failing
 
@@ -61,13 +63,13 @@ class TestCppCliErrorInFetch(object):
 
 @pytest.mark.ccp_cli_errexit_codes
 @pytest.mark.ccp_cli_build_exit_code
+@pytest.mark.revert_snapshot(ext.SNAPSHOT.ccp_deployed)
 class TestCppCliBuildExitCode(object):
     """Check exit codes when build is failing
 
        pytest.mark: ccp_cli_build_exit_code
        module pytest.mark: ccp_cli_errexit_codes
     """
-
     @pytest.mark.fail_snapshot
     def test_nonexistent_repo_name(self, admin_node):
         cmd = 'ccp build --components example'
@@ -88,6 +90,7 @@ class TestCppCliBuildExitCode(object):
 
 @pytest.mark.ccp_cli_errexit_codes
 @pytest.mark.ccp_cli_deploy_exit_code
+@pytest.mark.revert_snapshot(ext.SNAPSHOT.ccp_deployed)
 class TestCppCliDeploy(object):
     """Check exit codes when deploy is failing
 

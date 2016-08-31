@@ -12,11 +12,16 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 import copy
+import os
 import pkg_resources
 
 from oslo_config import cfg
-from fuel_ccp_tests.helpers import oslo_cfg_types as ct
+from oslo_config import generator
+
 from fuel_ccp_tests.helpers import ext
+from fuel_ccp_tests.helpers import oslo_cfg_types as ct
+from fuel_ccp_tests import settings
+
 
 _default_conf = pkg_resources.resource_filename(
     __name__, 'templates/default.yaml')
@@ -30,7 +35,7 @@ hardware_opts = [
 
     ct.Cfg('current_snapshot', ct.String(),
            help="Latest environment status name",
-           default=ext.SNAPSHOT.initial),
+           default=ext.SNAPSHOT.underlay),
 ]
 
 
@@ -65,7 +70,7 @@ k8s_deploy_opts = [
     ct.Cfg('deploy_script', ct.String(),
            help="", default=None),
     ct.Cfg('kube_settings', ct.JSONDict(),
-           help="", default=None),
+           help="", default={}),
 ]
 
 # Access credentials to a ready K8S cluster
@@ -75,7 +80,7 @@ k8s_opts = [
     ct.Cfg('kube_admin_pass', ct.String(),
            help="", default="changeme"),
     ct.Cfg('kube_host', ct.IPAddress(),
-           help="", default=None),
+           help="", default='0.0.0.0'),
 ]
 
 
@@ -91,7 +96,7 @@ ccp_deploy_opts = [
 ccp_opts = [
     # TODO: OpenStack endpoints, any other endpoints (galera? rabbit?)
     ct.Cfg('os_host', ct.IPAddress(),
-           help="", default=None),
+           help="", default='0.0.0.0'),
 ]
 
 
@@ -139,7 +144,43 @@ def load_config(config_files):
     return config
 
 
+def reload_snapshot_config(config, snapshot_name):
+    """Reset config to the state from test_config file"""
+    test_config_path = os.path.join(
+        settings.LOGS_DIR, 'config_{0}.ini'.format(snapshot_name))
+    config(args=[], default_config_files=[test_config_path])
+    return config
+
+
 def list_opts():
     """Return a list of oslo.config options available in the fuel-ccp-tests.
     """
     return [(group, copy.deepcopy(opts)) for group, opts in _group_opts]
+
+
+def list_current_opts(config):
+    """Return a list of oslo.config options available in the fuel-ccp-tests.
+    """
+    result_opts = []
+    for group, opts in _group_opts:
+        current_opts = copy.deepcopy(opts)
+        for opt in current_opts:
+            if hasattr(config, group):
+                if hasattr(config[group], opt.name):
+                    opt.default = getattr(config[group], opt.name)
+        result_opts.append((group, current_opts))
+    return result_opts
+
+
+def save_config(config, snapshot_name):
+    test_config_path = os.path.join(
+        settings.LOGS_DIR, 'config_{0}.ini'.format(snapshot_name))
+
+    with open(test_config_path, 'w') as output_file:
+        formatter = generator._OptFormatter(output_file=output_file)
+        for group, opts in list_current_opts(config):
+            formatter.format_group(group)
+            for opt in opts:
+                formatter.format(opt, group, minimal=True)
+                formatter.write('\n')
+            formatter.write('\n')
