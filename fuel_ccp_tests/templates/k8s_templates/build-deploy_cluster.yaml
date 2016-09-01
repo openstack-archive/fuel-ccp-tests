@@ -13,3 +13,5 @@ ccp-microservices-options:
 - images-tag: {images_tag}
 - deploy-config: {deploy_config}
 - images-namespace: {images_namespace}
+dry_run_options:
+  export_dir: {export_dir}
