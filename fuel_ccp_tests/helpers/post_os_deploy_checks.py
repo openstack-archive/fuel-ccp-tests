@@ -27,8 +27,8 @@ def check_pods_status(k8sclient, timeout=600, namespace='ccp'):
             if pod.status.phase in ['Running', 'Succeeded']:
                 return True
             elif pod.status.phase == "Failed":
-                if pod.status.reason == 'NodeSelectorMismatching' \
-                        or 'MatchNodeSelector':
+                if pod.status.reason in ['NodeSelectorMismatching',
+                                         'MatchNodeSelector']:
                     return True
             return False
         return temporary_status
