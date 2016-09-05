@@ -51,6 +51,7 @@ class K8SManager(object):
         :rtype: None
         """
         LOG.info("Trying to install k8s")
+
         current_env = copy.deepcopy(os.environ)
 
         k8s_nodes = self.__underlay.node_names()
@@ -73,7 +74,10 @@ class K8SManager(object):
             )
         if env_var:
             environment_variables.update(env_var)
-        current_env.update(dict=environment_variables)
+
+        # Return to original dict after moving to fuel-devops3.0.2
+        # current_env.update(dict=environment_variables)
+        current_env = environment_variables
 
         # TODO(ddmitriev): replace with check_call(...,env=current_env)
         # when migrate to fuel-devops-3.0.2
