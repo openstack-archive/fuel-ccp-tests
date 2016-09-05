@@ -19,7 +19,7 @@ from fuel_ccp_tests import settings
 from fuel_ccp_tests.managers import k8smanager
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='function')
 def k8s_actions(config, underlay):
     """Fixture that provides various actions for K8S
 
@@ -32,8 +32,9 @@ def k8s_actions(config, underlay):
     return k8smanager.K8SManager(config, underlay)
 
 
-@pytest.fixture(scope='session')
-def k8scluster(request, config, hardware, underlay, k8s_actions):
+@pytest.fixture(scope='function')
+def k8scluster(revert_snapshot, request, config,
+               hardware, underlay, k8s_actions):
     """Fixture to get or install k8s on environment
 
     :param request: fixture provides pytest data
@@ -56,11 +57,25 @@ def k8scluster(request, config, hardware, underlay, k8s_actions):
     If you want to revert 'k8s_deployed' snapshot, please use mark:
     @pytest.mark.revert_snapshot("k8s_deployed")
     """
+    # Try to guess environment config for reverted snapshot
+    if revert_snapshot and config.k8s.kube_host == '0.0.0.0':
+        config.k8s.kube_host = underlay.host_by_node_name(
+            underlay.node_names()[0])
 
-    if config.k8s.kube_host is None:
+    # Create k8s cluster
+    if config.k8s.kube_host == '0.0.0.0':
         kube_settings = getattr(request.instance, 'kube_settings',
                                 settings.DEFAULT_CUSTOM_YAML)
         k8s_actions.install_k8s(custom_yaml=kube_settings)
+
         hardware.create_snapshot(ext.SNAPSHOT.k8s_deployed)
+
+    else:
+        # 1. hardware environment created and powered on
+        # 2. config.underlay.ssh contains SSH access to provisioned nodes
+        #    (can be passed from external config with TESTS_CONFIGS variable)
+        # 3. config.k8s.* options contain access credentials to the already
+        #    installed k8s API endpoint
+        pass
 
     return k8s_actions
