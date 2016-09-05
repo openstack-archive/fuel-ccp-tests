@@ -93,7 +93,8 @@ class TestDeployOpenstack(base_test.SystemBaseTest):
                                if settings.BUILD_IMAGES else settings.REGISTRY,
                                images_namespace=settings.IMAGES_NAMESPACE,
                                images_tag=settings.IMAGES_TAG,
-                               deploy_config='~/k8s_topology.yaml')
+                               deploy_config='~/k8s_topology.yaml',
+                               export_dir='')
             data_params = yaml.load(data)['ccp-microservices-options']
         if settings.BUILD_IMAGES:
             k8scluster.create_registry(remote)
