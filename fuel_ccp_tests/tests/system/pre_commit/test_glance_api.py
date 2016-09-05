@@ -27,7 +27,7 @@ LOG.addHandler(logger.console)
 
 class TestServiceGlance(object):
 
-    @pytest.mark.revert_snapshot(ext.SNAPSHOT.initial)
+    @pytest.mark.revert_snapshot(ext.SNAPSHOT.ccp_deployed)
     @pytest.mark.glance_test
     @pytest.mark.fail_snapshot
     def test_glance_api(self, config, underlay,
