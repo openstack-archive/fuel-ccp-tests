@@ -93,8 +93,11 @@ REGISTRY = os.environ.get('REGISTRY')
 IMAGES_NAMESPACE = os.environ.get('IMAGES_NAMESPACE', 'mcp')
 IMAGES_TAG = os.environ.get('IMAGES_TAG', 'latest')
 UPSTREAM_DNS = os.environ.get('UPSTREAM_DNS', '8.8.8.8').split(',')
+NAMESERVERS = os.environ.get('NAMESERVERS', '8.8.8.8').split(',')
 SERVICE_PATH = os.environ.get('SERVICE_PATH')
 TEMPEST_SCRIPT_PATH = os.environ.get('TEMPEST_SCRIPT_PATH')
+SEARCH_DOMAINS = os.environ.get('SEARCH_DOMAINS',
+                                'ccp.svc.cluster.local').split(',')
 BUILDER_WORKERS = os.environ.get('BUILDER_WORKERS', '1')
 
 FUEL_CCP_KEYSTONE_LOCAL_REPO = os.environ.get('FUEL_CCP_KEYSTONE_LOCAL_REPO',
@@ -128,3 +131,8 @@ NETCHECKER_SERVER_DIR = os.environ.get(
 NETCHECKER_AGENT_DIR = os.environ.get(
     'NETCHECKER_AGENT_DIR', os.path.join(os.getcwd(), 'mcp-netchecker-agent')
 )
+AC_COMMIT = os.environ.get("AC_COMMIT", "master")
+AC_REPO = os.environ.get("AC_REPO", "")
+AC_ZIP_URL = os.environ.get(
+    "AC_ZIP_URL", "{repo}/archive/{commit}.zip".format(
+        repo=AC_REPO, commit=AC_COMMIT))
