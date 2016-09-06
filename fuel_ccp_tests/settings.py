@@ -18,8 +18,8 @@ import time
 _boolean_states = {'1': True, 'yes': True, 'true': True, 'on': True,
                    '0': False, 'no': False, 'false': False, 'off': False}
 
-_default_conf = pkg_resources.resource_filename(
-    __name__, 'templates/default.yaml')
+TEMPLATES_DIR = pkg_resources.resource_filename(__name__, 'templates')
+_default_conf = os.path.join(TEMPLATES_DIR, 'default.yaml')
 
 
 def get_var_as_bool(name, default):
@@ -120,3 +120,9 @@ CCP_DEFAULT_GLOBALS = {
         "neutron_external_interface": "eth2"
     }
 }
+AC_COMMIT = os.environ.get("AC_COMMIT", "master")
+AC_REPO = os.environ.get("AC_REPO",
+                         "https://github.com/Mirantis/k8s-AppController")
+AC_ZIP_URL = os.environ.get(
+    "AC_ZIP_URL", "{repo}/archive/{commit}.zip".format(
+        repo=AC_REPO, commit=AC_COMMIT))

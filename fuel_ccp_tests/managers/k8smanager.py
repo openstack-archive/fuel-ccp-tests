@@ -161,7 +161,7 @@ class K8SManager(object):
 
         self.wait_pod_phase('registry', 'default', 'Running', timeout=60)
 
-    def get_pod_phase(self, pod_name, namespace):
+    def get_pod_phase(self, pod_name, namespace=None):
         return self.api.pods.get(
             name=pod_name, namespace=namespace).phase
 
