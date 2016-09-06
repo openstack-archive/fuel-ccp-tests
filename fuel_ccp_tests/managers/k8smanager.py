@@ -159,13 +159,13 @@ class K8SManager(object):
                         "{}".format(
                             cmd, result['exit_code'], result['stderr_str']))
 
-        self.wait_pod_phase('registry', 'default', 'Running', timeout=60)
+        self.wait_pod_phase('registry', 'Running', 'default', timeout=60)
 
-    def get_pod_phase(self, pod_name, namespace):
+    def get_pod_phase(self, pod_name, namespace=None):
         return self.api.pods.get(
             name=pod_name, namespace=namespace).phase
 
-    def wait_pod_phase(self, pod_name, namespace, phase, timeout=60):
+    def wait_pod_phase(self, pod_name, phase, namespace=None, timeout=60):
         """Wait phase of pod_name from namespace while timeout
 
         :param str: pod_name
