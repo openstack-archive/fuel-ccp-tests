@@ -121,3 +121,9 @@ CCP_DEFAULT_GLOBALS = {
         "neutron_external_interface": "eth2"
     }
 }
+AC_COMMIT = os.environ.get("AC_COMMIT", "master")
+AC_REPO = os.environ.get("AC_REPO",
+                         "https://github.com/Mirantis/k8s-AppController")
+AC_ZIP_URL = os.environ.get(
+    "AC_ZIP_URL", "{repo}/archive/{commit}.zip".format(
+        repo=AC_REPO, commit=AC_COMMIT))
