@@ -56,6 +56,9 @@ def ccpcluster(revert_snapshot, config, hardware,
     If you want to revert 'ccp_deployed' snapshot, please use mark:
     @pytest.mark.revert_snapshot("ccp_deployed")
     """
+
+    ccp_actions.default_params = settings.CCP_CLI_PARAMS
+
     # Try to guess environment config for reverted snapshot
     if revert_snapshot and config.ccp.os_host == '0.0.0.0':
         config.ccp.os_host = config.k8s.kube_host
@@ -66,7 +69,6 @@ def ccpcluster(revert_snapshot, config, hardware,
         ccp_actions.put_yaml_config(
             settings.CCP_CLI_PARAMS['deploy-config'],
             settings.CCP_DEFAULT_GLOBALS)
-        ccp_actions.default_params = settings.CCP_CLI_PARAMS
         ccp_actions.init_default_config()
         config.ccp.os_host = config.k8s.kube_host
 

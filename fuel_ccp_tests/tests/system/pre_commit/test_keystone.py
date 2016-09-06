@@ -18,22 +18,6 @@ from fuel_ccp_tests.helpers import post_os_deploy_checks
 from fuel_ccp_tests.helpers import ext
 
 
-@pytest.fixture(scope='function')
-def ccp(ccp_actions, k8scluster):
-    """Fixture to install fuel-ccp on k8s environment
-
-    :param env_with_k8s: envmanager.EnvironmentManager
-
-    """
-    ccp_actions.install_ccp()
-    ccp_globals = settings.CCP_DEFAULT_GLOBALS
-    ccp_actions.put_yaml_config(settings.CCP_CLI_PARAMS['deploy-config'],
-                                ccp_globals)
-    ccp_actions.default_params = settings.CCP_CLI_PARAMS
-    ccp_actions.init_default_config()
-    return ccp_actions
-
-
 class TestPreCommitKeystone(object):
     """docstring for TestPreCommitKeystone
 
@@ -50,9 +34,9 @@ class TestPreCommitKeystone(object):
 
     @pytest.mark.keystone_test
     @pytest.mark.keystone_component
-    @pytest.mark.revert_snapshot(ext.SNAPSHOT.k8s_deployed)
+    @pytest.mark.revert_snapshot(ext.SNAPSHOT.ccp_deployed)
     def test_deploy_os_with_custom_keystone(
-            self, ccp, k8s_actions, underlay, rally):
+            self, ccpcluster, k8s_actions, underlay, rally):
         """
         Scenario:
             1. Install k8s
@@ -63,17 +47,15 @@ class TestPreCommitKeystone(object):
             6. Deploy components
             7. Run identity tempest suite
 
-        TODO:
-            Migrate from ccp to ccpcluster
         """
 
         k8s_actions.create_registry()
-        ccp.fetch()
-        ccp.update_service('keystone',
-                           settings.FUEL_CCP_KEYSTONE_LOCAL_REPO)
-        ccp.build('base-tools', suppress_output=False)
-        ccp.build(suppress_output=False)
-        ccp.deploy()
+        ccpcluster.fetch()
+        ccpcluster.update_service('keystone',
+                                  settings.FUEL_CCP_KEYSTONE_LOCAL_REPO)
+        ccpcluster.build('base-tools', suppress_output=False)
+        ccpcluster.build(suppress_output=False)
+        ccpcluster.deploy()
         rally.prepare()
         rally.pull_image()
         rally.run()
