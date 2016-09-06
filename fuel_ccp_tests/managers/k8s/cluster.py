@@ -45,6 +45,7 @@ from fuel_ccp_tests.managers.k8s.secrets import K8sSecretManager
 from fuel_ccp_tests.managers.k8s.serviceaccounts import \
     K8sServiceAccountManager
 from fuel_ccp_tests.managers.k8s.services import K8sServiceManager
+from fuel_ccp_tests.managers.k8s.replicasets import K8sReplicaSetManager
 
 
 class K8sCluster(object):
@@ -103,3 +104,6 @@ class K8sCluster(object):
             self._api, self._default_namespace)
         self.pvolumes = K8sPersistentVolumeManager(
             self._api, self._default_namespace)
+        self.replicasets = K8sReplicaSetManager(
+            self._eapi, self._default_namespace
+        )
