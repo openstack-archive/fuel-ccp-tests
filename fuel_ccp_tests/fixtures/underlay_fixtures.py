@@ -68,7 +68,7 @@ def hardware(request, config):
 
     manager = config.hardware.manager
 
-    if manager is None:
+    if manager == 'empty':
         # No environment manager is used.
         # 'config' should contain config.underlay.ssh settings
         # 'config' should contain config.underlay.current_snapshot setting
