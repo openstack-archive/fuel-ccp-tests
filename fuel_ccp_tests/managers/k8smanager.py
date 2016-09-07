@@ -172,7 +172,7 @@ class K8SManager(object):
         if isinstance(path, str):
             path = [path]
         params = ' '.join(["-f {}".format(p) for p in path])
-        cmd = 'kubectl create {params}'.format(params)
+        cmd = 'kubectl create {params}'.format(params=params)
         with self.__underlay.remote(
                 host=self.__config.k8s.kube_host) as remote:
             LOG.info("Running command '{cmd}' on node {node}".format(
