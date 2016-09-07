@@ -141,7 +141,7 @@ class K8SManager(object):
         registry_pod = self.api.pods.create(body=registry, namespace='default')
         self.api.services.create(body=service, namespace='default')
 
-        registry.wait_running()
+        registry_pod.wait_running()
 
     def get_pod_phase(self, pod_name, namespace):
         return self.api.pods.get(
