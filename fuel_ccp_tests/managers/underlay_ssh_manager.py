@@ -57,7 +57,6 @@ class UnderlaySSHManager(object):
        self.remote(): SSHClient object by a node name (w/wo address pool)
                       or by a hostname.
     """
-
     config_ssh = None
 
     def __init__(self, config_ssh):
@@ -65,11 +64,15 @@ class UnderlaySSHManager(object):
 
            :param config_ssh: dict
         """
-        if config_ssh is None:
-            config_ssh = []
-
         if self.config_ssh is None:
             self.config_ssh = []
+
+        self.add_config_ssh(config_ssh)
+
+    def add_config_ssh(self, config_ssh):
+
+        if config_ssh is None:
+            config_ssh = []
 
         for ssh in config_ssh:
             ssh_data = {
@@ -91,6 +94,24 @@ class UnderlaySSHManager(object):
                 ssh_data['keys'].extend(keys)
 
             self.config_ssh.append(ssh_data)
+
+    def remove_config_ssh(self, config_ssh):
+        if config_ssh is None:
+            config_ssh = []
+
+        for ssh in config_ssh:
+            ssh_data = {
+                # Required keys:
+                'node_name': ssh['node_name'],
+                'host': ssh['host'],
+                'login': ssh['login'],
+                'password': ssh['password'],
+                # Optional keys:
+                'address_pool': ssh.get('address_pool', None),
+                'port': ssh.get('port', None),
+                'keys': ssh.get('keys', []),
+            }
+            self.config_ssh.remove(ssh_data)
 
     def __get_keys(self, remote):
         keys = []
