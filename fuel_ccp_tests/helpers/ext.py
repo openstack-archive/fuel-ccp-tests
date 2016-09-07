@@ -25,6 +25,7 @@ NODE_ROLE = enum(
     'master',
     'slave',
     'k8s',
+    'k8s_scale',
 )
 
 NETWORK_TYPE = enum(
