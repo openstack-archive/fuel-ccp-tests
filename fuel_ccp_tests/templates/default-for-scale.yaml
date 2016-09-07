@@ -63,12 +63,12 @@ template:
             dhcp: false
 
         group_volumes:
-          - name: baseimage
-            source_image: !os_env IMAGE_PATH
-            format: qcow2
+         - name: baseimage   # This name is used for 'backing_store' option for node volumes.
+           source_image: !os_env IMAGE_PATH
+           format: qcow2
 
         nodes:
-          - name: master
+          - name: node1
             role: k8s
             params: &rack-01-node-params
               vcpu: !os_env SLAVE_NODE_CPU, 2
@@ -80,9 +80,6 @@ template:
                 - name: system
                   capacity: !os_env NODE_VOLUME_SIZE, 150
                   backing_store: baseimage
-                  format: qcow2
-                - name: lvm
-                  capacity: 10
                   format: qcow2
 
               interfaces:
@@ -106,10 +103,18 @@ template:
                   networks:
                     - neutron
 
-          - name: slave-0
+          - name: node2
             role: k8s
             params: *rack-01-node-params
 
-          - name: slave-1
+          - name: node3
             role: k8s
+            params: *rack-01-node-params
+
+          - name: node4
+            role: k8s_scale
+            params: *rack-01-node-params
+
+          - name: node5
+            role: k8s_scale
             params: *rack-01-node-params
