@@ -125,41 +125,23 @@ class K8SManager(object):
         return self._api_client
 
     def create_registry(self):
-        """Create Pod and SErvice for K8S registry
+        """Create Pod and SErvice for K8S registry"""
 
-        TODO:
-            Migrate to k8sclient
-        """
         registry_pod = os.getcwd() + '/fuel_ccp_tests/templates/' \
                                      'registry_templates/registry-pod.yaml'
         service_registry = os.getcwd() + '/fuel_ccp_tests/templates/' \
                                          'registry_templates/' \
                                          'service-registry.yaml'
 
-        with self.__underlay.remote(
-                host=self.__config.k8s.kube_host) as remote:
+        with file(registry_pod) as f:
+            registry = yaml.load(f)
+        with file(service_registry) as f:
+            service = yaml.load(f)
 
-            for item in registry_pod, service_registry:
-                remote.upload(item, './')
-            command = [
-                'kubectl create -f ~/{0}'.format(registry_pod.split('/')[-1]),
-                'kubectl create -f ~/{0}'.format(
-                    service_registry.split('/')[-1]),
-            ]
-            for cmd in command:
-                LOG.info(
-                    "Running command '{cmd}' on node {node_name}".format(
-                        cmd=cmd,
-                        node_name=remote.hostname))
-                result = remote.execute(cmd)
-                if result['exit_code'] != 0:
-                    raise SystemError(
-                        "Registry wasn't created. "
-                        "Command '{}' returned non-zero exit code({}). Err: "
-                        "{}".format(
-                            cmd, result['exit_code'], result['stderr_str']))
+        registry_pod = self.api.pods.create(body=registry, namespace='default')
+        self.api.services.create(body=service, namespace='default')
 
-        self.wait_pod_phase('registry', 'default', 'Running', timeout=60)
+        registry.wait_running()
 
     def get_pod_phase(self, pod_name, namespace):
         return self.api.pods.get(

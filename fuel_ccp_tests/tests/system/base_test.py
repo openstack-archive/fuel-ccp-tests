@@ -12,7 +12,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from devops.helpers import helpers
 import yaml
 
 from fuel_ccp_tests import logger
@@ -71,13 +70,7 @@ class SystemBaseTest(object):
         LOG.debug("Timeout for creation is set to {}".format(timeout))
         LOG.debug("Checking interval is set to {}".format(interval))
         pod = k8sclient.pods.create(body=body)
-        helpers.wait(
-            predicate=lambda: k8sclient.pods.get(
-                name=pod.metadata.name).status.phase == "Running",
-            timeout=timeout,
-            interval=interval,
-            timeout_msg="Pod creation timeout reached!"
-        )
+        pod.wait_running()
         LOG.info("Pod '{}' is created".format(pod.metadata.name))
         return k8sclient.pods.get(name=pod.metadata.name)
 

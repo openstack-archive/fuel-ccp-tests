@@ -11,6 +11,7 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 
+from devops.helpers import helpers
 
 from fuel_ccp_tests.managers.k8s.base import K8sBaseResource
 from fuel_ccp_tests.managers.k8s.base import K8sBaseManager
@@ -29,6 +30,30 @@ class K8sPod(K8sBaseResource):
     @property
     def phase(self):
         return self.status.phase
+
+    def wait_phase(self, phase, timeout=60):
+        """Wait phase of pod_name from namespace while timeout
+
+        :param list or str: phase
+        :param int: timeout
+
+        :rtype: None
+        """
+        if isinstance(phase, str):
+            phase = [phase]
+
+        def check():
+            return self.phase in phase
+
+        helpers.wait(check, timeout=timeout,
+                     timeout_msg='Timeout waiting({timeout}s), pod {pod_name} '
+                                 'is not in "{phase}" phase'.format(
+                                     timeout=timeout,
+                                     pod_name=self.name,
+                                     phase=phase))
+
+    def wait_running(self, timeout=60):
+        self.wait_phase(['Running'], timeout=timeout)
 
 
 class K8sPodManager(K8sBaseManager):
