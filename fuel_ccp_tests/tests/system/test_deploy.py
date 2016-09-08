@@ -72,6 +72,6 @@ class TestDeployOpenstack(base_test.SystemBaseTest):
         ccpcluster.build()
         export_dir = "/home/{user}/export".format(user=settings.SSH_LOGIN)
         ccpcluster.dry_deploy(export_dir=export_dir)
-        k8s_actions.create_objects(folder=export_dir)
+        k8s_actions.create_objects(export_dir)
         post_os_deploy_checks.check_jobs_status(k8s_actions.api)
         post_os_deploy_checks.check_pods_status(k8s_actions.api)
