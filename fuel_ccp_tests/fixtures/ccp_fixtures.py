@@ -12,10 +12,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 import pytest
-
+from fuel_ccp_tests import logger
 from fuel_ccp_tests.helpers import ext
 from fuel_ccp_tests.managers import ccpmanager
 from fuel_ccp_tests import settings
+
+LOG = logger.logger
 
 
 @pytest.fixture(scope='function')
@@ -86,7 +88,8 @@ def ccpcluster(revert_snapshot, config, hardware,
         ccp_actions.init_default_config(include_files=[
             settings.CCP_DEPLOY_CONFIG,
             settings.CCP_SOURCES_CONFIG,
-            settings.CCP_DEPLOY_TOPOLOGY])
+            settings.CCP_DEPLOY_TOPOLOGY,
+            settings.CCP_FETCH_CONFIG])
         config.ccp.os_host = config.k8s.kube_host
 
         hardware.create_snapshot(ext.SNAPSHOT.ccp_deployed)
@@ -102,3 +105,77 @@ def ccpcluster(revert_snapshot, config, hardware,
         pass
 
     return ccp_actions
+
+
+@pytest.yield_fixture(scope='function')
+def git_server_mock(config, underlay):
+    '''
+    Instantiate a mock ssh git server. Server host repositories in the /git
+     project. Git project mounted to /docker_data/openstack on host machine
+    Setup password-less access to repo for vagrant user from kube_host
+    Populate with default openstack repositories
+    '''
+    cmd_git_setup = 'docker run -d -p 2222:22 -p 3333:80 ' \
+                    '-v /docker_data/openstack:/git unixtastic/git-ssh-server'
+    LOG.info("Instantiating ssh-git-server mock instance")
+    ssh_server_docker_container_id = underlay.sudo_check_call(
+        cmd_git_setup,
+        host=config.k8s.kube_host)['stdout'][-1].strip()
+    LOG.info("Started ssh-git-server in {} container".format(
+        ssh_server_docker_container_id))
+
+    cmd_config_permisions = [
+        'ssh-keygen -b 2048 -t rsa -f ~/.ssh/id_rsa_git -q -N "" ',
+        'echo \"{}\" >> ~/.ssh/config'.format(
+            'IdentityFile ~/.ssh/id_rsa_git'),
+        'echo \"{}\" >> ~/.ssh/config'.format(
+            'HashKnownHosts no'),
+        'echo \"{}\" >> ~/.ssh/config'.format(
+            'StrictHostKeyChecking no')]
+
+    cmd_config_permisions_sudo = \
+        ['cd /docker_data/openstack',
+         'mkdir /docker_data/openstack/.ssh',
+         'chmod -R 700 /docker_data/openstack/.ssh',
+         'touch /docker_data/openstack/.ssh/authorized_keys',
+         'chmod 600 /docker_data/openstack/.ssh/authorized_keys',
+         'cat ~/.ssh/id_rsa_git.pub >> '
+         '/docker_data/openstack/.ssh/authorized_keys',
+         'touch /docker_data/openstack/.hushlogin',
+         'docker exec {} sed -i \'$ a {}\' /etc/ssh/sshd_config'.format(
+             ssh_server_docker_container_id,
+             'AuthorizedKeysFile      /git/.ssh/authorized_keys')
+         ]
+    LOG.info("Configuring public keys and permissions...")
+    for cmd in cmd_config_permisions:
+        underlay.check_call(cmd,
+                            host=config.k8s.kube_host, expected=[0])
+    for cmd in cmd_config_permisions_sudo:
+        underlay.sudo_check_call(cmd,
+                                 host=config.k8s.kube_host, expected=[0])
+
+    LOG.info("Configuring public keys and permissions completed")
+
+    LOG.info("Cloning all default repos from openstack public repo")
+    for project_repository in ext.DEFAULT_REPOS:
+        LOG.info('Cloning {}...'.format(project_repository))
+        underlay.sudo_check_call(
+            'git clone --mirror {}/{}'
+            ' /docker_data/openstack/{}'.format(
+                settings.FUEL_CCP_ORIGIN_URL,
+                project_repository, project_repository),
+            host=config.k8s.kube_host, expected=[0])
+    for cmd in ['docker exec {} /etc/init.d/ssh restart'.format(
+            ssh_server_docker_container_id),
+        'docker exec {} chown -R git:git /git'.format(
+            ssh_server_docker_container_id)]:
+        underlay.sudo_check_call(
+            cmd,
+            host=config.k8s.kube_host,
+            expected=[0])
+    yield ssh_server_docker_container_id
+    cmd_git_teardown = 'docker stop {ssh_git_id} && ' \
+                       'docker rm {ssh_git_id}'\
+        .format(ssh_git_id=ssh_server_docker_container_id)
+    LOG.info("Stoping and removing ssh-git-server mock instance...")
+    underlay.sudo_check_call(cmd_git_teardown, host=config.k8s.kube_host)
