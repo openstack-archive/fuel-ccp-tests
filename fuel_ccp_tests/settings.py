@@ -122,6 +122,10 @@ CCP_DEFAULT_GLOBALS = {
     }
 }
 
+CCP_ENVIRONMENT_PARAMS = {
+    "microservices_home": "~/ccp-repos"
+}
+
 NETCHECKER_SERVER_DIR = os.environ.get(
     'NETCHECKER_SERVER_DIR', os.path.join(os.getcwd(), 'mcp-netchecker-server')
 )

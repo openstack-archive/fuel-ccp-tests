@@ -12,7 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 import pytest
-
+from fuel_ccp_tests.logger import logger
 from fuel_ccp_tests.helpers import ext
 from fuel_ccp_tests.managers import ccpmanager
 from fuel_ccp_tests import settings
@@ -85,3 +85,68 @@ def ccpcluster(revert_snapshot, config, hardware,
         pass
 
     return ccp_actions
+
+
+@pytest.fixture(scope='function')
+def git_server_mock(config, underlay):
+    '''
+    Instantiate a mock ssh git server. Server host repositories in the /git
+     project. Git project mounted to /docker_data/openstack on host machine
+    Setup password-less access to repo for vagrant user from kube_host
+    Populate with default openstack repositories
+    '''
+    cmd_git_setup = 'git clone https://github.com/unixtastic/git-ssh-server ' \
+                    '&& cd git-ssh-server ' \
+                    '&& docker build -t \'unixtastic/git-ssh-server\' . ' \
+                    '&& docker run -d -p 2222:22 ' \
+                    '-v /docker_data/openstack:/git unixtastic/git-ssh-server'
+    logger.info("Instantiating ssh-git-server mock instance")
+    ssh_server_docker_container_id = underlay.sudo_check_call(
+        cmd_git_setup,
+        host=config.k8s.kube_host)['stdout'][-1].strip()
+    logger.info("Started ssh-git-server in {} container".format(
+        ssh_server_docker_container_id))
+
+    cmd_config_permitions = \
+        'ssh-keygen -b 2048 -t rsa -f ~/.ssh/id_rsa_vagrant -q -N "" ' \
+        '&& cat ~/.ssh/id_rsa_vagrant >> ~/.ssh/id_rsa'
+
+    cmd_config_permitions_sudo = \
+        ['cd /docker_data/openstack',
+         'mkdir /docker_data/openstack/.ssh',
+         'chown -R 987:987 /docker_data/openstack/.ssh',
+         'chmod -R 700 /docker_data/openstack/.ssh',
+         'touch /docker_data/openstack/.ssh/authorized_keys',
+         'chmod 600 /docker_data/openstack/.ssh/authorized_keys',
+         'chown 987:987 /docker_data/openstack/.ssh/authorized_keys',
+         'cat ~/.ssh/id_rsa_vagrant.pub >> '
+         '/docker_data/openstack/.ssh/authorized_keys',
+         'chmod 600 ~/.ssh/id_rsa',
+         'touch /docker_data/openstack/.hushlogin',
+         'docker exec {} sed -i \'$ a {}\' /etc/ssh/sshd_config'.format(
+             ssh_server_docker_container_id,
+             'AuthorizedKeysFile      /git/.ssh/authorized_keys'),
+         'sed -i \'$ a {}\' /etc/ssh/ssh_config'.format(
+             'StrictHostKeyChecking no'),
+         'docker exec {} /etc/init.d/ssh restart'.format(
+             ssh_server_docker_container_id)
+         ]
+    logger.info("Configuring public keys and permissions...")
+    underlay.check_call(cmd_config_permitions,
+                        host=config.k8s.kube_host, expected=[0])
+    for cmd in cmd_config_permitions_sudo:
+        underlay.sudo_check_call(cmd,
+                                 host=config.k8s.kube_host, expected=[0])
+
+    logger.info("Configuring public keys and permissions completed")
+
+    logger.info("Cloning all default repos from openstack public repo")
+    for repo in ext.DEFAULT_REPOS:
+        logger.info('Cloning {}...'.format(repo))
+        underlay.sudo_check_call(
+            'git clone --mirror https://review.openstack.org:443/openstack/{}'
+            ' /docker_data/openstack/{}'.format(
+                repo, repo), host=config.k8s.kube_host, expected=[0])
+        underlay.sudo_check_call(
+            'cd /docker_data/openstack/{} && chown -R 987:987 .'.format(repo),
+            host=config.k8s.kube_host, expected=[0])
