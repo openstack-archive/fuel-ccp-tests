@@ -106,7 +106,7 @@ CCP_CLI_PARAMS = {
     "builder-workers": "1",
     "builder-push": "",
     "registry-address": REGISTRY or "127.0.0.1:31500",
-    "kubernetes-namespace": "demo",
+    "kubernetes-namespace": "ccp",
     "repositories-skip-empty": "",
     "deploy-config": "/tmp/ccp-globals.yaml",
     "images-namespace": IMAGES_NAMESPACE,
