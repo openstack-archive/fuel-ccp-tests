@@ -22,8 +22,7 @@ from fuel_ccp_tests import logger
 LOG = logger.logger
 
 CCP_CONF = """
-[DEFAULT]
-use_stderr = False
+use_stderr: False
 """
 
 
@@ -74,7 +73,7 @@ class CCPManager(object):
         self._default_params = v.copy()
 
     def init_default_config(self):
-        self.put_raw_config('~/ccp.conf', CCP_CONF)
+        self.put_raw_config('~/.ccp.yaml', CCP_CONF)
 
     def put_raw_config(self, path, content):
         """Put config content to file on admin node at path

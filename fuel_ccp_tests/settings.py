@@ -100,7 +100,7 @@ FUEL_CCP_KEYSTONE_LOCAL_REPO = os.environ.get('FUEL_CCP_KEYSTONE_LOCAL_REPO',
                                               None)
 
 CCP_CLI_PARAMS = {
-    "config-file": "~/ccp.conf",
+    "config-file": "~/.ccp.yaml",
     "debug": "",
     "log-file": "ccp.log",
     "builder-workers": "1",
