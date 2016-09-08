@@ -87,7 +87,7 @@ class K8sBaseManager(object):
         if not hasattr(self, '_create'):
             raise NotImplementedError(
                 '{} does not have {}'.format(self, '_create'))
-        return self._create(*args, **kwargs)
+        return self.resource_class(self, self._create(*args, **kwargs))
 
     def replace(self, *args, **kwargs):
         if not hasattr(self, '_replace'):
