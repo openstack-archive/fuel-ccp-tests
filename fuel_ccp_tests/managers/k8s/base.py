@@ -17,7 +17,6 @@ class K8sBaseResource(object):
 
     def __init__(self, manager, data):
         self._manager = manager
-        self._data = data
         self._add_details(data)
 
     def __repr__(self):
@@ -33,6 +32,7 @@ class K8sBaseResource(object):
         return self._data.api_version
 
     def _add_details(self, data):
+        self._data = data
         for k in [k for k in dir(data)
                   if not any((k.startswith('_'), k in ('to_dict', 'to_str')))]:
             try:
