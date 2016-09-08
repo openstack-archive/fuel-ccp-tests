@@ -70,7 +70,8 @@ class CCPManager(object):
         self._default_params = v.copy()
 
     def init_default_config(self):
-        self.put_yaml_config('~/.ccp.yaml', settings.CCP_CONF)
+        self.put_yaml_config(settings.CCP_CLI_PARAMS["config-file"],
+                             settings.CCP_CONF)
 
     def put_raw_config(self, path, content):
         """Put config content to file on admin node at path
@@ -108,34 +109,53 @@ class CCPManager(object):
         return ' '.join(["--{}={}".format(
             k, v) if v else "--{}".format(k) for (k, v) in params.items()])
 
-    def run(self, cmd, components=None, params=None, suppress_output=False):
-        params = self.__build_param_string(params)
-        params = params or ''
-        if components:
-            if isinstance(components, str):
-                components = [components]
-            components = '-c {}'.format(' '.join(components))
-        else:
-            components = ''
+    def run(self, cmd, components=None, params=None,
+            use_cli_params=False, suppress_output=False,
+            raise_on_err=True, error_info=None,
+            expected=None):
+
         if suppress_output:
             ccp_out_redirect = ("> >(tee ccp.out.log > /dev/null) "
                                 "2> >(tee ccp.err.log >/dev/null)")
         else:
             ccp_out_redirect = ""
+        if use_cli_params is True:
+            params = self.__build_param_string(params)
+            params = params or ''
+            if components:
+                if isinstance(components, str):
+                    components = [components]
+                components = '-c {}'.format(' '.join(components))
+            else:
+                components = ''
 
-        cmd = "ccp {params} {cmd} {components} {ccp_out_redirect}".format(
-            params=params, cmd=cmd, components=components,
-            ccp_out_redirect=ccp_out_redirect)
+            cmd = "ccp {params} {cmd} {components} {ccp_out_redirect}".format(
+                params=params, cmd=cmd, components=components,
+                ccp_out_redirect=ccp_out_redirect)
+        else:
+            cmd = "ccp {cmd} {ccp_out_redirect}".format(
+                cmd=cmd, ccp_out_redirect=ccp_out_redirect)
 
         LOG.info("Running {cmd}".format(cmd=cmd))
         with self.__underlay.remote(
                 host=self.__config.k8s.kube_host) as remote:
-            remote.check_call(cmd)
+            res = remote.check_call(cmd,
+                                    raise_on_err=raise_on_err,
+                                    error_info=error_info,
+                                    expected=expected)
+        return res
 
-    def fetch(self, components=None, params=None):
-        self.run('fetch',
-                 components=components,
-                 params=params)
+    def fetch(self,
+              params=None,
+              raise_on_err=True,
+              error_info=None,
+              expected=None):
+        # build config file
+        self.put_yaml_config(settings.CCP_CLI_PARAMS["config-file"], params)
+        return self.run('fetch',
+                        raise_on_err=raise_on_err,
+                        error_info=error_info,
+                        expected=expected)
 
     def build(self, components=None, params=None, suppress_output=True):
         try:
