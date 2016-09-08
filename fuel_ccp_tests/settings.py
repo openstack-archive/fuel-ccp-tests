@@ -116,6 +116,9 @@ DEPLOY_CONFIG = '/tmp/ccp-globals.yaml'
 
 FUEL_CCP_KEYSTONE_LOCAL_REPO = os.environ.get('FUEL_CCP_KEYSTONE_LOCAL_REPO',
                                               None)
+FUEL_CCP_ORIGIN_URL = os.environ.get(
+    'FUEL_CCP_ORIGIN_URL',
+    'https://git.openstack.org:443/openstack/')
 
 CCP_CONF = {
     'builder': {
@@ -150,6 +153,10 @@ CCP_DEFAULT_GLOBALS = {
         "public_interface": "eth1",
         "neutron_external_interface": "eth2"
     }
+}
+
+CCP_ENVIRONMENT_PARAMS = {
+    "microservices_home": "$HOME/ccp-repos"
 }
 
 NETCHECKER_SERVER_DIR = os.environ.get(
