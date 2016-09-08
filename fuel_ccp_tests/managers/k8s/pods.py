@@ -43,6 +43,7 @@ class K8sPod(K8sBaseResource):
             phase = [phase]
 
         def check():
+            self._add_details(self._manager.get(name=self.name))
             return self.phase in phase
 
         helpers.wait(check, timeout=timeout,
