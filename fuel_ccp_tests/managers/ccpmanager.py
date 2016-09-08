@@ -22,7 +22,9 @@ from fuel_ccp_tests import logger
 LOG = logger.logger
 
 CCP_CONF = """
-use_stderr: False
+use_stderr: True
+registry:
+  insecure: True
 """
 
 
