@@ -2,19 +2,18 @@ nodes:
   node1:
     roles:
       - controller
-      - stacklight-collector
-      - stacklight-backend
       - openvswitch
   node[2-3]:
     roles:
       - compute
-      - stacklight-collector
       - openvswitch
 roles:
   controller:
     - etcd
     - glance-api
     - glance-registry
+    - heat-api
+    - heat-engine
     - horizon
     - keystone
     - mariadb
@@ -36,10 +35,3 @@ roles:
     - neutron-openvswitch-agent
     - openvswitch-db
     - openvswitch-vswitchd
-  stacklight-backend:
-    - elasticsearch
-    - grafana
-    - influxdb
-    - kibana
-  stacklight-collector:
-    - heka

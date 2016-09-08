@@ -89,12 +89,13 @@ DEFAULT_CUSTOM_YAML = {
 }
 
 BUILD_IMAGES = get_var_as_bool('BUILD_IMAGES', True)
-REGISTRY = os.environ.get('REGISTRY', None)
-IMAGES_NAMESPACE = os.environ.get('IMAGES_NAMESPACE', 'ccp')
+REGISTRY = os.environ.get('REGISTRY')
+IMAGES_NAMESPACE = os.environ.get('IMAGES_NAMESPACE', 'mcp')
 IMAGES_TAG = os.environ.get('IMAGES_TAG', 'latest')
 UPSTREAM_DNS = os.environ.get('UPSTREAM_DNS', '8.8.8.8').split(',')
 SERVICE_PATH = os.environ.get('SERVICE_PATH')
 TEMPEST_SCRIPT_PATH = os.environ.get('TEMPEST_SCRIPT_PATH')
+BUILDER_WORKERS = os.environ.get('BUILDER_WORKERS', '1')
 
 FUEL_CCP_KEYSTONE_LOCAL_REPO = os.environ.get('FUEL_CCP_KEYSTONE_LOCAL_REPO',
                                               None)
@@ -103,7 +104,7 @@ CCP_CLI_PARAMS = {
     "config-file": "~/.ccp.yaml",
     "debug": "",
     "log-file": "ccp.log",
-    "builder-workers": "1",
+    "builder-workers": BUILDER_WORKERS,
     "builder-push": "",
     "registry-address": REGISTRY or "127.0.0.1:31500",
     "kubernetes-namespace": "ccp",
