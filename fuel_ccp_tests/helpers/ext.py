@@ -38,3 +38,18 @@ SNAPSHOT = enum(
     'k8s_deployed',
     'ccp_deployed',
 )
+
+DEFAULT_REPOS = ['fuel-ccp-debian-base',
+                 'fuel-ccp-entrypoint',
+                 'fuel-ccp-etcd',
+                 'fuel-ccp-glance',
+                 'fuel-ccp-heat',
+                 'fuel-ccp-horizon',
+                 'fuel-ccp-keystone',
+                 'fuel-ccp-mariadb',
+                 'fuel-ccp-memcached',
+                 'fuel-ccp-neutron',
+                 'fuel-ccp-nova',
+                 'fuel-ccp-openstack-base',
+                 'fuel-ccp-rabbitmq',
+                 'fuel-ccp-stacklight']
