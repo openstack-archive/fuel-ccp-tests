@@ -61,4 +61,4 @@ class TestPreCommitKeystone(object):
         rally.run()
 
         post_os_deploy_checks.check_jobs_status(k8s_actions.api)
-        rally.run_tempest('identity')
+        rally.run_tempest('^tempest.api.identity.*')
