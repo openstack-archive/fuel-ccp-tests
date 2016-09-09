@@ -100,9 +100,16 @@ class EnvironmentManager(object):
         network_pool = default_node_group.get_network_pool(name=net_pool_name)
         return network_pool
 
-    def get_ssh_data(self):
+    def get_ssh_data(self, roles=None):
+        """Generate ssh config for Underlay
+
+        :param roles: list of strings
+        """
+        if roles is None:
+            raise Exception("No roles specified for the environment!")
+
         config_ssh = []
-        for d_node in self.k8s_nodes:
+        for d_node in self._env.get_nodes(role__in=roles):
             ssh_data = {
                 'node_name': d_node.name,
                 'address_pool': self._get_network_pool(

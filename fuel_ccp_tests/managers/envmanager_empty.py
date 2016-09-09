@@ -32,7 +32,7 @@ class EnvironmentManagerEmpty(object):
         """
         self.__config = config
 
-    def get_ssh_data(self):
+    def get_ssh_data(self, roles=None):
         raise Exception("EnvironmentManagerEmpty doesn't have SSH details. "
                         "Please provide SSH details in config.underlay.ssh")
 

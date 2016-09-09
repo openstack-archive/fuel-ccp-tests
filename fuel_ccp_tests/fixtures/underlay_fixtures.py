@@ -164,7 +164,8 @@ def underlay(revert_snapshot, config, hardware):
     """
     # Try to guess environment config for reverted snapshot
     if revert_snapshot and not config.underlay.ssh:
-        config.underlay.ssh = hardware.get_ssh_data()
+        config.underlay.ssh = hardware.get_ssh_data(
+            roles=config.underlay.roles)
 
     # Create Underlay
     if not config.underlay.ssh:
@@ -175,7 +176,8 @@ def underlay(revert_snapshot, config, hardware):
 
         # If config.underlay.ssh wasn't provided from external config, then
         # try to get necessary data from hardware manager (fuel-devops)
-        config.underlay.ssh = hardware.get_ssh_data()
+        config.underlay.ssh = hardware.get_ssh_data(
+            roles=config.underlay.roles)
 
         hardware.create_snapshot(ext.SNAPSHOT.underlay)
 

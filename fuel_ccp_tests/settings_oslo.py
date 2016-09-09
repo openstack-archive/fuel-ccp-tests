@@ -50,6 +50,9 @@ underlay_opts = [
                   'port': (optional),
                   'keys': [(optional)],
                   }, ...]""", default=[]),
+    ct.Cfg('roles', ct.JSONList(),
+           help="Node roles managed by underlay in the environment",
+           default=[ext.NODE_ROLE.k8s, ]),
 ]
 
 # TODO(ddmitriev): remove these variables from settings.py
