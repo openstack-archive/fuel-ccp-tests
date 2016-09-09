@@ -22,6 +22,7 @@ class TestPreCommitKeystone(object):
     """docstring for TestPreCommitKeystone
 
     """
+
     @pytest.mark.keystone_test
     @pytest.mark.keystone_component
     @pytest.mark.revert_snapshot(ext.SNAPSHOT.ccp_deployed)
@@ -31,13 +32,15 @@ class TestPreCommitKeystone(object):
         Scenario:
             1. Install k8s
             2. Install fuel-ccp
-            3. Fetch repos
-            4. Upload repo with changes
-            5. Build components
-            6. Deploy components
-            7. Run identity tempest suite
+            3. Fetch all repositories
+            4. Fetch keystone from review
+            5. Fetch containers from external registry
+            6. Build keytone container
+            7. Deploy Openstack
+            8. Run tempest
 
         """
+
         k8s_actions.create_registry()
         ccpcluster.fetch()
         ccpcluster.update_service('keystone',
@@ -53,4 +56,4 @@ class TestPreCommitKeystone(object):
                                                 namespace='ccp')
         post_os_deploy_checks.check_pods_status(k8s_actions.api, timeout=2500,
                                                 namespace='ccp')
-        rally.run_tempest('--regex tempest.api.identity')
+        rally.run_tempest('--regex ^tempest.api.identity.*')
