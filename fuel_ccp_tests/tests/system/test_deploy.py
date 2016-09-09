@@ -30,6 +30,7 @@ class TestDeployOpenstack(base_test.SystemBaseTest):
 
     @pytest.mark.revert_snapshot(ext.SNAPSHOT.ccp_deployed)
     @pytest.mark.deploy_openstack
+    @pytest.mark.fail_snapshot
     def test_fuel_ccp_deploy_microservices(self, ccpcluster, k8s_actions):
         """Deploy base environment
 
@@ -56,6 +57,7 @@ class TestDeployOpenstack(base_test.SystemBaseTest):
     @pytest.mark.revert_snapshot(ext.SNAPSHOT.ccp_deployed)
     @pytest.mark.component
     @pytest.mark.dry_run
+    @pytest.mark.fail_snapshot
     def test_fuel_ccp_dry_run(self, ccpcluster, k8s_actions):
         """Deploy base environment
 
