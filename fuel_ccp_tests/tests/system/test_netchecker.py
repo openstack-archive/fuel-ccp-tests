@@ -17,7 +17,6 @@ import pytest
 import random
 import time
 import os
-import re
 import yaml
 
 from devops.helpers.helpers import wait, wait_pass
@@ -173,61 +172,10 @@ class TestFuelCCPNetChecker(SystemBaseTest):
             'iptables -D FORWARD -p tcp --dport 8081 -j DROP',
             node_name=slave_node)
 
-    @staticmethod
-    def parse_test_doc(docstring):
-        test_case = {}
-        parse_regex = re.compile(r'(?P<title>^(.*\S.*\n)+)+'
-                                 r'(?P<empty_line1>\s*\n)'
-                                 r'\s*Scenario:\s*\n(?P<scenario>(.+\n)+)'
-                                 r'(?P<empty_line2>\s*(\n|$))?'
-                                 r'(\s*Duration:\s+(?P<duration>\d+).*\n)?')
-        doc_match = re.match(parse_regex, docstring)
-
-        if not doc_match:
-            LOG.error("Can't parse test docstring, unknown format!")
-            return test_case
-
-        test_case['title'] = re.sub(r'[\n\s]+',  # replace multiple spaces and
-                                    ' ',         # line breaks by single space
-                                    doc_match.group('title')
-                                    ).strip()
-
-        test_case['steps'] = []
-        for raw_step in re.split(r'\s+\d+\.\s*', doc_match.group('scenario')):
-            if not raw_step:
-                # start or end of the string
-                continue
-            test_case['steps'].append(
-                re.sub(r'[\n\s]+',  # replace multiple spaces and
-                       ' ',         # line breaks by single space
-                       raw_step
-                       ).strip()
-            )
-
-        # TODO(apanchenko): now it works only with 'seconds'
-        duration = doc_match.group('duration') or 1000
-        test_case['duration'] = int(duration)
-        return test_case
-
-    @staticmethod
-    def show_step(func, step_num):
-        if not func.__doc__:
-            LOG.error("Can't show step #{0}: docstring for method {1} not "
-                      "found!".format(step_num, func.__name__))
-        test_case_steps = TestFuelCCPNetChecker.parse_test_doc(
-            func.__doc__)['steps']
-        try:
-            LOG.info(" *** [STEP#{0}] {1} ***".format(
-                step_num,
-                test_case_steps[step_num - 1]))
-        except IndexError:
-            LOG.error("Can't show step #{0}: docstring for method {1} does't "
-                      "contain it!".format(step_num, func.__name__))
-
     @pytest.mark.fail_snapshot
     @pytest.mark.snapshot_needed
     @pytest.mark.revert_snapshot(ext.SNAPSHOT.k8s_deployed)
-    def test_k8s_netchecker_calico(self, underlay, k8scluster):
+    def test_k8s_netchecker_calico(self, underlay, k8scluster, log_helper):
         """Test for deploying an k8s environment with Calico and check
            connectivity between its networks
 
@@ -254,67 +202,65 @@ class TestFuelCCPNetChecker(SystemBaseTest):
         Duration: 600 seconds
         """
 
-        me = self.test_k8s_netchecker_calico
-
         # STEP #1
-        self.show_step(me, 1)
+        log_helper.show_step(1)
         k8sclient = k8scluster.api
 
         # STEP #2
-        self.show_step(me, 2)
+        log_helper.show_step(2)
         k8scluster.create_registry()
 
         # STEP #3
-        self.show_step(me, 3)
+        log_helper.show_step(3)
         self.dir_upload(underlay,
                         host='master',
                         source=settings.NETCHECKER_SERVER_DIR,
                         destination='/tmp/mcp-netchecker-server')
 
         # STEP #4
-        self.show_step(me, 4)
+        log_helper.show_step(4)
         self.build_netchecker(underlay,
                               stype='server',
                               source_dir='/tmp/mcp-netchecker-server')
 
         # STEP #5
-        self.show_step(me, 5)
+        log_helper.show_step(5)
         self.push_netchecker(underlay, stype='server')
 
         # STEP #6
-        self.show_step(me, 6)
+        log_helper.show_step(6)
         self.dir_upload(underlay,
                         host='master',
                         source=settings.NETCHECKER_AGENT_DIR,
                         destination='/tmp/mcp-netchecker-agent')
 
         # STEP #7
-        self.show_step(me, 7)
+        log_helper.show_step(7)
         self.build_netchecker(underlay,
                               stype='agent',
                               source_dir='/tmp/mcp-netchecker-agent')
 
         # STEP #8
-        self.show_step(me, 8)
+        log_helper.show_step(8)
         self.push_netchecker(underlay, stype='agent')
 
         # STEP #9
-        self.show_step(me, 9)
+        log_helper.show_step(9)
         self.start_netchecker_server(k8sclient=k8sclient)
         self.wait_netchecker_running(underlay, timeout=240)
 
         # STEP #10
-        self.show_step(me, 10)
+        log_helper.show_step(10)
         self.start_netchecker_agent(underlay, k8sclient)
 
         # STEP #11
         # currently agents need some time to start reporting to the server
-        self.show_step(me, 11)
+        log_helper.show_step(11)
         time.sleep(120)
         self.check_network(underlay, works=True)
 
         # STEP #12
-        self.show_step(me, 12)
+        log_helper.show_step(12)
         target_slave = self.get_random_slave(underlay)
 
         # stop netchecker-server
@@ -338,17 +284,17 @@ class TestFuelCCPNetChecker(SystemBaseTest):
         self.wait_netchecker_running(underlay, timeout=240)
 
         # STEP #13
-        self.show_step(me, 13)
+        log_helper.show_step(13)
         # currently agents need some time to start reporting to the server
         time.sleep(120)
         self.check_network(underlay, works=False)
 
         # STEP #14
-        self.show_step(me, 14)
+        log_helper.show_step(14)
         self.unblock_traffic_on_slave(underlay, target_slave)
 
         # STEP #15
-        self.show_step(me, 15)
+        log_helper.show_step(15)
         # currently agents need some time to start reporting to the server
         time.sleep(240)
         self.check_network(underlay, works=True)

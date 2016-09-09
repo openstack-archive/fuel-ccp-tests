@@ -13,6 +13,7 @@
 #    under the License.
 
 from __future__ import division
+import re
 import time
 
 import pytest
@@ -64,3 +65,66 @@ def pytest_runtest_teardown(item):
     foot = "\n" + "<" * 5 + "#" * 30 + "[ {} ]" + "#" * 30 + ">" * 5
     foot = foot.format(finish_step)
     LOG.info(foot)
+
+
+def parse_test_doc(docstring):
+    test_case = {}
+    parse_regex = re.compile(r'(?P<title>^(.*\S.*\n)+)+'
+                             r'(?P<empty_line1>\s*\n)'
+                             r'\s*Scenario:\s*\n(?P<scenario>(.+\n)+)'
+                             r'(?P<empty_line2>\s*(\n|$))?'
+                             r'(\s*Duration:\s+(?P<duration>\d+).*\n)?')
+    doc_match = re.match(parse_regex, docstring)
+
+    if not doc_match:
+        LOG.error("Can't parse test docstring, unknown format!")
+        return test_case
+
+    test_case['title'] = re.sub(r'[\n\s]+',  # replace multiple spaces and
+                                ' ',  # line breaks by single space
+                                doc_match.group('title')
+                                ).strip()
+
+    test_case['steps'] = []
+    for raw_step in re.split(r'\s+\d+\.\s*', doc_match.group('scenario')):
+        if not raw_step:
+            # start or end of the string
+            continue
+        test_case['steps'].append(
+            re.sub(r'[\n\s]+',  # replace multiple spaces and
+                   ' ',  # line breaks by single space
+                   raw_step
+                   ).strip()
+        )
+
+    # TODO(apanchenko): now it works only with 'seconds'
+    duration = doc_match.group('duration') or 1000
+    test_case['duration'] = int(duration)
+    return test_case
+
+
+def show_step(func, step_num):
+    if not func.__doc__:
+        LOG.error("Can't show step #{0}: docstring for method {1} not "
+                  "found!".format(step_num, func.__name__))
+    test_case_steps = parse_test_doc(func.__doc__)['steps']
+    try:
+        LOG.info(" *** [STEP#{0}] {1} ***".format(
+            step_num,
+            test_case_steps[step_num - 1]))
+    except IndexError:
+        LOG.error("Can't show step #{0}: docstring for method {1} does't "
+                  "contain it!".format(step_num, func.__name__))
+
+
+@pytest.fixture(scope='function')
+def log_helper(request):
+    class LogHelper(object):
+        def __init__(self, show_step_func):
+            self._show_step_func = show_step_func
+            self.test_func = request.function
+
+        def show_step(self, step_number):
+            self._show_step_func(self.test_func, step_number)
+
+    return LogHelper(show_step_func=show_step)
