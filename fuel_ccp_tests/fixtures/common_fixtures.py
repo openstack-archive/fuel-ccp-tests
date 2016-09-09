@@ -18,7 +18,9 @@ import time
 import pytest
 
 from fuel_ccp_tests import logger
+from fuel_ccp_tests.helpers import log_step
 from fuel_ccp_tests.helpers import utils
+
 
 LOG = logger.logger
 
@@ -64,3 +66,10 @@ def pytest_runtest_teardown(item):
     foot = "\n" + "<" * 5 + "#" * 30 + "[ {} ]" + "#" * 30 + ">" * 5
     foot = foot.format(finish_step)
     LOG.info(foot)
+
+
+@pytest.fixture(scope='function')
+def show_step(request):
+    def _show_step(step_number):
+        return log_step.log_step(request.function, step_number)
+    return _show_step
