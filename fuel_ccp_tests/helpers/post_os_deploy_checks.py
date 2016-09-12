@@ -57,3 +57,21 @@ def check_jobs_status(k8sclient, timeout=1500, namespace='ccp'):
         helpers.wait(predicate, timeout=timeout,
                      timeout_msg='Timeout waiting job {0} '
                                  'status is not successful'.format(job_name))
+
+
+def check_pod_status_by_name(name, k8sclient, namespace='ccp', count=None):
+    pod_names = [pod.name for pod in
+                 k8sclient.pods.list(namespace=namespace) if name in pod.name]
+    if count:
+        assert (len(pod_names), count,
+                'Unexpected count for service {}'.format(name))
+    for pod in pod_names:
+
+        assert (
+            k8sclient.pods.get(
+                name=pod, namespace=namespace).status.phase in (
+                'Running', 'Succeeded'),
+            'Pod {0} not in Running status. '
+            'Current status {1}.'.format(
+                pod,
+                k8sclient.pods.get(name=pod, namespace=namespace).status))
