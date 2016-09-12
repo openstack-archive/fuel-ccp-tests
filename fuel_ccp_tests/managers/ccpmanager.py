@@ -199,10 +199,10 @@ class CCPManager(object):
         with self.__underlay.remote(
                 host=self.__config.k8s.kube_host) as remote:
             remote.execute(
-                'rm -rf ./microservices-repos/fuel-ccp-{}'
+                'rm -rf ./ccp-repos/fuel-ccp-{}'
                 .format(service_name))
             remote.upload(
                 path,
-                "/home/{user}/microservices-repos/fuel-ccp-{service}".format(
+                "/home/{user}/ccp-repos/fuel-ccp-{service}".format(
                     user=settings.SSH_LOGIN,
                     service=service_name))
