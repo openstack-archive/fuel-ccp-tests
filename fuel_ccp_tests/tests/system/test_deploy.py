@@ -53,27 +53,3 @@ class TestDeployOpenstack(base_test.SystemBaseTest):
         ccpcluster.deploy()
         post_os_deploy_checks.check_jobs_status(k8s_actions.api)
         post_os_deploy_checks.check_pods_status(k8s_actions.api)
-
-    @pytest.mark.revert_snapshot(ext.SNAPSHOT.ccp_deployed)
-    @pytest.mark.component
-    @pytest.mark.dry_run
-    @pytest.mark.fail_snapshot
-    def test_fuel_ccp_dry_run(self, ccpcluster, k8s_actions):
-        """Deploy base environment
-
-        Scenario:
-        1. Revert snapshot
-        2. Install microservices
-        3. Create yaml templates
-        4. Deploy environment
-        4. Check deployment
-
-        Duration 35 min
-        """
-        k8s_actions.create_registry()
-        ccpcluster.build()
-        export_dir = "/home/{user}/export".format(user=settings.SSH_LOGIN)
-        ccpcluster.dry_deploy(export_dir=export_dir)
-        k8s_actions.create_objects(export_dir)
-        post_os_deploy_checks.check_jobs_status(k8s_actions.api)
-        post_os_deploy_checks.check_pods_status(k8s_actions.api)
