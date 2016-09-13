@@ -47,6 +47,92 @@ class SystemBaseTest(object):
         assert set(required_images) < set(images),\
             "Running containers check failed on node '{}'".format(node_name)
 
+    def required_images_version_exists(self, node_name, underlay,
+                                       required_images_version):
+        """Check if there are all base containers on node
+
+        :param node_name: string
+        :param underlay: fuel_ccp_tests.managers.UnderlaySSHManager
+        :param required_images_version: dict, {<image_name_part>: <tag>, }
+        """
+        cmd = "docker images --no-trunc --format '{{.Repository}} {{.Tag}}'"
+        result = underlay.sudo_check_call(cmd, node_name=node_name)
+        images = dict(x.split() for x in result.stdout)
+        err_msg = ''
+        for name in required_images_version.keys():
+            img_name = [x for x in images.keys() if name in x]
+            if not img_name:
+                err_msg += "Image for '{0}' not found\n".format(name)
+            elif len(img_name) > 1:
+                err_msg += "Found more than one image for '{0}'\n".format(name)
+            elif images[img_name[0]] != required_images_version[name]:
+                err_msg += (
+                    "Image for '{0}' has version {1} while expecting version "
+                    "{2}\n".format(name, images[img_name[0]],
+                                   required_images_version[name])
+                )
+        assert err_msg == '',\
+            err_msg + "Expected: {}\nActually: {}\n".format(
+                required_images_version, images)
+
+    def required_packages_version_exists(self, node_name, underlay,
+                                         required_packages_version):
+        """Check if there are all base containers on node
+
+        :param node_name: string
+        :param underlay: fuel_ccp_tests.managers.UnderlaySSHManager
+        :param required_packages_version: dict,
+            {<command_to_get_version>: <version_starts_with>, }
+        """
+        err_msg = ''
+        for cmd in required_packages_version.keys():
+            result = underlay.sudo_check_call(cmd, node_name=node_name)
+            if not result.stdout_str.startswith(
+                    str(required_packages_version[cmd])):
+                err_msg += ("Command '{0}' returned version {1} while "
+                            "expecting version {2}\n"
+                            .format(cmd, result.stdout_str,
+                                    required_packages_version[cmd]))
+
+        assert err_msg == '', err_msg
+
+    def check_required_versions(self, underlay, node_name, kube_settings):
+        """Check that images in docker and packages on the 'node_name'
+           have expected versions.
+        """
+        required_images_version = {
+            kube_settings["hyperkube_image_repo"]: kube_settings[
+                "hyperkube_image_tag"],
+        }
+
+        # If etcd installed in docker, let's check the etcd image tag
+        if kube_settings['etcd_deployment_type'] == 'docker':
+            required_images_version.update(
+                {kube_settings["etcd_image_repo"]: kube_settings[
+                    "etcd_image_tag"]}
+            )
+
+        self.required_images_version_exists(node_name, underlay,
+                                            required_images_version)
+
+        # dict of commands and expected output
+        required_packages_version = {
+            "docker version -f '{{.Client.Version}}'": kube_settings[
+                "docker_version"],
+            "kubectl --version | awk '{print $2}'": kube_settings[
+                "kube_version"],
+        }
+
+        # If etcd installed on host, it should be checked as a package
+        if kube_settings['etcd_deployment_type'] == 'host':
+            required_packages_version.update(
+                {"etcdctl --version | grep 'etcdctl version:' | "
+                 "awk '{print \"v\"$NF}'": kube_settings["etcd_image_tag"]}
+            )
+
+        self.required_packages_version_exists(node_name, underlay,
+                                              required_packages_version)
+
     def check_list_required_images(self, underlay, required_images):
         """Check running containers on each node
 

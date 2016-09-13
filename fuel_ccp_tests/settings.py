@@ -88,6 +88,23 @@ DEFAULT_CUSTOM_YAML = {
     "kube_version": KUBE_VERSION,
 }
 
+# Versions used for upgrade test cases:
+#     from <SERVICENAME> to <UPGRADE_TO_SERVICENAME>
+# , for rollback test cases:
+#     from <UPGRADE_TO_SERVICENAME> to <SERVICENAME>
+UPGRADE_TO_KUBE_VERSION = os.environ.get(
+    'UPGRADE_TO_KUBE_VERSION', KUBE_VERSION)
+UPGRADE_TO_ETCD_IMAGE_REPO = os.environ.get(
+    'UPGRADE_TO_ETCD_IMAGE_REPO', ETCD_IMAGE_REPO)
+UPGRADE_TO_ETCD_IMAGE_TAG = os.environ.get(
+    'UPGRADE_TO_ETCD_IMAGE_TAG', ETCD_IMAGE_TAG)
+UPGRADE_TO_DOCKER_VERSION = float(os.environ.get(
+    'UPGRADE_TO_DOCKER_VERSION', DOCKER_VERSION))
+UPGRADE_TO_HYPERKUBE_IMAGE_REPO = os.environ.get(
+    'UPGRADE_TO_HYPERKUBE_IMAGE_REPO', HYPERKUBE_IMAGE_REPO)
+UPGRADE_TO_HYPERKUBE_IMAGE_TAG = os.environ.get(
+    'UPGRADE_TO_HYPERKUBE_IMAGE_TAG', HYPERKUBE_IMAGE_TAG)
+
 CALICO = {
     "calico_node_image_repo": os.environ.get('CALICO_NODE_IMAGE_REPO'),
     "calicoctl_image_repo": os.environ.get('CALICOCTL_IMAGE_REPO'),
