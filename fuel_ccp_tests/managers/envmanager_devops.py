@@ -142,7 +142,7 @@ class EnvironmentManager(object):
             self._env.resume()
         else:
             raise exceptions.EnvironmentIsNotSet()
-        settings_oslo.save_config(self.__config, name)
+        settings_oslo.save_config(self.__config, name, self._d_env_name)
 
     def revert_snapshot(self, name):
         """Revert snapshot by name
@@ -163,7 +163,8 @@ class EnvironmentManager(object):
             raise exceptions.EnvironmentIsNotSet()
 
         try:
-            settings_oslo.reload_snapshot_config(self.__config, name)
+            settings_oslo.reload_snapshot_config(self.__config, name,
+                                                 self._d_env_name)
         except cfg.ConfigFilesNotFoundError as conf_err:
             LOG.error("Config file(s) {0} not found!".format(
                 conf_err.config_files))
