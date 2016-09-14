@@ -134,6 +134,7 @@ class TestAppController(object):
     }
 
     @pytest.mark.ac_linear_test
+    @pytest.mark.component
     @pytest.mark.revert_snapshot(ext.SNAPSHOT.k8s_deployed)
     @pytest.mark.skipif(settings.AC_REPO == "",
                         reason="ApplicationController repo is not set!")

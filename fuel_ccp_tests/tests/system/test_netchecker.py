@@ -188,6 +188,7 @@ class TestFuelCCPNetChecker(SystemBaseTest, TestFuelCCPNetCheckerMixin):
     @pytest.mark.fail_snapshot
     @pytest.mark.snapshot_needed
     @pytest.mark.revert_snapshot(ext.SNAPSHOT.k8s_deployed)
+    @pytest.mark.system
     def test_k8s_netchecker_calico(self, underlay, k8scluster, show_step):
         """Test for deploying an k8s environment with Calico and check
            connectivity between its networks

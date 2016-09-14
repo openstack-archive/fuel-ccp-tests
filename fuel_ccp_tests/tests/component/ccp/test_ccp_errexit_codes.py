@@ -34,6 +34,7 @@ def clean_repos(node):
 @pytest.mark.ccp_cli_errexit_codes
 @pytest.mark.ccp_cli_error_in_fetch
 @pytest.mark.revert_snapshot(ext.SNAPSHOT.ccp_deployed)
+@pytest.mark.component
 class TestCppCliErrorInFetch(object):
     """Check exit codes when fetch is failing
 
@@ -105,6 +106,7 @@ class TestCppCliDeploy(object):
         clean_repos(admin_node)
 
 
+@pytest.mark.component
 class TestCppCliErrorInShowDep(object):
     """Check exit codes when show-dep is failing"""
 

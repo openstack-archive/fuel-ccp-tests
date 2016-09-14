@@ -27,6 +27,7 @@ class TestLCMScaleK8s(base_test.SystemBaseTest):
     @pytest.mark.snapshot_needed
     @pytest.mark.revert_snapshot(ext.SNAPSHOT.k8s_deployed)
     @pytest.mark.fail_snapshot
+    @pytest.mark.system
     def test_lcm_k8s_scale_up(self, hardware, underlay, k8scluster):
         """Test for scale an k8s environment
 
