@@ -88,6 +88,21 @@ DEFAULT_CUSTOM_YAML = {
     "kube_version": KUBE_VERSION,
 }
 
+CALICO = {
+    "calico_node_image_repo": os.environ.get('CALICO_NODE_IMAGE_REPO'),
+    "calicoctl_image_repo": os.environ.get('CALICOCTL_IMAGE_REPO'),
+    "calico_version": os.environ.get('CALICO_VERSION'),
+    "calico_cni_download_url": os.environ.get('CALICO_CNI_DOWNLOAD_URL'),
+    "calico_cni_checksum": os.environ.get('CALICO_CNI_CHECKSUM'),
+    "calico_cni_ipam_download_url": os.environ.get(
+        'CALICO_CNI_IPAM_DOWNLOAD_URL'),
+    "calico_cni_ipam_checksum": os.environ.get('CALICO_CNI_IPAM_CHECKSUM'),
+}
+
+for key, val in CALICO.items():
+    if val:
+        DEFAULT_CUSTOM_YAML[key] = val
+
 BUILD_IMAGES = get_var_as_bool('BUILD_IMAGES', True)
 REGISTRY = os.environ.get('REGISTRY')
 IMAGES_NAMESPACE = os.environ.get('IMAGES_NAMESPACE', 'mcp')
