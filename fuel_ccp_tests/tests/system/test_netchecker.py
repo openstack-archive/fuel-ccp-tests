@@ -54,6 +54,7 @@ class TestFuelCCPNetCheckerMixin:
 
 
 @pytest.mark.usefixtures("check_netchecker_files")
+@pytest.mark.system
 class TestFuelCCPNetChecker(SystemBaseTest, TestFuelCCPNetCheckerMixin):
     """Test class for network connectivity verification in k8s"""
 

@@ -18,6 +18,7 @@ from fuel_ccp_tests.helpers import ext
 
 
 @pytest.mark.fuel_ccp_scale_k8s
+@pytest.mark.system
 class TestLCMScaleK8s(base_test.SystemBaseTest):
     """Test class for testing k8s scale by fuel-ccp-installer
 

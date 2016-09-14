@@ -31,6 +31,7 @@ class FuelCCPInstallerConfigMixin:
 
 
 @pytest.mark.fuel_ccp_installer
+@pytest.mark.system
 class TestFuelCCPInstaller(base_test.SystemBaseTest,
                            FuelCCPInstallerConfigMixin):
     """Test class for testing k8s deployed by fuel-ccp-installer
@@ -226,6 +227,7 @@ class TestFuelCCPInstaller(base_test.SystemBaseTest,
 
 
 @pytest.mark.fuel_ccp_installer_idempotency
+@pytest.mark.system
 class TestFuelCCPInstallerIdempotency(base_test.SystemBaseTest,
                                       FuelCCPInstallerConfigMixin):
 

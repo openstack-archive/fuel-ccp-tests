@@ -42,6 +42,7 @@ def admin_node(config, underlay, ccpcluster):
 
 
 @pytest.mark.revert_snapshot(ext.SNAPSHOT.ccp_deployed)
+@pytest.mark.component
 class TestCppCliNormalMessageInShowDep(object):
     """Check info messages when show-dep is success"""
 
@@ -176,6 +177,7 @@ class TestCppCliNormalMessageInShowDep(object):
 
 
 @pytest.mark.revert_snapshot(ext.SNAPSHOT.ccp_deployed)
+@pytest.mark.component
 class TestCppCliErrorMessageInShowDep(object):
     """Check error messages when show-dep is failing"""
 
