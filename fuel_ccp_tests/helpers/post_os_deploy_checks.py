@@ -63,7 +63,9 @@ def check_pod_status_by_name(name, k8sclient, namespace='ccp', count=None):
     pod_names = [pod.name for pod in
                  k8sclient.pods.list(namespace=namespace) if name in pod.name]
     if count:
-        assert len(pod_names), count
+        fail_msg = 'Unexpected count of pods {0}. Current {1}'.format(
+            pod_names, len(pod_names))
+        assert len(pod_names) == count, fail_msg
     for pod in pod_names:
 
         assert k8sclient.pods.get(
