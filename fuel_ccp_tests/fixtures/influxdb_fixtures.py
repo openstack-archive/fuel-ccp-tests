@@ -12,10 +12,16 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-pytest_plugins = ['fuel_ccp_tests.fixtures.common_fixtures',
-                  'fuel_ccp_tests.fixtures.config_fixtures',
-                  'fuel_ccp_tests.fixtures.underlay_fixtures',
-                  'fuel_ccp_tests.fixtures.k8s_fixtures',
-                  'fuel_ccp_tests.fixtures.rally_fixtures',
-                  'fuel_ccp_tests.fixtures.ccp_fixtures',
-                  'fuel_ccp_tests.fixtures.influxdb_fixtures']
+import pytest
+
+from fuel_ccp_tests.managers import influxdb_manager
+
+
+@pytest.fixture
+def influxdb_actions(config, underlay, k8s_actions):
+    remote = underlay.remote(host=config.k8s.kube_host)
+    k8sclient = k8s_actions.api
+    ep = k8sclient.endpoints.get('influxdb', namespace='ccp')
+    address = ep.subsets[0].addresses[0]
+    pod_name = address.target_ref.name
+    return influxdb_manager.InfluxDBManager(remote, pod_name)
