@@ -61,10 +61,6 @@ KUBE_PROXY_MODE = os.environ.get("KUBE_PROXY_MODE", "iptables")
 IPIP_USAGE = get_var_as_bool('IPIP_USAGE', True)
 DOCKER_VERSION = float(os.environ.get("DOCKER_VERSION", "1.12"))
 
-KARGO_REPO = os.environ.get('KARGO_REPO',
-                            "https://github.com/kubespray/kargo.git")
-KARGO_COMMIT = os.environ.get('KARGO_COMMIT', 'master')
-
 HYPERKUBE_IMAGE_REPO = os.environ.get('HYPERKUBE_IMAGE_REPO',
                                       "quay.io/coreos/hyperkube")
 HYPERKUBE_IMAGE_TAG = os.environ.get('HYPERKUBE_IMAGE_TAG', "{}_coreos.0"
@@ -72,6 +68,20 @@ HYPERKUBE_IMAGE_TAG = os.environ.get('HYPERKUBE_IMAGE_TAG', "{}_coreos.0"
 ETCD_IMAGE_REPO = os.environ.get('ETCD_IMAGE_REPO', "quay.io/coreos/etcd")
 ETCD_IMAGE_TAG = os.environ.get("ETCD_IMAGE_TAG", 'v3.0.1')
 ETCD_DEPLOYMENT_TYPE = os.environ.get('ETCD_DEPLOYMENT_TYPE', "docker")
+# For dnsmasq purposes
+UPSTREAM_DNS = os.environ.get('UPSTREAM_DNS', '8.8.8.8').split(',')
+# For resolv.conf entries
+
+SERVICE_PATH = os.environ.get('SERVICE_PATH')
+TEMPEST_SCRIPT_PATH = os.environ.get('TEMPEST_SCRIPT_PATH')
+SEARCH_DOMAINS = os.environ.get('SEARCH_DOMAINS',
+                                'ccp.svc.cluster.local').split(',')
+BUILDER_WORKERS = os.environ.get('BUILDER_WORKERS', 1)
+BUILD_IMAGES = get_var_as_bool('BUILD_IMAGES', True)
+REGISTRY = os.environ.get('REGISTRY', "127.0.0.1:31500")
+IMAGES_NAMESPACE = os.environ.get('IMAGES_NAMESPACE', 'mcp')
+IMAGES_TAG = os.environ.get('IMAGES_TAG', 'latest')
+
 
 DEFAULT_CUSTOM_YAML = {
     "kube_network_plugin": KUBE_NETWORK_PLUGIN,
@@ -86,6 +96,9 @@ DEFAULT_CUSTOM_YAML = {
     "hyperkube_image_repo": HYPERKUBE_IMAGE_REPO,
     "ipip": IPIP_USAGE,
     "kube_version": KUBE_VERSION,
+    "use_hyperkube_cni": str("true"),
+    "upstream_dns_servers": UPSTREAM_DNS,
+    "searchdomains": SEARCH_DOMAINS,
 }
 
 CALICO = {
@@ -103,17 +116,6 @@ for key, val in CALICO.items():
     if val:
         DEFAULT_CUSTOM_YAML[key] = val
 
-BUILD_IMAGES = get_var_as_bool('BUILD_IMAGES', True)
-REGISTRY = os.environ.get('REGISTRY', "127.0.0.1:31500")
-IMAGES_NAMESPACE = os.environ.get('IMAGES_NAMESPACE', 'mcp')
-IMAGES_TAG = os.environ.get('IMAGES_TAG', 'latest')
-# For dnsmasq purposes
-UPSTREAM_DNS = os.environ.get('UPSTREAM_DNS', '8.8.8.8').split(',')
-SERVICE_PATH = os.environ.get('SERVICE_PATH')
-TEMPEST_SCRIPT_PATH = os.environ.get('TEMPEST_SCRIPT_PATH')
-SEARCH_DOMAINS = os.environ.get('SEARCH_DOMAINS',
-                                'ccp.svc.cluster.local').split(',')
-BUILDER_WORKERS = os.environ.get('BUILDER_WORKERS', 1)
 DEPLOY_CONFIG = '/tmp/ccp-globals.yaml'
 
 FUEL_CCP_KEYSTONE_LOCAL_REPO = os.environ.get('FUEL_CCP_KEYSTONE_LOCAL_REPO',
