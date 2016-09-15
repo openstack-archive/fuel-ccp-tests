@@ -34,7 +34,7 @@ class CliMessages(object):
         "ccp: error: unrecognized arguments: {}"
 
 
-@pytest.yield_fixture(scope='module')
+@pytest.yield_fixture(scope='function')
 def admin_node(config, underlay, ccpcluster):
     logger.info("Get SSH access to admin node")
     with underlay.remote(host=config.k8s.kube_host) as remote:
