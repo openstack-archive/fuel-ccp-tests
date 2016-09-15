@@ -32,10 +32,12 @@ hardware_opts = [
            help="Hardware manager name", default="devops"),
     ct.Cfg('conf_path', ct.String(),
            help="Hardware config file", default=_default_conf),
-
     ct.Cfg('current_snapshot', ct.String(),
            help="Latest environment status name",
            default=ext.SNAPSHOT.underlay),
+    ct.Cfg('nameserver', ct.String(),
+           help="IP address of DNS server",
+           default='8.8.8.8'),
 ]
 
 

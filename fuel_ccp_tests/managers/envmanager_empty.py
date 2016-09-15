@@ -88,3 +88,7 @@ class EnvironmentManagerEmpty(object):
     def delete_environment(self):
         """Delete environment"""
         pass
+
+    @property
+    def nameserver(self):
+        return self.__config.hardware.nameserver
