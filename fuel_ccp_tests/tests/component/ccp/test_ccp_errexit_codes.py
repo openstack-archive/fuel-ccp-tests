@@ -27,7 +27,7 @@ def admin_node(config, underlay, ccpcluster):
 
 
 def clean_repos(node):
-    cmd = 'rm ~/microservices-repos -rf'
+    cmd = 'rm ~/ccp-repos -rf'
     node.execute(cmd, verbose=True)
 
 
@@ -82,7 +82,7 @@ class TestCppCliBuildExitCode(object):
     def test_error_build_image(self, admin_node):
         cmd = ('ccp --repositories-names fuel-ccp-debian-base fetch && '
                'echo "RUN exit 1" >> '
-               '~/microservices-repos/fuel-ccp-debian-base/'
+               '~/ccp-repos/fuel-ccp-debian-base/'
                'docker/base/Dockerfile.j2')
         admin_node.check_call(cmd, expected=[0], verbose=True)
         cmd = 'ccp build --components base'
