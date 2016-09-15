@@ -12,9 +12,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import json
 import pytest
 import random
+import requests
 import time
 import os
 import yaml
@@ -140,27 +140,22 @@ class TestFuelCCPNetChecker(SystemBaseTest, TestFuelCCPNetCheckerMixin):
                     dsname=daemon_set_spec['metadata']['name'])
 
     @staticmethod
-    def get_netchecker_status(underlay):
-        raw_status = underlay.sudo_check_call(
-            'curl -m 5 -s localhost:31081/api/v1/agents/',
-            node_name='master').stdout
-        return json.loads(''.join(raw_status))
+    def get_netchecker_status(kube_host_ip, netchecker_pod_port=31081):
+        net_status_url = 'http://{0}:{1}/api/v1/connectivity_check'.format(
+            kube_host_ip, netchecker_pod_port)
+        return requests.get(net_status_url)
 
     @staticmethod
-    def wait_netchecker_running(underlay, timeout=60, interval=5):
+    def wait_netchecker_running(kube_host_ip, timeout=60, interval=5):
         wait_pass(
-            lambda: TestFuelCCPNetChecker.get_netchecker_status(underlay),
+            lambda: TestFuelCCPNetChecker.get_netchecker_status(kube_host_ip),
             timeout=timeout, interval=interval)
 
-    @staticmethod
-    def get_netchecker_pods(k8sclient):
-        all_pods = k8sclient.pods.list()
-        return len([p for p in all_pods
-                    if 'netchecker-agent' in p.metadata.name])
-
-    def check_network(self, underlay, k8sclient, works=True):
-        assert (self.get_netchecker_pods(k8sclient) ==
-                len(self.get_netchecker_status(underlay))) == works
+    def check_network(self, kube_host_ip, works=True):
+        if works:
+            assert self.get_netchecker_status(kube_host_ip).status_code == 204
+        else:
+            assert self.get_netchecker_status(kube_host_ip).status_code == 400
 
     @staticmethod
     def get_random_slave(underlay):
@@ -175,7 +170,8 @@ class TestFuelCCPNetChecker(SystemBaseTest, TestFuelCCPNetCheckerMixin):
         LOG.info('Blocked traffic to the network checker service from '
                  'containers on node "{}".'.format(slave_node))
         underlay.sudo_check_call(
-            'iptables -A FORWARD -p tcp --dport 8081 -j DROP',
+            'calicoctl profile calico-k8s-network rule add '
+            '--at=1 outbound deny tcp to ports 8081',
             node_name=slave_node)
 
     @staticmethod
@@ -183,13 +179,14 @@ class TestFuelCCPNetChecker(SystemBaseTest, TestFuelCCPNetCheckerMixin):
         LOG.info('Unblocked traffic to the network checker service from '
                  'containers on node "{}".'.format(slave_node))
         underlay.sudo_check_call(
-            'iptables -D FORWARD -p tcp --dport 8081 -j DROP',
+            'calicoctl profile calico-k8s-network rule remove outbound --at=1',
             node_name=slave_node)
 
     @pytest.mark.fail_snapshot
     @pytest.mark.snapshot_needed
     @pytest.mark.revert_snapshot(ext.SNAPSHOT.k8s_deployed)
-    def test_k8s_netchecker_calico(self, underlay, k8scluster, show_step):
+    def test_k8s_netchecker_calico(self, underlay, k8scluster, config,
+                                   show_step):
         """Test for deploying an k8s environment with Calico and check
            connectivity between its networks
 
@@ -208,9 +205,9 @@ class TestFuelCCPNetChecker(SystemBaseTest, TestFuelCCPNetCheckerMixin):
             10. Run netchecker-agent replication cluster
             11. Get network verification status. Check status is 'OK'
             12. Randomly choose some slave, login to it via SSH, add blocking
-                iptables rule. Restart network checker server
+                rule to the calico policy. Restart network checker server
             13. Get network verification status, Check status is 'FAIL'
-            14. Recover iptables state on the slave
+            14. Recover calico profile state on the slave
             15. Get network verification status. Check status is 'OK'
 
         Duration: 600 seconds
@@ -261,7 +258,7 @@ class TestFuelCCPNetChecker(SystemBaseTest, TestFuelCCPNetCheckerMixin):
         # STEP #9
         show_step(9)
         self.start_netchecker_server(k8sclient=k8sclient)
-        self.wait_netchecker_running(underlay, timeout=240)
+        self.wait_netchecker_running(config.k8s.kube_host, timeout=240)
 
         # STEP #10
         show_step(10)
@@ -271,7 +268,7 @@ class TestFuelCCPNetChecker(SystemBaseTest, TestFuelCCPNetCheckerMixin):
         # currently agents need some time to start reporting to the server
         show_step(11)
         time.sleep(120)
-        self.check_network(underlay, k8sclient, works=True)
+        self.check_network(config.k8s.kube_host, works=True)
 
         # STEP #12
         show_step(12)
@@ -295,13 +292,13 @@ class TestFuelCCPNetChecker(SystemBaseTest, TestFuelCCPNetCheckerMixin):
 
         # start netchecker-server
         self.start_netchecker_server(k8sclient=k8sclient)
-        self.wait_netchecker_running(underlay, timeout=240)
+        self.wait_netchecker_running(config.k8s.kube_host, timeout=240)
 
         # STEP #13
         show_step(13)
         # currently agents need some time to start reporting to the server
         time.sleep(120)
-        self.check_network(underlay, k8sclient, works=False)
+        self.check_network(config.k8s.kube_host, works=False)
 
         # STEP #14
         show_step(14)
@@ -311,4 +308,4 @@ class TestFuelCCPNetChecker(SystemBaseTest, TestFuelCCPNetCheckerMixin):
         show_step(15)
         # currently agents need some time to start reporting to the server
         time.sleep(240)
-        self.check_network(underlay, k8sclient, works=True)
+        self.check_network(config.k8s.kube_host, works=True)
