@@ -67,7 +67,7 @@ def ccpcluster(revert_snapshot, config, hardware,
     if config.ccp.os_host == '0.0.0.0':
         ccp_actions.install_ccp()
         ccp_actions.put_yaml_config(
-            settings.CCP_CLI_PARAMS['deploy-config'],
+            settings.DEPLOY_CONFIG,
             settings.CCP_DEFAULT_GLOBALS)
         ccp_actions.init_default_config()
         config.ccp.os_host = config.k8s.kube_host

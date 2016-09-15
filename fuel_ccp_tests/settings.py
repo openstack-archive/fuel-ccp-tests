@@ -104,7 +104,7 @@ for key, val in CALICO.items():
         DEFAULT_CUSTOM_YAML[key] = val
 
 BUILD_IMAGES = get_var_as_bool('BUILD_IMAGES', True)
-REGISTRY = os.environ.get('REGISTRY')
+REGISTRY = os.environ.get('REGISTRY', "127.0.0.1:31500")
 IMAGES_NAMESPACE = os.environ.get('IMAGES_NAMESPACE', 'mcp')
 IMAGES_TAG = os.environ.get('IMAGES_TAG', 'latest')
 # For dnsmasq purposes
@@ -115,23 +115,38 @@ SERVICE_PATH = os.environ.get('SERVICE_PATH')
 TEMPEST_SCRIPT_PATH = os.environ.get('TEMPEST_SCRIPT_PATH')
 SEARCH_DOMAINS = os.environ.get('SEARCH_DOMAINS',
                                 'ccp.svc.cluster.local').split(',')
-BUILDER_WORKERS = os.environ.get('BUILDER_WORKERS', '1')
+BUILDER_WORKERS = os.environ.get('BUILDER_WORKERS', 1)
+DEPLOY_CONFIG = '/tmp/ccp-globals.yaml'
 
 FUEL_CCP_KEYSTONE_LOCAL_REPO = os.environ.get('FUEL_CCP_KEYSTONE_LOCAL_REPO',
                                               None)
+
+CCP_CONF = {
+    'use_stderr': False,
+    'builder': {
+        'workers': BUILDER_WORKERS,
+        'push': True
+    },
+    'registry': {
+        'address': REGISTRY
+    },
+    'repositories': {
+        'skip_empty': True
+    },
+    'kubernetes': {
+        'namespace': 'ccp'
+    },
+    'deploy_config': DEPLOY_CONFIG,
+    'images': {
+        'namespace': IMAGES_NAMESPACE,
+        'tag': IMAGES_TAG
+    }
+}
 
 CCP_CLI_PARAMS = {
     "config-file": "~/.ccp.yaml",
     "debug": "",
     "log-file": "ccp.log",
-    "builder-workers": BUILDER_WORKERS,
-    "builder-push": "",
-    "registry-address": REGISTRY or "127.0.0.1:31500",
-    "kubernetes-namespace": "ccp",
-    "repositories-skip-empty": "",
-    "deploy-config": "/tmp/ccp-globals.yaml",
-    "images-namespace": IMAGES_NAMESPACE,
-    "images-tag": IMAGES_TAG
 }
 
 CCP_DEFAULT_GLOBALS = {
