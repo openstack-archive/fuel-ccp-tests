@@ -21,9 +21,6 @@ from fuel_ccp_tests import logger
 
 LOG = logger.logger
 
-CCP_CONF = """
-use_stderr: False
-"""
 
 
 class CCPManager(object):
@@ -59,7 +56,8 @@ class CCPManager(object):
             if use_defaults:
                 LOG.info("Use defaults config from ccp")
                 cmd = ('cat fuel-ccp/etc/topology-example.yaml '
-                       '>> /tmp/ccp-globals.yaml')
+                       '>> {deploy_config}').format(
+                           deploy_config=settings.DEPLOY_CONFIG)
                 remote.check_call(cmd, verbose=True)
 
     @property
@@ -73,7 +71,7 @@ class CCPManager(object):
         self._default_params = v.copy()
 
     def init_default_config(self):
-        self.put_raw_config('~/.ccp.yaml', CCP_CONF)
+        self.put_yaml_config('~/.ccp.yaml', settings.CCP_CONF)
 
     def put_raw_config(self, path, content):
         """Put config content to file on admin node at path
