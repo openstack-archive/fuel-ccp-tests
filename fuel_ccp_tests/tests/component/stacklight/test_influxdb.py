@@ -82,24 +82,34 @@ def make_file(admin_node):
         admin_node.execute('rm /tmp/{}'.format(filename))
 
 
-@pytest.yield_fixture
-def cpu_workload(admin_node):
+def workload_fixture_generator(command):
+    @pytest.yield_fixture
+    def workload(admin_node):
 
-    pids = set()
+        pids = set()
 
-    def _make_workload():
-        pid = admin_node.check_call(
-            'gzip < /dev/zero > /dev/null 2>&1 & echo $!').stdout_str
-        # check process is running
-        cmd = 'ls /proc/{}'.format(pid)
-        err_msg = "Background process with pid `{}` is not found".format(pid)
-        assert admin_node.execute(cmd).exit_code == 0, err_msg
-        pids.add(pid)
+        def _make_workload():
+            pid = admin_node.check_call('{} & echo $!'.format(
+                command)).stdout_str
+            # check process is running
+            cmd = 'ls /proc/{}'.format(pid)
+            err_msg = "Background process with pid `{}` is not found".format(
+                pid)
+            assert admin_node.execute(cmd).exit_code == 0, err_msg
+            pids.add(pid)
 
-    yield _make_workload
+        yield _make_workload
 
-    for pid in pids:
-        admin_node.execute('kill {}'.format(pid))
+        for pid in pids:
+            admin_node.execute('kill {}'.format(pid))
+
+    return workload
+
+
+cpu_workload = workload_fixture_generator(
+    command='gzip < /dev/zero > /dev/null 2>&1')
+dd_workload = workload_fixture_generator(
+    command='dd if=/dev/zero of=/dev/null < /dev/null > /dev/null 2>&1')
 
 
 class TestMetrics(object):
@@ -119,6 +129,10 @@ class TestMetrics(object):
         diff = map(lambda x: x[0] - x[1], zip(new_values, old_values))
         # user_cpu is 1st value from metrics
         return diff[0] * 100.0 / sum(diff)
+
+    def get_node_loadavg(self, remote):
+        return float(remote.check_call(
+            "cat /proc/loadavg | awk '{ print $1 }'").stdout_str)
 
     def get_influxdb_measurements(self, influxdb, measure_regexp):
         """Returns list of measurements matched `measure_regexp`
@@ -151,7 +165,8 @@ class TestMetrics(object):
                                  influxdb,
                                  serie,
                                  conditions=None,
-                                 updated_after=0):
+                                 updated_after=0,
+                                 timeout=2 * 60):
         conditions = " and {}".format(conditions) if conditions else ""
         query = ("select * from \"{serie}\" "
                  "where time > {updated_after} {conditions} "
@@ -172,10 +187,23 @@ class TestMetrics(object):
 
         helpers.wait(
             _get_data,
-            timeout=60 * 2,
-            interval=10,
+            timeout=timeout,
+            interval=timeout / 10,
             timeout_msg="Timeout waiting data for query `{}`".format(query))
         return data[-1]
+
+    def get_influxdb_new_record(self,
+                                influxdb,
+                                serie,
+                                conditions=None,
+                                timeout=2 * 60):
+        """Return first new record (what will appear in future) from db"""
+        data = self.get_influxdb_last_record(influxdb, serie, conditions)
+        return self.get_influxdb_last_record(influxdb,
+                                             serie,
+                                             conditions,
+                                             updated_after=data['time'],
+                                             timeout=timeout)
 
     def test_filesystem_metrics(self, make_file, influxdb, admin_node):
         """Check reporting filesystem metrics in InfluxDb
@@ -204,9 +232,9 @@ class TestMetrics(object):
         hostname = admin_node.check_call('hostname').stdout_str
         query_conditions = ("hostname='{hostname}' and "
                             "filesystem='rootfs'").format(hostname=hostname)
-        data = self.get_influxdb_last_record(influxdb,
-                                             free_space_serie,
-                                             conditions=query_conditions)
+        data = self.get_influxdb_new_record(influxdb,
+                                            free_space_serie,
+                                            conditions=query_conditions)
         # Get df free space from admin_node
         free = self.get_node_free_space(admin_node)
         assert free == pytest.approx(data['value'], rel=0.1)
@@ -214,12 +242,9 @@ class TestMetrics(object):
         # Create file
         make_file(size_mb=100)
 
-        # Retrive data twice for avoiding old record retriving
-        for _ in range(2):
-            data = self.get_influxdb_last_record(influxdb,
-                                                 free_space_serie,
-                                                 conditions=query_conditions,
-                                                 updated_after=data['time'])
+        data = self.get_influxdb_new_record(influxdb,
+                                            free_space_serie,
+                                            conditions=query_conditions)
         # Get df free space from admin_node
         free = self.get_node_free_space(admin_node)
         assert free == pytest.approx(data['value'], rel=0.1)
@@ -267,11 +292,11 @@ class TestMetrics(object):
             user_percentage = self.get_node_user_cpu_percentage(admin_node)
             host_percentages.append(user_percentage)
             influxdb_percentages.append(data['value'])
-        err_msg = (
-            "Mean CPU user load for last 5 times from influxdb -  {0} "
-            "and same value from host - {1} "
-            "are significantly different").format(
-                sum(influxdb_percentages) / 5, sum(host_percentages) / 5)
+        err_msg = ("Mean CPU user load for last 5 times from influxdb -  {0} "
+                   "and same value from host - {1} "
+                   "are significantly different").format(
+                       sum(influxdb_percentages) / 5,
+                       sum(host_percentages) / 5)
         assert sum(host_percentages) == pytest.approx(
             sum(influxdb_percentages), rel=0.5), err_msg
 
@@ -291,10 +316,55 @@ class TestMetrics(object):
             user_percentage = self.get_node_user_cpu_percentage(admin_node)
             host_percentages.append(user_percentage)
             influxdb_percentages.append(data['value'])
-        err_msg = (
-            "Mean CPU user load for last 5 times from influxdb -  {0} "
-            "and same value from host - {1} "
-            "are significantly different").format(
-                sum(influxdb_percentages) / 5, sum(host_percentages) / 5)
+        err_msg = ("Mean CPU user load for last 5 times from influxdb -  {0} "
+                   "and same value from host - {1} "
+                   "are significantly different").format(
+                       sum(influxdb_percentages) / 5,
+                       sum(host_percentages) / 5)
         assert sum(host_percentages) == pytest.approx(
             sum(influxdb_percentages), rel=0.5), err_msg
+
+    def test_load_metrics(self, influxdb, admin_node, dd_workload):
+        """Check reporting load metrics in InfluxDb
+
+        Scenario:
+            * Get measurements starts with `intel.procfs.load`
+            * Get information from influxdb pod for all filesystem series:
+                    kubectl exec -it <pod name> -- influx -host <ip> \
+                    -database ccp -execute "select count(value) \
+                    from \"<series>\" where time > now() - 1d"
+            * Check that all series contains some data
+            * Check that load.mi1 value from ifluxdb nearly equal to
+                `cat /proc/loadavg` output
+            * Create some load on admin_node
+            * Check that load.mi1 value from ifluxdb nearly equal to
+                `cat /proc/loadavg` output again
+        """
+        # Get all load series
+        series = self.get_influxdb_measurements(influxdb,
+                                                '/intel\.procfs\.load*/')
+
+        # Check all series contains records
+        for serie in series:
+            self.check_influxdb_serie_contains_records(influxdb, serie)
+
+        # Get admin_node load min1
+        load_serie = "intel.procfs.load.min1"
+        hostname = admin_node.check_call('hostname').stdout_str
+        query_conditions = ("hostname='{hostname}'").format(hostname=hostname)
+        data = self.get_influxdb_new_record(influxdb,
+                                            load_serie,
+                                            conditions=query_conditions)
+        # Get /proc/loadavd 1st value from admin_node
+        loadavg = self.get_node_loadavg(admin_node)
+        assert loadavg == pytest.approx(data['value'], rel=0.5)
+
+        # Make some load
+        dd_workload()
+
+        # Get influxdb and admin_node values again
+        data = self.get_influxdb_new_record(influxdb,
+                                            load_serie,
+                                            conditions=query_conditions)
+        loadavg = self.get_node_loadavg(admin_node)
+        assert loadavg == pytest.approx(data['value'], rel=0.5)
