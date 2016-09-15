@@ -69,7 +69,11 @@ class InfluxDBManager(object):
                    "in influxdb for last `{}`").format(serie, duration)
         assert count > 0, err_msg
 
-    def get_last_record(self, serie, conditions=None, updated_after=0):
+    def get_last_record(self,
+                        serie,
+                        conditions=None,
+                        updated_after=0,
+                        timeout=2 * 60):
         conditions = " and {}".format(conditions) if conditions else ""
         query = ("select * from \"{serie}\" "
                  "where time > {updated_after} {conditions} "
@@ -90,6 +94,15 @@ class InfluxDBManager(object):
 
         helpers.wait(
             _get_data,
-            timeout=60 * 2,
+            timeout=timeout,
+            interval=timeout / 10,
             timeout_msg="Timeout waiting data for query `{}`".format(query))
         return data[-1]
+
+    def get_new_record(self, serie, conditions=None, timeout=2 * 60):
+        """Return first new record (what will appear in future) from db"""
+        data = self.get_last_record(serie, conditions)
+        return self.get_last_record(serie,
+                                    conditions,
+                                    updated_after=data['time'],
+                                    timeout=timeout)
