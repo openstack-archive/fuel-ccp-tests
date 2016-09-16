@@ -59,9 +59,13 @@ def ccpcluster(revert_snapshot, config, hardware,
 
     ccp_actions.default_params = settings.CCP_CLI_PARAMS
 
-    # Try to guess environment config for reverted snapshot
-    if revert_snapshot and config.ccp.os_host == '0.0.0.0':
-        config.ccp.os_host = config.k8s.kube_host
+    # If no snapshot was reverted, then try to revert the snapshot
+    # that belongs to the fixture.
+    # Note: keep fixtures in strict dependences from each other!
+    if not revert_snapshot:
+        if  hardware.has_snapshot(ext.SNAPSHOT.ccp_deployed) and \
+                hardware.has_snapshot_config(ext.SNAPSHOT.ccp_deployed):
+        hardware.revert_snapshot(ext.SNAPSHOT.ccp_deployed)
 
     # Install CCP
     if config.ccp.os_host == '0.0.0.0':
