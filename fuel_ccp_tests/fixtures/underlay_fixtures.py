@@ -105,7 +105,9 @@ def revert_snapshot(request, hardware):
     revert_snapshot = request.keywords.get('revert_snapshot', None)
     snapshot_name = extract_name_from_mark(revert_snapshot)
 
-    if snapshot_name and hardware.has_snapshot(snapshot_name):
+    if snapshot_name and \
+            hardware.has_snapshot(snapshot_name) and \
+            hardware.has_snapshot_config(snapshot_name):
         hardware.revert_snapshot(snapshot_name)
         return snapshot_name
 
@@ -163,10 +165,13 @@ def underlay(request, revert_snapshot, config, hardware):
                                - provide SSH access to underlay nodes using
                                  node names or node IPs.
     """
-    # Try to guess environment config for reverted snapshot
-    if revert_snapshot and not config.underlay.ssh:
-        config.underlay.ssh = hardware.get_ssh_data(
-            roles=config.underlay.roles)
+    # If no snapshot was reverted, then try to revert the snapshot
+    # that belongs to the fixture.
+    # Note: keep fixtures in strict dependences from each other!
+    if not revert_snapshot:
+        if hardware.has_snapshot(ext.SNAPSHOT.underlay) and \
+                hardware.has_snapshot_config(ext.SNAPSHOT.underlay):
+            hardware.revert_snapshot(ext.SNAPSHOT.underlay)
 
     # Create Underlay
     if not config.underlay.ssh:

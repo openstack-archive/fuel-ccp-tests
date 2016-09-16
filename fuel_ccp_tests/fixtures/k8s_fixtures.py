@@ -60,10 +60,13 @@ def k8scluster(revert_snapshot, request, config,
     If you want to revert 'k8s_deployed' snapshot, please use mark:
     @pytest.mark.revert_snapshot("k8s_deployed")
     """
-    # Try to guess environment config for reverted snapshot
-    if revert_snapshot and config.k8s.kube_host == '0.0.0.0':
-        config.k8s.kube_host = underlay.host_by_node_name(
-            underlay.node_names()[0])
+    # If no snapshot was reverted, then try to revert the snapshot
+    # that belongs to the fixture.
+    # Note: keep fixtures in strict dependences from each other!
+    if not revert_snapshot:
+        if hardware.has_snapshot(ext.SNAPSHOT.k8s_deployed) and \
+                hardware.has_snapshot_config(ext.SNAPSHOT.k8s_deployed):
+            hardware.revert_snapshot(ext.SNAPSHOT.k8s_deployed)
 
     # Create k8s cluster
     if config.k8s.kube_host == '0.0.0.0':
