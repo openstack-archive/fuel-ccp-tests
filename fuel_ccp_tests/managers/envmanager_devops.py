@@ -12,6 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import os
+
 from devops import error
 from devops.helpers import helpers
 from devops import models
@@ -177,6 +179,14 @@ class EnvironmentManager(object):
             raise exceptions.EnvironmentIsNotSet()
         settings_oslo.save_config(self.__config, name, self._env.name)
 
+    def _get_snapshot_config_name(snapshot_name, env_name=None):
+        """Reset config to the state from test_config file"""
+        if env_name is None:
+            env_name = 'config'
+        test_config_path = os.path.join(
+            settings.LOGS_DIR, '{0}_{1}.ini'.format(env_name, snapshot_name))
+        return test_config_path
+
     def revert_snapshot(self, name):
         """Revert snapshot by name
 
@@ -196,8 +206,10 @@ class EnvironmentManager(object):
             raise exceptions.EnvironmentIsNotSet()
 
         try:
-            settings_oslo.reload_snapshot_config(self.__config, name,
-                                                 self._env.name)
+            test_config_path = self._get_snapshot_config_name(name,
+                                                              self._env.name)
+            settings_oslo.reload_snapshot_config(self.__config,
+                                                 test_config_path)
         except cfg.ConfigFilesNotFoundError as conf_err:
             LOG.error("Config file(s) {0} not found!".format(
                 conf_err.config_files))
@@ -273,6 +285,11 @@ class EnvironmentManager(object):
 
     def has_snapshot(self, name):
         return self._env.has_snapshot(name)
+
+    def has_snapshot_config(self, name):
+        test_config_path = self._get_snapshot_config_name(name,
+                                                          self._env.name)
+        return os.path.isfile(test_config_path)
 
     def delete_environment(self):
         """Delete environment
