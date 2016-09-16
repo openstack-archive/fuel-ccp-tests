@@ -60,11 +60,6 @@ class EnvironmentManagerEmpty(object):
             raise Exception(
                 "EnvironmentManagerEmpty cannot revert nodes from {} to {}"
                 .format(self.__config.hardware.current_snapshot, name))
-        try:
-            settings_oslo.reload_snapshot_config(self.__config, name)
-        except cfg.ConfigFilesNotFoundError:
-            pass
-        self.__config.hardware.current_snapshot = name
 
     def start(self):
         """Start environment"""
@@ -83,6 +78,9 @@ class EnvironmentManagerEmpty(object):
         pass
 
     def has_snapshot(self, name):
+        return self.__config.hardware.current_snapshot == name
+
+    def has_snapshot_config(self, name):
         return self.__config.hardware.current_snapshot == name
 
     def delete_environment(self):
