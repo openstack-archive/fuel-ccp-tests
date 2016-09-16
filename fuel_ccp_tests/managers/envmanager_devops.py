@@ -197,7 +197,7 @@ class EnvironmentManager(object):
             )
             raise exceptions.EnvironmentAlreadyExists(env_name)
         self._env.define()
-
+        self.set_dns_config()
         LOG.info(
             'Environment "{0}" created and started'.format(env_name)
         )
@@ -323,6 +323,10 @@ class EnvironmentManager(object):
         nodes = self.k8s_nodes
         return [self.node_ip(node) for node in nodes]
 
+    @property
+    def nameserver(self):
+        return self._env.router(ext.NETWORK_TYPE.public)
+
     @staticmethod
     def node_ssh_client(node, login, password=None, private_keys=None):
         """Return SSHClient for node
@@ -407,3 +411,8 @@ class EnvironmentManager(object):
                 source=source, target=target, login=login,
                 password=password, private_keys=private_keys
             )
+
+    def set_dns_config(self):
+        # Set local nameserver to use by default
+        if not self.__config.underlay.nameservers:
+            self.__config.underlay.nameservers = [self.nameserver]

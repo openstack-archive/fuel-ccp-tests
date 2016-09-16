@@ -32,7 +32,6 @@ hardware_opts = [
            help="Hardware manager name", default="devops"),
     ct.Cfg('conf_path', ct.String(),
            help="Hardware config file", default=_default_conf),
-
     ct.Cfg('current_snapshot', ct.String(),
            help="Latest environment status name",
            default=ext.SNAPSHOT.underlay),
@@ -53,6 +52,9 @@ underlay_opts = [
     ct.Cfg('roles', ct.JSONList(),
            help="Node roles managed by underlay in the environment",
            default=[ext.NODE_ROLE.k8s, ]),
+    ct.Cfg('nameservers', ct.JSONList(),
+           help="IP addresses of DNS servers",
+           default=[]),
 ]
 
 # TODO(ddmitriev): remove these variables from settings.py

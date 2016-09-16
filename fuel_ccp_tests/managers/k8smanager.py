@@ -71,6 +71,7 @@ class K8SManager(object):
             "KARGO_COMMIT": settings.KARGO_COMMIT
         }
         if custom_yaml:
+            self.set_dns(custom_yaml)
             environment_variables.update(
                 {"CUSTOM_YAML": yaml.dump(
                     custom_yaml, default_flow_style=False)}
@@ -181,3 +182,12 @@ class K8SManager(object):
             )
             result = remote.check_call(cmd)
             LOG.info(result['stdout'])
+
+    def set_dns(self, k8s_settings):
+        if 'nameservers' in k8s_settings:
+            return
+        if not self.__config.underlay.nameservers:
+            return
+        k8s_settings['nameservers'] = self.__config.underlay.nameservers
+        LOG.info('Added custom DNS servers to the settings: '
+                 '{0}'.format(k8s_settings['nameservers']))
