@@ -65,15 +65,15 @@ class TestFuelCCPNetChecker(base_test.SystemBaseTest,
             remote.upload(source, destination)
 
     @staticmethod
-    def get_ds_status(k8sclient, dsname):
-        ds = k8sclient.daemonsets.get(name=dsname)
+    def get_ds_status(k8s, dsname):
+        ds = k8s.api.daemonsets.get(name=dsname)
         return (ds.status.current_number_scheduled ==
                 ds.status.desired_number_scheduled)
 
     @staticmethod
-    def wait_ds_running(k8sclient, dsname, timeout=60, interval=5):
+    def wait_ds_running(k8s, dsname, timeout=60, interval=5):
         helpers.wait(
-            lambda: TestFuelCCPNetChecker.get_ds_status(k8sclient, dsname),
+            lambda: TestFuelCCPNetChecker.get_ds_status(k8s, dsname),
             timeout=timeout, interval=interval)
 
     @staticmethod
@@ -257,7 +257,7 @@ class TestFuelCCPNetChecker(base_test.SystemBaseTest,
         # STEP #9
         show_step(9)
         self.start_netchecker_server(k8s=k8scluster)
-        self.wait_netchecker_running(underlay, timeout=240)
+        self.wait_netchecker_running(config.k8s.kube_host, timeout=240)
 
         # STEP #10
         show_step(10)
@@ -291,7 +291,7 @@ class TestFuelCCPNetChecker(base_test.SystemBaseTest,
 
         # start netchecker-server
         self.start_netchecker_server(k8s=k8scluster)
-        self.wait_netchecker_running(underlay, timeout=240)
+        self.wait_netchecker_running(config.k8s.kube_host, timeout=240)
 
         # STEP #13
         show_step(13)
