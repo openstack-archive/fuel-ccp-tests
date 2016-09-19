@@ -13,6 +13,7 @@
 #    under the License.
 
 import pytest
+from datetime import datetime
 
 from fuel_ccp_tests.helpers import ext
 from fuel_ccp_tests import logger
@@ -195,3 +196,47 @@ def underlay(request, revert_snapshot, config, hardware):
         underlay = underlay_ssh_manager.UnderlaySSHManager(config.underlay.ssh)
 
     return underlay
+
+
+@pytest.fixture(scope='function', autouse=True)
+def gather_logs(request, config, underlay):
+    """Fixture executes Ansible command that gather logs from the K8s cluster
+    nodes into a tarball and store results to the 'logs' directory.
+    Logs collection starts if the test is failed and marked with
+    'gather_logs_if_test_failed' marker.
+
+    :param request: pytest.python.FixtureRequest
+    :param config: fixture provides oslo.config
+    :param underlay: fixture provides underlay manager
+    """
+    collect_logs = request.keywords.get('gather_logs_if_test_fails')
+
+    def test_fin():
+        if hasattr(request.node, 'rep_call') \
+                and request.node.rep_call.failed and collect_logs:
+            remote = underlay.remote(host=config.k8s.kube_host)
+            cmd = "/usr/bin/ansible-playbook " \
+                  "--ssh-extra-args '-o\ StrictHostKeyChecking=no' " \
+                  "-u {user} -b " \
+                  "--become-user=root -i workspace/inventory/inventory.cfg " \
+                  "-e searchpath=workspace " \
+                  "-e @workspace/utils/kargo/roles/configure_logs/defaults/" \
+                  "main.yml " \
+                  "workspace/kargo/scripts/collect-info.yaml".format(
+                      user=settings.SSH_LOGIN)
+            LOG.info(
+                "Running command '{cmd}' on node {node_name}".format(
+                    cmd=cmd,
+                    node_name=remote.hostname
+                )
+            )
+            remote.execute(cmd)
+            tarball_name = 'logs.tar.gz'
+            tarball_prefix = request.node.function.__name__ + '_' + \
+                datetime.now().strftime('%Y%m%d_%H%M%S') + '_'
+            tarball_dst = settings.LOGS_DIR + '/logs/' + tarball_prefix + \
+                tarball_name
+            remote.download(tarball_name, tarball_dst)
+            LOG.info("Logs are copied into: {}".format(tarball_dst))
+
+    request.addfinalizer(test_fin)
