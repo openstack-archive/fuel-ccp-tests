@@ -33,19 +33,23 @@ def get_test_method_name():
 
 
 def update_yaml(yaml_tree=None, yaml_value='', is_uniq=True,
-                yaml_file=settings.TIMESTAT_PATH_YAML):
+                yaml_file=settings.TIMESTAT_PATH_YAML, remote=None):
     """Store/update a variable in YAML file.
 
     yaml_tree - path to the variable in YAML file, will be created if absent,
     yaml_value - value of the variable, will be overwritten if exists,
     is_uniq - If false, add the unique two-digit suffix to the variable name.
     """
+    def get_file(path, remote=None, mode="r"):
+        if remote:
+            return remote.open(path, mode)
+        else:
+            return open(path, mode)
+
     if yaml_tree is None:
         yaml_tree = []
-    yaml_data = {}
-    if os.path.isfile(yaml_file):
-        with open(yaml_file, 'r') as f:
-            yaml_data = yaml.load(f)
+    with get_file(yaml_file, remote) as file_obj:
+        yaml_data = yaml.safe_load(file_obj)
 
     # Walk through the 'yaml_data' dict, find or create a tree using
     # sub-keys in order provided in 'yaml_tree' list
@@ -65,8 +69,8 @@ def update_yaml(yaml_tree=None, yaml_value='', is_uniq=True,
                 break
 
     item[last] = yaml_value
-    with open(yaml_file, 'w') as f:
-        yaml.dump(yaml_data, f, default_flow_style=False)
+    with get_file(yaml_file, remote, mode='w') as file_obj:
+        yaml.dump(yaml_data, file_obj, default_flow_style=False)
 
 
 class TimeStat(object):
