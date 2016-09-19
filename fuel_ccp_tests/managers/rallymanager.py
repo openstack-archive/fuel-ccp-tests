@@ -91,7 +91,7 @@ rally verify showconfig"""
             self.docker_id = res['stdout'][0].strip()
             LOG.info("Container ID is {}".format(self.docker_id))
 
-    def run_tempest(self, test):
+    def run_tempest(self, test=''):
         docker_exec = ('source /home/{user}/rally/openrc; '
                        'docker exec -i {docker_id} bash -c "{cmd}"')
         commands = [
