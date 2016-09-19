@@ -16,7 +16,6 @@ import os
 import pytest
 import random
 import requests
-import time
 import yaml
 
 from devops.helpers import helpers
@@ -41,6 +40,20 @@ def check_netchecker_files(request):
          "{0}!".format(', '.join(files_missing)))
 
 
+@pytest.fixture(scope='class')
+def check_netchecker_images():
+    settings_missing = []
+    for setting in ('MCP_NETCHECKER_AGENT_IMAGE_REPO',
+                    'MCP_NETCHECKER_AGENT_VERSION',
+                    'MCP_NETCHECKER_SERVER_IMAGE_REPO',
+                    'MCP_NETCHECKER_SERVER_VERSION'):
+        if not getattr(settings, setting, None):
+            settings_missing.append(setting)
+    assert len(settings_missing) == 0, \
+        ("The following environment variables are not set: "
+         "{0}!".format(', '.join(settings_missing)))
+
+
 class TestFuelCCPNetCheckerMixin:
     pod_yaml_file = os.path.join(
         settings.NETCHECKER_SERVER_DIR,
@@ -54,6 +67,7 @@ class TestFuelCCPNetCheckerMixin:
 
 
 @pytest.mark.usefixtures("check_netchecker_files")
+@pytest.mark.usefixtures("check_netchecker_images")
 @pytest.mark.system
 class TestFuelCCPNetChecker(base_test.SystemBaseTest,
                             TestFuelCCPNetCheckerMixin):
@@ -76,25 +90,14 @@ class TestFuelCCPNetChecker(base_test.SystemBaseTest,
             lambda: TestFuelCCPNetChecker.get_ds_status(k8s, dsname),
             timeout=timeout, interval=interval)
 
-    @staticmethod
-    def build_netchecker(underlay, stype, source_dir):
-        if stype == 'agent':
-            source_dir = '/'.join((source_dir, 'docker'))
-        underlay.sudo_check_call(
-            'cd {0} && docker build -t 127.0.0.1:31500/netchecker/'
-            '{1}:latest .'.format(source_dir, stype),
-            node_name='master')
-
-    @staticmethod
-    def push_netchecker(underlay, stype, registry='127.0.0.1:31500'):
-        underlay.sudo_check_call(
-            'docker push {0}/netchecker/{1}:latest'.format(registry, stype),
-            node_name='master')
-
     def start_netchecker_server(self, k8s):
-
         with open(self.pod_yaml_file) as pod_conf:
             for pod_spec in yaml.load_all(pod_conf):
+                for container in pod_spec['spec']['containers']:
+                    if container['name'] == 'netchecker-server':
+                        container['image'] = '{0}:{1}'.format(
+                            settings.MCP_NETCHECKER_SERVER_IMAGE_REPO,
+                            settings.MCP_NETCHECKER_SERVER_VERSION)
                 try:
                     if k8s.api.pods.get(name=pod_spec['metadata']['name']):
                         LOG.debug('Network checker server pod {} is '
@@ -112,7 +115,7 @@ class TestFuelCCPNetChecker(base_test.SystemBaseTest,
                 try:
                     if k8s.api.services.get(
                             name=svc_spec['metadata']['name']):
-                        LOG.debug('Network checker server pod {} is '
+                        LOG.debug('Network checker server service {} is '
                                   'already running! Skipping resource creation'
                                   '.'.format(svc_spec['metadata']['name']))
                         continue
@@ -132,6 +135,12 @@ class TestFuelCCPNetChecker(base_test.SystemBaseTest,
 
         with open(self.ds_yaml_file) as ds_conf:
             for daemon_set_spec in yaml.load_all(ds_conf):
+                for container in (daemon_set_spec['spec']['template']['spec']
+                                  ['containers']):
+                    if container['name'] == 'netchecker-agent':
+                        container['image'] = '{0}:{1}'.format(
+                            settings.MCP_NETCHECKER_AGENT_IMAGE_REPO,
+                            settings.MCP_NETCHECKER_AGENT_VERSION)
                 k8s.check_ds_create(body=daemon_set_spec)
                 TestFuelCCPNetChecker.wait_ds_running(
                     k8s,
@@ -144,7 +153,7 @@ class TestFuelCCPNetChecker(base_test.SystemBaseTest,
         return requests.get(net_status_url)
 
     @staticmethod
-    def wait_netchecker_running(kube_host_ip, timeout=60, interval=5):
+    def wait_netchecker_running(kube_host_ip, timeout=120, interval=5):
         helpers.wait_pass(
             lambda: TestFuelCCPNetChecker.get_netchecker_status(kube_host_ip),
             timeout=timeout, interval=interval)
@@ -154,6 +163,12 @@ class TestFuelCCPNetChecker(base_test.SystemBaseTest,
             assert self.get_netchecker_status(kube_host_ip).status_code == 204
         else:
             assert self.get_netchecker_status(kube_host_ip).status_code == 400
+
+    def wait_check_network(self, kube_host_ip, works=True, timeout=120,
+                           interval=5):
+        helpers.wait_pass(
+            lambda: self.check_network(kube_host_ip, works=works),
+            timeout=timeout, interval=interval)
 
     @staticmethod
     def get_random_slave(underlay):
@@ -190,25 +205,16 @@ class TestFuelCCPNetChecker(base_test.SystemBaseTest,
 
         Scenario:
             1. Install k8s.
-            2. Create docker registry service
-            3. Upload local copy of the 'mcp-netchecker-server' repository
-               to the kubernetes master node via SSH(SFTP)
-            4. Build docker image with netchecker-server
-            5. Push the image with netchecker-server to the registry
-            6. Go to kubernetes master node via SSH and upload local copy of
-               the 'mcp-netchecker-agent' repository to the remote directory
-            7. Build docker image with netchecker-agent
-            8. Push the image with netchecker-agent to the registry
-            9. Run netchecker-server service
-            10. Run netchecker-agent replication cluster
-            11. Get network verification status. Check status is 'OK'
-            12. Randomly choose some slave, login to it via SSH, add blocking
-                rule to the calico policy. Restart network checker server
-            13. Get network verification status, Check status is 'FAIL'
-            14. Recover calico profile state on the slave
-            15. Get network verification status. Check status is 'OK'
+            2. Run netchecker-server service
+            3. Run netchecker-agent daemon set
+            4. Get network verification status. Check status is 'OK'
+            5. Randomly choose some slave, login to it via SSH, add blocking
+               rule to the calico policy. Restart network checker server
+            6. Get network verification status, Check status is 'FAIL'
+            7. Recover calico profile state on the slave
+            8. Get network verification status. Check status is 'OK'
 
-        Duration: 600 seconds
+        Duration: 300 seconds
         """
 
         # STEP #1
@@ -218,93 +224,31 @@ class TestFuelCCPNetChecker(base_test.SystemBaseTest,
 
         # STEP #2
         show_step(2)
-        k8scluster.create_registry()
+        self.start_netchecker_server(k8s=k8scluster)
+        self.wait_netchecker_running(config.k8s.kube_host, timeout=240)
 
         # STEP #3
         show_step(3)
-        self.dir_upload(underlay,
-                        host='master',
-                        source=settings.NETCHECKER_SERVER_DIR,
-                        destination='/tmp/mcp-netchecker-server')
+        self.start_netchecker_agent(underlay, k8scluster)
 
         # STEP #4
+        # currently agents need some time to start reporting to the server
         show_step(4)
-        self.build_netchecker(underlay,
-                              stype='server',
-                              source_dir='/tmp/mcp-netchecker-server')
+        self.wait_check_network(config.k8s.kube_host, works=True)
 
         # STEP #5
         show_step(5)
-        self.push_netchecker(underlay, stype='server')
+        target_slave = self.get_random_slave(underlay)
+        self.block_traffic_on_slave(underlay, target_slave)
 
         # STEP #6
         show_step(6)
-        self.dir_upload(underlay,
-                        host='master',
-                        source=settings.NETCHECKER_AGENT_DIR,
-                        destination='/tmp/mcp-netchecker-agent')
+        self.wait_check_network(config.k8s.kube_host, works=False)
 
         # STEP #7
         show_step(7)
-        self.build_netchecker(underlay,
-                              stype='agent',
-                              source_dir='/tmp/mcp-netchecker-agent')
+        self.unblock_traffic_on_slave(underlay, target_slave)
 
         # STEP #8
         show_step(8)
-        self.push_netchecker(underlay, stype='agent')
-
-        # STEP #9
-        show_step(9)
-        self.start_netchecker_server(k8s=k8scluster)
-        self.wait_netchecker_running(config.k8s.kube_host, timeout=240)
-
-        # STEP #10
-        show_step(10)
-        self.start_netchecker_agent(underlay, k8scluster)
-
-        # STEP #11
-        # currently agents need some time to start reporting to the server
-        show_step(11)
-        time.sleep(120)
-        self.check_network(config.k8s.kube_host, works=True)
-
-        # STEP #12
-        show_step(12)
-        target_slave = self.get_random_slave(underlay)
-
-        # stop netchecker-server
-        # FIXME(apanchenko): uncomment and remove deletion via CLI below
-        # currently it fails due to labels:
-        # AttributeError: 'object' object has no attribute 'swagger_types'
-        # need a new version of k8sclient released with the following patch
-        # https://review.openstack.org/#/c/366908/
-        # self.check_pod_delete(
-        #     k8s_pod=k8sclient.pods.get(name='netchecker-server'),
-        #     k8sclient=k8sclient)
-        underlay.sudo_check_call(
-            'kubectl delete pod/netchecker-server',
-            node_name='master')
-        k8scluster.wait_pod_deleted('netchecker-server')
-
-        self.block_traffic_on_slave(underlay, target_slave)
-
-        # start netchecker-server
-        self.start_netchecker_server(k8s=k8scluster)
-        self.wait_netchecker_running(config.k8s.kube_host, timeout=240)
-
-        # STEP #13
-        show_step(13)
-        # currently agents need some time to start reporting to the server
-        time.sleep(120)
-        self.check_network(config.k8s.kube_host, works=False)
-
-        # STEP #14
-        show_step(14)
-        self.unblock_traffic_on_slave(underlay, target_slave)
-
-        # STEP #15
-        show_step(15)
-        # currently agents need some time to start reporting to the server
-        time.sleep(240)
-        self.check_network(config.k8s.kube_host, works=True)
+        self.wait_check_network(config.k8s.kube_host, works=True)

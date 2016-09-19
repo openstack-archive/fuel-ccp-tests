@@ -161,6 +161,14 @@ NETCHECKER_SERVER_DIR = os.environ.get(
 NETCHECKER_AGENT_DIR = os.environ.get(
     'NETCHECKER_AGENT_DIR', os.path.join(os.getcwd(), 'mcp-netchecker-agent')
 )
+MCP_NETCHECKER_AGENT_IMAGE_REPO = os.environ.get(
+    'MCP_NETCHECKER_AGENT_IMAGE_REPO')
+MCP_NETCHECKER_AGENT_VERSION = os.environ.get(
+    'MCP_NETCHECKER_AGENT_VERSION')
+MCP_NETCHECKER_SERVER_IMAGE_REPO = os.environ.get(
+    'MCP_NETCHECKER_SERVER_IMAGE_REPO')
+MCP_NETCHECKER_SERVER_VERSION = os.environ.get(
+    'MCP_NETCHECKER_SERVER_VERSION')
 
 # Settings for AppController testing
 # AC_ZIP_URL is used to get link for zip archive with AppController, and by
