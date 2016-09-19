@@ -109,8 +109,6 @@ IMAGES_NAMESPACE = os.environ.get('IMAGES_NAMESPACE', 'mcp')
 IMAGES_TAG = os.environ.get('IMAGES_TAG', 'latest')
 # For dnsmasq purposes
 UPSTREAM_DNS = os.environ.get('UPSTREAM_DNS', '8.8.8.8').split(',')
-# For resolv.conf entries
-NAMESERVERS = os.environ.get('NAMESERVERS', '8.8.8.8').split(',')
 SERVICE_PATH = os.environ.get('SERVICE_PATH')
 TEMPEST_SCRIPT_PATH = os.environ.get('TEMPEST_SCRIPT_PATH')
 SEARCH_DOMAINS = os.environ.get('SEARCH_DOMAINS',

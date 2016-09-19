@@ -46,7 +46,9 @@ class JSONList(types.ConfigType):
             return value
 
         try:
-            result = json.loads(value)
+            result = JSONList._hook(
+                json.loads(value, object_hook=JSONList._hook)
+            )
         except ValueError:
             raise ValueError("No JSON object could be decoded from the value: "
                              "{0}".format(value))
@@ -54,6 +56,14 @@ class JSONList(types.ConfigType):
             raise ValueError("Expected JSONList, but decoded '{0}' from the "
                              "value: {1}".format(type(result), value))
         return result
+
+    @staticmethod
+    def _hook(data):
+        if isinstance(data, unicode):
+            return data.encode('utf-8')
+        if isinstance(data, list):
+            return [JSONList._hook(item) for item in data]
+        return data
 
     def __repr__(self):
         return 'JSONList'

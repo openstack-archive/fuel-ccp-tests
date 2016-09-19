@@ -129,7 +129,6 @@ class TestAppController(object):
         "hyperkube_image_repo": settings.HYPERKUBE_IMAGE_REPO,
         "hyperkube_image_tag": settings.HYPERKUBE_IMAGE_TAG,
         "upstream_dns_servers": settings.UPSTREAM_DNS,
-        "nameservers": settings.NAMESERVERS,
         "searchdomains": settings.SEARCH_DOMAINS,
         "use_hyperkube_cni": str("true"),
     }
