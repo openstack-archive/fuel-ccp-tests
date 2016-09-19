@@ -38,7 +38,6 @@ class TestPreStackLight(object):
         "hyperkube_image_repo": settings.HYPERKUBE_IMAGE_REPO,
         "hyperkube_image_tag": settings.HYPERKUBE_IMAGE_TAG,
         "upstream_dns_servers": settings.UPSTREAM_DNS,
-        "nameservers": settings.NAMESERVERS,
         "searchdomains": settings.SEARCH_DOMAINS,
         "use_hyperkube_cni": str("true"),
     }
@@ -50,13 +49,13 @@ class TestPreStackLight(object):
         """
         Scenario:
             1. Install k8s
-        2. Install fuel-ccp
-        3. Fetch all repositories
-        4. Fetch stacklight from review
-        5. Fetch repositories
-        6. Build containers
-        7. Deploy stack Light and openstack
-        8. Run verification
+            2. Install fuel-ccp
+            3. Fetch all repositories
+            4. Fetch stacklight from review
+            5. Fetch repositories
+            6. Build containers
+            7. Deploy stack Light and openstack
+            8. Run verification
 
         """
 
