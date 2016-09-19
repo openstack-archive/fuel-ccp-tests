@@ -48,6 +48,35 @@ def system_dashboard(request, driver):
 
 @pytest.mark.revert_snapshot(ext.SNAPSHOT.ccp_deployed)
 class TestGrafana(object):
+    def check_percent_value(self, value, value_name):
+        """Check that percent value is looks good"""
+        value = value.strip()
+        err_msg = "Expected that {} value {} ends with % sign".format(
+            value_name, value)
+        assert value.endswith('%'), err_msg
+        value = value.strip('%')
+        try:
+            value = int(value)
+        except ValueError:
+            pytest.fail("Expected that {} value {} is integer",
+                        format(value_name, value))
+        err_msg = ('Expected that {} value {} is between 0 and 100 '
+                   'and not equal 0').format(value_name, value)
+        assert 0 < value <= 100, err_msg
+
+    def check_decimal_values(self, value, value_name):
+        """Checks that float values is looks good"""
+        search_result = re.search(r'\d+(\.\d+)?', value)
+        err_msg = "Expected that {} value {} contains decimal value".format(
+            value_name, value)
+        assert search_result is not None, err_msg
+        value = search_result.group()
+        try:
+            value = float(value)
+        except ValueError:
+            pytest.fail("Expected that {} value {} is decimal",
+                        format(value_name, value))
+
     def test_cpu_metrics(self, system_dashboard):
         """Check CPU metrics on Grafana system dashboard
 
@@ -68,7 +97,58 @@ class TestGrafana(object):
                 err_msg = ("Grafana CPU panel tooltip "
                            "doesn't contains {} value").format(key)
                 assert key in tooltip_values, err_msg
-                err_msg = ("Grafana CPU panel tooltip value for {} "
-                           "is 0% or has wrong format").format(key)
-                assert re.search(r'[1-9][0-9]*?%',
-                                 tooltip_values[key]) is not None, err_msg
+                self.check_percent_value(tooltip_values[key],
+                                         value_name="CPU {}".format(key))
+
+    def test_filesystem_metrics(self, system_dashboard):
+        """Check filesystem metrics on Grafana system dashboard
+
+        Scenario:
+            * Login to Grafana
+            * Go to system dashboard page
+            * Select 1'st hostname
+            * Select rootfs filesystem
+            * Check free space value
+            * Move mouse to disk usage graph
+            * Check that "user", "reserved", "free" values are present
+                on tooltip
+            * Check free inodes value
+            * Move mouse to inodes graph
+            * Check that "user", "reserved", "free" values are present
+                on tooltip
+            * Repeat last 7 steps for each hostname
+        """
+        for host in system_dashboard.get_hostnames_list():
+            system_dashboard.choose_hostname(host)
+            system_dashboard.choose_filesystem('rootfs')
+
+            # Check free space
+            free_space = system_dashboard.get_fs_free_space()
+            self.check_percent_value(free_space, value_name="free space")
+
+            # Check disk usage
+            disk_usage_panel = system_dashboard.get_disk_usage_panel()
+            tooltip = system_dashboard.get_panel_tooltip(disk_usage_panel)
+            tooltip_values = system_dashboard.get_tooltop_values(tooltip)
+            for key in ("used", "reserved", "free"):
+                err_msg = ("Grafana disk usage panel tooltip "
+                           "doesn't contains {} value").format(key)
+                assert key in tooltip_values, err_msg
+                self.check_decimal_values(
+                    tooltip_values[key],
+                    value_name="disk usage {}".format(key))
+
+            # Check free inodes
+            free_inodes = system_dashboard.get_fs_free_inodes()
+            self.check_percent_value(free_inodes, value_name="free space")
+
+            # Check inodes
+            inodes_panel = system_dashboard.get_inodes_panel()
+            tooltip = system_dashboard.get_panel_tooltip(inodes_panel)
+            tooltip_values = system_dashboard.get_tooltop_values(tooltip)
+            for key in ("used", "reserved", "free"):
+                err_msg = ("Grafana inodes panel tooltip "
+                           "doesn't contains {} value").format(key)
+                assert key in tooltip_values, err_msg
+                self.check_decimal_values(tooltip_values[key],
+                                          value_name="inodes {}".format(key))
