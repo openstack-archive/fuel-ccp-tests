@@ -114,7 +114,7 @@ class K8SManager(object):
         if custom_yaml:
             self.set_dns(custom_yaml)
             environment_variables.update(
-                {"CUSTOM_YAML": yaml.dump(
+                {"CUSTOM_YAML": yaml.safe_dump(
                     custom_yaml, default_flow_style=False)}
             )
         if env_var:
