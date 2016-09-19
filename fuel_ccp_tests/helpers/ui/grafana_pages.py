@@ -13,6 +13,7 @@
 #    under the License.
 
 from selenium.webdriver.common import by
+from selenium.webdriver.support import expected_conditions as EC
 
 from fuel_ccp_tests.helpers.ui import base_pages
 
@@ -77,9 +78,18 @@ class DashboardPage(base_pages.PageObject):
                                      'graph-tooltip-series-name')
     _tooltip_series_value_selector = (by.By.CLASS_NAME, 'graph-tooltip-value')
 
+    _singlestat_panel_value_selector = (by.By.CLASS_NAME,
+                                        'singlestat-panel-value')
+
+    _loading_selector = (by.By.CLASS_NAME, 'panel-loading')
+
     def __init__(self, driver, dashboard_name):
         super(DashboardPage, self).__init__(driver)
         self._page_title = "Grafana - {}".format(dashboard_name)
+
+    def _wait_load(self):
+        self.get_wait().until(EC.invisibility_of_element_located(
+            self._loading_selector))
 
     def is_dashboards_page(self):
         return (self.is_the_current_page() and
@@ -108,6 +118,7 @@ class DashboardPage(base_pages.PageObject):
         list_items = self._get_submenu_list(selector)
         mapping = {x.text.lower(): x for x in list_items}
         mapping[value].click()
+        self._wait_load()
 
     def get_hostnames_list(self):
         return self._get_submenu_items_names(self._hostname_selector)
@@ -141,6 +152,22 @@ class DashboardPage(base_pages.PageObject):
 
     def get_cpu_panel(self):
         return self._get_panels_mapping()['CPU']
+
+    def get_disk_usage_panel(self):
+        return next(v for k, v in self._get_panels_mapping().items()
+                    if k.startswith('Disk usage'))
+
+    def get_inodes_panel(self):
+        return next(v for k, v in self._get_panels_mapping().items()
+                    if k.startswith('inodes'))
+
+    def get_fs_free_space(self):
+        panel = self._get_panels_mapping()['Free space']
+        return panel.find_element(*self._singlestat_panel_value_selector).text
+
+    def get_fs_free_inodes(self):
+        panel = self._get_panels_mapping()['Free inodes']
+        return panel.find_element(*self._singlestat_panel_value_selector).text
 
     def get_panel_tooltip(self, panel):
         size = panel.size
