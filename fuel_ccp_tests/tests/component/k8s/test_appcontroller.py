@@ -93,7 +93,7 @@ class AppControllerResoucesStatus(object):
         try:
             result = func()
             if must_created is None:
-                raise Exception("{} is already created!".resource_repr)
+                raise Exception("{} is already created!".format(resource_repr))
             LOG.info("{} is created".format(resource_repr))
         except rest.ApiException as err:
             LOG.debug(err)
