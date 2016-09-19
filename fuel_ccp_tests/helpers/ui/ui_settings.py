@@ -30,6 +30,10 @@ maximize_window = os.environ.get('SELENIUM_MAXIMIZE', True)
 # or a command to complete.
 implicit_wait = os.environ.get('IMPLICIT_WAIT', 5)
 
+# Sets a sticky timeout to implicitly wait for an element to be found,
+# or a command to complete.
+explicit_wait = os.environ.get('EXPLICIT_WAIT', 30)
+
 # Set the amount of time to wait for a page load to complete
 # before throwing an error.
 page_timeout = os.environ.get('PAGE_TIMEOUT', 15)

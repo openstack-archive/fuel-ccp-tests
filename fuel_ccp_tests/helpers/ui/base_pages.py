@@ -21,6 +21,8 @@ import selenium.webdriver.support.ui as Support
 from selenium.webdriver.support import expected_conditions
 from six.moves.urllib import parse
 
+from fuel_ccp_tests.helpers.ui import ui_settings
+
 
 class ImproperlyConfigured(Exception):
     """Raises on some errors in pages classes configuration"""
@@ -106,6 +108,9 @@ class BaseWebObject(object):
 
     def get_action(self):
         return webdriver.ActionChains(self.driver)
+
+    def get_wait(self, timeout=ui_settings.explicit_wait):
+        return Support.WebDriverWait(self.driver, timeout)
 
 
 class PageObject(BaseWebObject):
