@@ -94,4 +94,5 @@ class TestPreStackLight(object):
 
         res = requests.get(url,
                            auth=('admin', 'admin'))
-        assert res.status_code, 200
+        msg = 'Fail to auth in Grafana with {}'.format(res.status_code)
+        assert res.status_code == 200, msg
