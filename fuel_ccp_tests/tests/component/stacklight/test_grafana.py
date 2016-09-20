@@ -176,3 +176,45 @@ class TestGrafana(object):
                 self.check_decimal_values(
                     tooltip_values[key],
                     value_name="system load {}".format(key))
+
+    def test_disk_metrics(self, system_dashboard):
+        """Check disk metrics on Grafana system dashboard
+
+        Scenario:
+            * Login to Grafana
+            * Go to system dashboard page
+            * Select 1'st hostname
+            * Select 1'st disk
+            * Move mouse to "Merged operations on <disk>" graph
+            * Check that "read" and "write" values are present on tooltip
+            * Move mouse to "Operations on <disk>" graph
+            * Check that "read" and "write" values are present on tooltip
+            * Move mouse to "Traffic on <disk>" graph
+            * Check that "read" and "write" values are present on tooltip
+            * Repeat last 6 steps for each hostname and each disk
+        """
+        for host in system_dashboard.get_hostnames_list():
+            system_dashboard.choose_hostname(host)
+            disk_names = system_dashboard.get_disks_list()
+            disk_types = {re.sub('\d+', '', x): x for x in disk_names}
+            for disk in disk_types.values():
+                system_dashboard.choose_disk(disk)
+                for panel_name in ('merged_operations', 'operations',
+                                   'traffic'):
+                    panel = getattr(system_dashboard,
+                                    'get_{}_panel'.format(panel_name))()
+                    tooltip = system_dashboard.get_panel_tooltip(panel)
+                    tooltip_values = system_dashboard.get_tooltop_values(
+                        tooltip)
+                for key in ("read", "write"):
+                    err_msg = (
+                        "Grafana {host} host {disk} disk {panel_name} "
+                        "panel tooltip doesn't contains {key} value").format(
+                            host=host,
+                            disk=disk,
+                            panel_name=panel_name,
+                            key=key)
+                    assert key in tooltip_values, err_msg
+                    self.check_decimal_values(
+                        tooltip_values[key],
+                        value_name="{} panel {}".format(panel_name, key))
