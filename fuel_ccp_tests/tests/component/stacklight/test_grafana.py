@@ -152,3 +152,27 @@ class TestGrafana(object):
                 assert key in tooltip_values, err_msg
                 self.check_decimal_values(tooltip_values[key],
                                           value_name="inodes {}".format(key))
+
+    def test_load_metrics(self, system_dashboard):
+        """Check load metrics on Grafana system dashboard
+
+        Scenario:
+            * Login to Grafana
+            * Go to system dashboard page
+            * Select 1'st hostname
+            * Move mouse to System load graph
+            * Check that "short", "mid", "long" values are present on tooltip
+            * Repeat last 3 steps for each hostname
+        """
+        for host in system_dashboard.get_hostnames_list():
+            system_dashboard.choose_hostname(host)
+            load_panel = system_dashboard.get_load_panel()
+            tooltip = system_dashboard.get_panel_tooltip(load_panel)
+            tooltip_values = system_dashboard.get_tooltop_values(tooltip)
+            for key in ("short", "mid", "long"):
+                err_msg = ("Grafana System load panel tooltip "
+                           "doesn't contains {} value").format(key)
+                assert key in tooltip_values, err_msg
+                self.check_decimal_values(
+                    tooltip_values[key],
+                    value_name="system load {}".format(key))

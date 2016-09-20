@@ -14,6 +14,7 @@
 
 from selenium.webdriver.common import by
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.common import exceptions as selenium_exception
 
 from fuel_ccp_tests.helpers.ui import base_pages
 
@@ -117,6 +118,8 @@ class DashboardPage(base_pages.PageObject):
     def _choose_submenu_item_value(self, selector, value):
         list_items = self._get_submenu_list(selector)
         mapping = {x.text.lower(): x for x in list_items}
+        if 'selected' in mapping[value].get_attribute('class').split():
+            mapping[value].click()
         mapping[value].click()
         self._wait_load()
 
@@ -160,6 +163,9 @@ class DashboardPage(base_pages.PageObject):
     def get_inodes_panel(self):
         return next(v for k, v in self._get_panels_mapping().items()
                     if k.startswith('inodes'))
+
+    def get_load_panel(self):
+        return self._get_panels_mapping()['System load']
 
     def get_fs_free_space(self):
         panel = self._get_panels_mapping()['Free space']
