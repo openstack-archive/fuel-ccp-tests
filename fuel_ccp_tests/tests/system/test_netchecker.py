@@ -14,7 +14,6 @@
 
 import os
 import pytest
-import random
 import requests
 import yaml
 
@@ -29,31 +28,6 @@ from fuel_ccp_tests import settings
 LOG = logger.logger
 
 
-@pytest.fixture(scope='class')
-def check_netchecker_files(request):
-    files_missing = []
-    for arg in request.cls.netchecker_files:
-        if not os.path.isfile(arg):
-            files_missing.append(arg)
-    assert len(files_missing) == 0, \
-        ("The following netchecker files not found: "
-         "{0}!".format(', '.join(files_missing)))
-
-
-@pytest.fixture(scope='class')
-def check_netchecker_images():
-    settings_missing = []
-    for setting in ('MCP_NETCHECKER_AGENT_IMAGE_REPO',
-                    'MCP_NETCHECKER_AGENT_VERSION',
-                    'MCP_NETCHECKER_SERVER_IMAGE_REPO',
-                    'MCP_NETCHECKER_SERVER_VERSION'):
-        if not getattr(settings, setting, None):
-            settings_missing.append(setting)
-    assert len(settings_missing) == 0, \
-        ("The following environment variables are not set: "
-         "{0}!".format(', '.join(settings_missing)))
-
-
 class TestFuelCCPNetCheckerMixin:
     pod_yaml_file = os.path.join(
         settings.NETCHECKER_SERVER_DIR,
@@ -64,31 +38,6 @@ class TestFuelCCPNetCheckerMixin:
     ds_yaml_file = os.path.join(
         settings.NETCHECKER_AGENT_DIR, 'netchecker-agent.yaml')
     netchecker_files = (pod_yaml_file, svc_yaml_file, ds_yaml_file)
-
-
-@pytest.mark.usefixtures("check_netchecker_files")
-@pytest.mark.usefixtures("check_netchecker_images")
-@pytest.mark.system
-class TestFuelCCPNetChecker(base_test.SystemBaseTest,
-                            TestFuelCCPNetCheckerMixin):
-    """Test class for network connectivity verification in k8s"""
-
-    @staticmethod
-    def dir_upload(underlay, host, source, destination):
-        with underlay.remote(node_name=host) as remote:
-            remote.upload(source, destination)
-
-    @staticmethod
-    def get_ds_status(k8s, dsname):
-        ds = k8s.api.daemonsets.get(name=dsname)
-        return (ds.status.current_number_scheduled ==
-                ds.status.desired_number_scheduled)
-
-    @staticmethod
-    def wait_ds_running(k8s, dsname, timeout=60, interval=5):
-        helpers.wait(
-            lambda: TestFuelCCPNetChecker.get_ds_status(k8s, dsname),
-            timeout=timeout, interval=interval)
 
     def start_netchecker_server(self, k8s):
         with open(self.pod_yaml_file) as pod_conf:
@@ -142,9 +91,7 @@ class TestFuelCCPNetChecker(base_test.SystemBaseTest,
                             settings.MCP_NETCHECKER_AGENT_IMAGE_REPO,
                             settings.MCP_NETCHECKER_AGENT_VERSION)
                 k8s.check_ds_create(body=daemon_set_spec)
-                TestFuelCCPNetChecker.wait_ds_running(
-                    k8s,
-                    dsname=daemon_set_spec['metadata']['name'])
+                k8s.wait_ds_ready(dsname=daemon_set_spec['metadata']['name'])
 
     @staticmethod
     def get_netchecker_status(kube_host_ip, netchecker_pod_port=31081):
@@ -171,15 +118,7 @@ class TestFuelCCPNetChecker(base_test.SystemBaseTest,
             timeout=timeout, interval=interval)
 
     @staticmethod
-    def get_random_slave(underlay):
-        slave_nodes = [n for n in underlay.node_names() if n != 'master']
-        if not slave_nodes:
-            return None
-        random.shuffle(slave_nodes)
-        return slave_nodes.pop()
-
-    @staticmethod
-    def block_traffic_on_slave(underlay, slave_node):
+    def calico_block_traffic_on_slave(underlay, slave_node):
         LOG.info('Blocked traffic to the network checker service from '
                  'containers on node "{}".'.format(slave_node))
         underlay.sudo_check_call(
@@ -188,12 +127,20 @@ class TestFuelCCPNetChecker(base_test.SystemBaseTest,
             node_name=slave_node)
 
     @staticmethod
-    def unblock_traffic_on_slave(underlay, slave_node):
+    def calico_unblock_traffic_on_slave(underlay, slave_node):
         LOG.info('Unblocked traffic to the network checker service from '
                  'containers on node "{}".'.format(slave_node))
         underlay.sudo_check_call(
             'calicoctl profile calico-k8s-network rule remove outbound --at=1',
             node_name=slave_node)
+
+
+@pytest.mark.usefixtures("check_netchecker_files")
+@pytest.mark.usefixtures("check_netchecker_images")
+@pytest.mark.component
+class TestFuelCCPNetChecker(base_test.SystemBaseTest,
+                            TestFuelCCPNetCheckerMixin):
+    """Test class for network connectivity verification in k8s"""
 
     @pytest.mark.fail_snapshot
     @pytest.mark.snapshot_needed
@@ -232,14 +179,13 @@ class TestFuelCCPNetChecker(base_test.SystemBaseTest,
         self.start_netchecker_agent(underlay, k8scluster)
 
         # STEP #4
-        # currently agents need some time to start reporting to the server
         show_step(4)
         self.wait_check_network(config.k8s.kube_host, works=True)
 
         # STEP #5
         show_step(5)
-        target_slave = self.get_random_slave(underlay)
-        self.block_traffic_on_slave(underlay, target_slave)
+        target_slave = underlay.get_random_slave()
+        self.calico_block_traffic_on_slave(underlay, target_slave)
 
         # STEP #6
         show_step(6)
@@ -247,7 +193,7 @@ class TestFuelCCPNetChecker(base_test.SystemBaseTest,
 
         # STEP #7
         show_step(7)
-        self.unblock_traffic_on_slave(underlay, target_slave)
+        self.calico_unblock_traffic_on_slave(underlay, target_slave)
 
         # STEP #8
         show_step(8)

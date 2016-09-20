@@ -285,6 +285,27 @@ class K8SManager(object):
         LOG.info("DaemonSet '{}' is created".format(ds.metadata.name))
         return self.api.daemonsets.get(name=ds.metadata.name)
 
+    def check_ds_ready(self, dsname):
+        """Check if k8s DaemonSet is ready
+
+        :param dsname: str, ds name
+        :return: bool
+        """
+        ds = self.api.daemonsets.get(name=dsname)
+        return (ds.status.current_number_scheduled ==
+                ds.status.desired_number_scheduled)
+
+    def wait_ds_ready(self, dsname, timeout=60, interval=5):
+        """Wait until all pods are scheduled on nodes
+
+        :param dsname: str, ds name
+        :param timeout: int
+        :param interval: int
+        """
+        helpers.wait(
+            lambda: self.check_ds_ready(dsname),
+            timeout=timeout, interval=interval)
+
     def create_objects(self, path):
         if isinstance(path, str):
             path = [path]
