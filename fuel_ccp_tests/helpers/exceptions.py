@@ -101,6 +101,18 @@ class EnvironmentAlreadyExists(BaseException):
         )
 
 
+class EnvironmentSnapshotMissing(BaseException):
+    def __init__(self, env_name, snapshot_name):
+        super(EnvironmentSnapshotMissing, self).__init__()
+        self.env_name = env_name
+        self.snapshot_name = snapshot_name
+
+    def __str__(self):
+        return ("Environment '{0}' doesn't have requested snapshot '{1}'! "
+                "Please create the snapshot manually or erase the environment."
+                .format(self.env_name, self.snapshot_name))
+
+
 class EnvironmentIsNotSet(BaseException):
     def __str__(self):
         return "Environment is not set!"
