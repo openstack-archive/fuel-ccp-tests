@@ -12,6 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import random
+
 from devops.helpers import helpers
 from devops.helpers import ssh_client
 from paramiko import rsakey
@@ -309,3 +311,24 @@ class UnderlaySSHManager(object):
                 command=cmd, verbose=verbose, timeout=timeout,
                 error_info=error_info, expected=expected,
                 raise_on_err=raise_on_err)
+
+    def dir_upload(self, host, source, destination):
+        """Upload local directory content to remote host
+
+        :param host: str, remote node name
+        :param source: str, local directory path
+        :param destination: str, local directory path
+        """
+        with self.remote(node_name=host) as remote:
+            remote.upload(source, destination)
+
+    def get_random_slave(self):
+        """Get random slave node name
+
+        :return: str, name of slave node
+        """
+        slave_nodes = [n for n in self.node_names() if n != 'master']
+        if not slave_nodes:
+            return None
+        random.shuffle(slave_nodes)
+        return slave_nodes.pop()
