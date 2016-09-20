@@ -29,7 +29,8 @@ class CliMessages(object):
         "components  CCP components to show dependencies",
         "optional arguments:",
         "-h, --help  show this help message and exit"]
-    error_message_bad_component_name = "Wrong component name '{}'"
+    error_message_bad_component_name = "Following components do not " \
+                                       "match any definitions: '{}'"
     error_message_unrecognized_arguments = \
         "ccp: error: unrecognized arguments: {}"
 
@@ -75,7 +76,7 @@ class TestCppCliNormalMessageInShowDep(object):
         """
         logger.info("Show info for component with multiple dependencies")
         component = ["keystone"]
-        dependencies = ["mariadb", "etcd"]
+        dependencies = ["mariadb", "etcd", "memcached"]
         cmd = "ccp show-dep {}".format(component[0])
         result = admin_node.check_call(cmd, expected=[0])
         result_no_fetch = filter(
@@ -166,7 +167,7 @@ class TestCppCliNormalMessageInShowDep(object):
             "Show info for component with multiple dependencies with"
             "cross referenced dependecies")
         component = ["keystone", "etcd"]
-        dependencies = ["mariadb"]
+        dependencies = ["mariadb", "memcached"]
         cmd = "ccp show-dep {}".format(" ".join(component))
         result = admin_node.check_call(cmd, expected=[0])
         result_no_fetch = filter(
