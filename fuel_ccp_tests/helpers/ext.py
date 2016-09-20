@@ -34,6 +34,7 @@ NETWORK_TYPE = enum(
 )
 
 SNAPSHOT = enum(
+    'hardware',
     'underlay',
     'k8s_deployed',
     'ccp_deployed',

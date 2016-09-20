@@ -54,6 +54,9 @@ class EnvironmentManager(object):
 
         try:
             self._get_env_by_name(self._d_env_name)
+            if not self.has_snapshot(config.hardware.current_snapshot):
+                raise exceptions.EnvironmentSnapshotMissing(
+                    self._d_env_name, config.hardware.current_snapshot)
         except error.DevopsObjNotFound:
             LOG.info("Environment doesn't exist, creating a new one")
             self._create_environment()
