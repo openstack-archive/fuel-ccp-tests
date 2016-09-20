@@ -34,7 +34,7 @@ hardware_opts = [
            help="Hardware config file", default=_default_conf),
     ct.Cfg('current_snapshot', ct.String(),
            help="Latest environment status name",
-           default=ext.SNAPSHOT.underlay),
+           default=ext.SNAPSHOT.hardware),
 ]
 
 
@@ -56,7 +56,7 @@ underlay_opts = [
            help="IP addresses of DNS servers",
            default=[]),
     ct.Cfg('lvm', ct.JSONDict(),
-           help="LVM settings for Underlay"),
+           help="LVM settings for Underlay", default={}),
 ]
 
 # TODO(ddmitriev): remove these variables from settings.py
