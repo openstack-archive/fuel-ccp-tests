@@ -120,7 +120,6 @@ FUEL_CCP_KEYSTONE_LOCAL_REPO = os.environ.get('FUEL_CCP_KEYSTONE_LOCAL_REPO',
                                               None)
 
 CCP_CONF = {
-    'use_stderr': False,
     'builder': {
         'workers': BUILDER_WORKERS,
         'push': True
