@@ -50,20 +50,18 @@ def hardware(request, config):
        'config' object or create a virtual/baremetal underlay
        using EnvironmentManager.
 
-       Input data:
-           config.hardware.manager: one of ('devops', 'maas', None)
-           config.hardware.config: path to the config file for the manager
-           ...
-           (additional variables for the hardware manager)
+       Creates a snapshot 'hardware' with ready-to-use virtual environment
+       (Only for config.hardware.manager='devops'):
+        - just created virtual nodes in power-on state
+        - node volumes filled with necessary content
+        - node network interfaces connected to necessary devices
 
-       Output data:
-           config.status_name = Latest created or reverted snapshot name
-           config.underlay.ssh = JSONList of SSH access credentials for nodes.
-                                 This list will be used for initialization the
-                                 model UnderlaySSHManager, see it for details.
+       config.hardware.manager: one of ('devops', 'maas', None)
+       config.hardware.config: path to the config file for the manager
+       config.hardware.current_snapshot = Latest created or reverted snapshot name
 
        :rtype EnvironmentModel: if config.hardware.manager == 'devops'
-       :rtype NoneType: if config.hardware.manager == None
+       :rtype EnvironmentManagerEmpty: if config.hardware.manager == 'empty'
     """
     env = None
 
@@ -83,6 +81,13 @@ def hardware(request, config):
     else:
         raise Exception("Unknown hardware manager: '{}'".format(manager))
 
+    # for devops manager: power on nodes and wait for SSH
+    # for empty manager: do nothing
+    # for maas manager: provision nodes and wait for SSH
+    env.start()
+    if not env.has_snapshot(ext.SNAPSHOT.hardware):
+        env.create_snapshot(ext.SNAPSHOT.hardware)
+
     def fin():
         if settings.SHUTDOWN_ENV_ON_TEARDOWN:
             LOG.info("Shutdown environment...")
@@ -94,11 +99,13 @@ def hardware(request, config):
 
 @pytest.fixture(scope='function')
 def revert_snapshot(request, hardware):
-    """Extract snapshot name from mark
+    """Revert snapshot for the test case
 
-    Marks:
-        revert_snapshot - if used this mark with 'name' parameter,
-                          use given name as result
+    Usage:
+    @pytest.mark.revert_snapshot(name='<required_snapshot_name>')
+
+    If the mark 'revert_snapshot' is absend, or <required_snapshot_name>
+    not found, then an initial 'hardware' snapshot will be reverted.
 
     :rtype string: name of the reverted snapshot or None
     """
@@ -108,6 +115,9 @@ def revert_snapshot(request, hardware):
     if snapshot_name and hardware.has_snapshot(snapshot_name):
         hardware.revert_snapshot(snapshot_name)
         return snapshot_name
+    else:
+        hardware.revert_snapshot(ext.SNAPSHOT.hardware)
+        return None
 
 
 @pytest.fixture(scope='function', autouse=True)
@@ -151,12 +161,15 @@ def snapshot(request, hardware):
 
 
 @pytest.fixture(scope="function")
-def underlay(request, revert_snapshot, config, hardware):
+def underlay(revert_snapshot, config, hardware):
     """Fixture that should provide SSH access to underlay objects.
 
-       Input data:
-        - config.underlay.ssh : JSONList, *must* be provided, from 'hardware'
-                                fixture or from an external config
+    - Starts the 'hardware' environment and creates 'underlay' with required
+      configuration.
+    - Fills the following object using the 'hardware' fixture:
+      config.underlay.ssh = JSONList of SSH access credentials for nodes.
+                            This list will be used for initialization the
+                            model UnderlaySSHManager, see it for details.
 
     :rtype UnderlaySSHManager: Object that encapsulate SSH credentials;
                                - provide list of underlay nodes;
@@ -170,11 +183,6 @@ def underlay(request, revert_snapshot, config, hardware):
 
     # Create Underlay
     if not config.underlay.ssh:
-        # for devops manager: power on nodes and wait for SSH
-        # for empty manager: do nothing
-        # for maas manager: provision nodes and wait for SSH
-        hardware.start()
-
         # If config.underlay.ssh wasn't provided from external config, then
         # try to get necessary data from hardware manager (fuel-devops)
         config.underlay.ssh = hardware.get_ssh_data(
