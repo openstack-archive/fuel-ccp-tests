@@ -97,24 +97,6 @@ class CCPManager(object):
                 host=self.__config.k8s.kube_host) as remote:
             remote.execute(cmd)
 
-    @classmethod
-    def build_command(cls, *args, **kwargs):
-        """Generate the list of parameters
-
-        :param args: list of command parameters
-        :param kwargs: dict of command parameters
-        :param base_command: by default will be ccp, or taken from  kwargs
-        :return: list of parameters
-        """
-        base_command = kwargs.pop('base_command', 'ccp')
-        command_list = [base_command]
-        for arg in args:
-            command_list.append('--{}'.format(arg.replace('_', '-')))
-        for key in kwargs:
-            command_list.append(
-                '--{0} {1}'.format(key.replace('_', '-'), kwargs[key]))
-        return ' '.join(command_list)
-
     def __build_param_string(self, params=None):
         if params is None:
             params = self.default_params
