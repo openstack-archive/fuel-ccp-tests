@@ -62,7 +62,7 @@ class DashboardPage(base_pages.PageObject):
         '//*[contains(@class, "variable-link-wrapper")]')
     _hostname_selector = (by.By.XPATH,
                           _submenu_item_xpath_tpl.format('Hostname:'))
-    _disk_selector = (by.By.XPATH, _submenu_item_xpath_tpl.format('Disks:'))
+    _disk_selector = (by.By.XPATH, _submenu_item_xpath_tpl.format('Disk:'))
     _interface_selector = (by.By.XPATH,
                            _submenu_item_xpath_tpl.format('Interface:'))
     _filesystem_selector = (by.By.XPATH,
@@ -165,6 +165,18 @@ class DashboardPage(base_pages.PageObject):
 
     def get_load_panel(self):
         return self._get_panels_mapping()['System load']
+
+    def get_merged_operations_panel(self):
+        return next(v for k, v in self._get_panels_mapping().items()
+                    if k.startswith('Merged operations on'))
+
+    def get_operations_panel(self):
+        return next(v for k, v in self._get_panels_mapping().items()
+                    if k.startswith('Operations on'))
+
+    def get_traffic_panel(self):
+        return next(v for k, v in self._get_panels_mapping().items()
+                    if k.startswith('Traffic on'))
 
     def get_fs_free_space(self):
         panel = self._get_panels_mapping()['Free space']
