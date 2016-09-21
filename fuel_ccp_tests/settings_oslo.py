@@ -55,6 +55,9 @@ underlay_opts = [
     ct.Cfg('nameservers', ct.JSONList(),
            help="IP addresses of DNS servers",
            default=[]),
+    ct.Cfg('upstream_dns_servers', ct.JSONList(),
+           help="IP addresses of upstream DNS servers (dnsmasq)",
+           default=[]),
     ct.Cfg('lvm', ct.JSONDict(),
            help="LVM settings for Underlay"),
 ]

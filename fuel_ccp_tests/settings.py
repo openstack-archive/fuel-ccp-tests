@@ -68,9 +68,6 @@ HYPERKUBE_IMAGE_TAG = os.environ.get('HYPERKUBE_IMAGE_TAG', "{}_coreos.0"
 ETCD_IMAGE_REPO = os.environ.get('ETCD_IMAGE_REPO', "quay.io/coreos/etcd")
 ETCD_IMAGE_TAG = os.environ.get("ETCD_IMAGE_TAG", 'v3.0.1')
 ETCD_DEPLOYMENT_TYPE = os.environ.get('ETCD_DEPLOYMENT_TYPE', "docker")
-# For dnsmasq purposes
-UPSTREAM_DNS = os.environ.get('UPSTREAM_DNS', '8.8.8.8').split(',')
-# For resolv.conf entries
 
 SERVICE_PATH = os.environ.get('SERVICE_PATH')
 TEMPEST_SCRIPT_PATH = os.environ.get('TEMPEST_SCRIPT_PATH')
@@ -97,7 +94,6 @@ DEFAULT_CUSTOM_YAML = {
     "ipip": IPIP_USAGE,
     "kube_version": KUBE_VERSION,
     "use_hyperkube_cni": str("true"),
-    "upstream_dns_servers": UPSTREAM_DNS,
     "searchdomains": SEARCH_DOMAINS,
 }
 
