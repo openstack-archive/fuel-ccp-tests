@@ -300,10 +300,14 @@ class K8SManager(object):
             LOG.info(result['stdout'])
 
     def set_dns(self, k8s_settings):
-        if 'nameservers' in k8s_settings:
-            return
-        if not self.__config.underlay.nameservers:
-            return
-        k8s_settings['nameservers'] = self.__config.underlay.nameservers
-        LOG.info('Added custom DNS servers to the settings: '
-                 '{0}'.format(k8s_settings['nameservers']))
+        if 'nameservers' not in k8s_settings and \
+                self.__config.underlay.nameservers:
+            k8s_settings['nameservers'] = self.__config.underlay.nameservers
+            LOG.info('Added custom DNS servers to the settings: '
+                     '{0}'.format(k8s_settings['nameservers']))
+        if 'upstream_dns_servers' not in k8s_settings and \
+                self.__config.underlay.upstream_dns_servers:
+            k8s_settings['upstream_dns_servers'] = \
+                self.__config.underlay.upstream_dns_servers
+            LOG.info('Added custom upstream DNS servers (dnsmasq) to the '
+                     'settings: {0}'.format(k8s_settings['nameservers']))

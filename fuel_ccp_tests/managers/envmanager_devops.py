@@ -449,3 +449,5 @@ class EnvironmentManager(object):
         # Set local nameserver to use by default
         if not self.__config.underlay.nameservers:
             self.__config.underlay.nameservers = [self.nameserver]
+        if not self.__config.underlay.upstream_dns_servers:
+            self.__config.underlay.upstream_dns_servers = [self.nameserver]
