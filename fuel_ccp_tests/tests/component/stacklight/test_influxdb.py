@@ -14,6 +14,7 @@
 
 import contextlib
 import functools
+import subprocess
 import time
 import uuid
 
@@ -75,7 +76,7 @@ def workload_fixture_generator(command):
 cpu_workload = workload_fixture_generator(
     command='gzip < /dev/zero > /dev/null 2>&1')
 dd_workload = workload_fixture_generator(
-    command='dd if=/dev/zero of=/dev/null < /dev/null > /dev/null 2>&1')
+    command='dd if=/dev/zero of=/dev/null <&- > /dev/null 2>&1')
 
 
 @pytest.mark.revert_snapshot(ext.SNAPSHOT.ccp_deployed)
@@ -88,6 +89,16 @@ class TestMetrics(object):
     def get_root_device(self, remote):
         return remote.check_call(
             "basename $(findmnt -o source -n /)").stdout_str
+
+    def get_default_iface(self, remote):
+        return remote.check_call(
+            "ip r | grep default | awk '{ print $5 }'").stdout_str
+
+    def get_iface_ip(self, remote, iface):
+        return remote.check_call(
+            "ip -o -4 a show  {} | "
+            "awk '{{ gsub(\"/[0-9]+\",\"\"); print $4 }}'".format(
+                iface)).stdout_str
 
     def _get_cpu_metrics(self, remote):
         output = remote.check_call('head -n1 /proc/stat').stdout_str
@@ -105,6 +116,16 @@ class TestMetrics(object):
                  'ios_in_progress_weighted_time')
         values = map(int, output.split()[3:])
         return dict(zip(names, values))
+
+    def _get_iface_metrics(self, remote, device):
+        output = remote.check_call(
+            'grep . /sys/class/net/{}/statistics/ -r'.format(device)).stdout
+        result = {}
+        for line in output:
+            path, value = line.strip().split(':')
+            _, key = path.rsplit('/', 1)
+            result[key] = int(value)
+        return result
 
     @contextlib.contextmanager
     def _get_diff(self, get_values):
@@ -363,3 +384,64 @@ class TestMetrics(object):
             influx_ops_read = sum(x['value'] for x in influxdb_records) / count
             assert host_ops_read == pytest.approx(
                 influx_ops_read, abs=50, rel=0.4)
+
+    def test_interface_metrics(self, influxdb_actions, admin_node):
+        """Check reporting interface metrics in InfluxDb
+
+        Scenario:
+            * Get measurements starts with `intel.procfs.iface`
+            * Get information from influxdb pod for all iface series:
+                    kubectl exec -it <pod name> -- influx -host <ip> \
+                    -database ccp -execute "select count(value) \
+                    from \"<series>\" where time > now() - 1d"
+            * Check that all series contains some data
+            * Get default gateway interface
+            * Check that intel.procfs.iface.bytes_recv value from influxdb
+                nearly equal to
+                `cat /sys/class/net/{iface}/statistics/rx_bytes` output
+            * Create some load to default interface on admin_node
+            * Check that intel.procfs.iface.bytes_recv value from influxdb
+                nearly equal to
+                `cat /sys/class/net/{iface}/statistics/rx_bytes` output
+        """
+        # Get all interfaces' series
+        series = influxdb_actions.get_measurements('/intel\.procfs\.iface*/')
+
+        # Check all series contains records
+        for serie in series:
+            influxdb_actions.check_serie_contains_records(serie)
+
+        # Get admin_node intel.procfs.iface.bytes_recv
+        bytes_recv_serie = "intel.procfs.iface.bytes_recv"
+        hostname = admin_node.check_call('hostname').stdout_str
+        iface = self.get_default_iface(admin_node)
+        query_conditions = (
+            "hostname='{hostname}' and interface='{iface}'").format(
+                hostname=hostname, iface=iface)
+        influxdb_rx_bytes = influxdb_actions.get_new_record(
+            bytes_recv_serie, conditions=query_conditions)
+
+        host_tx_bytes = self._get_iface_metrics(admin_node, iface)['rx_bytes']
+        assert host_tx_bytes == pytest.approx(influxdb_rx_bytes['value'],
+                                              abs=100 * 1024)
+        host_tx_bytest_old = host_tx_bytes
+
+        # Increase rx counters
+        iface_ip = self.get_iface_ip(admin_node, iface)
+        admin_node.execute('nc -l 12345 <&- > /dev/null 2>&1 &')
+        subprocess.check_call('dd if=/dev/zero bs=1M count=100 '
+                              '| nc {} 12345'.format(iface_ip),
+                              shell=True)
+
+        # Check values again
+        influxdb_rx_bytes = influxdb_actions.get_new_records(
+            bytes_recv_serie,
+            conditions=query_conditions,
+            count=2)[-1]
+
+        host_tx_bytes = self._get_iface_metrics(admin_node, iface)['rx_bytes']
+        err_msg = ("Expected that tx_bytes on interface "
+                   "are increased at least by 100Mb")
+        assert host_tx_bytes - host_tx_bytest_old >= 1024**2, err_msg
+        assert host_tx_bytes == pytest.approx(influxdb_rx_bytes['value'],
+                                              abs=100 * 1024)
