@@ -151,3 +151,27 @@ def generate_keys():
 
 def clean_dir(dirpath):
     shutil.rmtree(dirpath)
+
+
+def retry(tries_number=3, exception=Exception):
+    def _retry(func):
+        assert tries_number >= 1, 'ERROR! @retry is called with no tries!'
+
+        def wrapper(*args, **kwargs):
+            iter_number = 1
+            while True:
+                try:
+                    LOG.debug('Calling function "{0}" with args "{1}" and '
+                              'kwargs "{2}". Try # {3}.'.format(func.__name__,
+                                                                args,
+                                                                kwargs,
+                                                                iter_number))
+                    return func(*args, **kwargs)
+                except exception as e:
+                    if iter_number > tries_number:
+                        LOG.debug('Failed to execute function "{0}" with {1} '
+                                  'tries!'.format(func.__name__, tries_number))
+                        raise e
+                iter_number += 1
+        return wrapper
+    return _retry

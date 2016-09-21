@@ -22,6 +22,7 @@ from k8sclient.client import rest
 
 import base_test
 from fuel_ccp_tests.helpers import ext
+from fuel_ccp_tests.helpers import utils
 from fuel_ccp_tests import logger
 from fuel_ccp_tests import settings
 
@@ -94,10 +95,11 @@ class TestFuelCCPNetCheckerMixin:
                 k8s.wait_ds_ready(dsname=daemon_set_spec['metadata']['name'])
 
     @staticmethod
+    @utils.retry(3, requests.exceptions.RequestException)
     def get_netchecker_status(kube_host_ip, netchecker_pod_port=31081):
         net_status_url = 'http://{0}:{1}/api/v1/connectivity_check'.format(
             kube_host_ip, netchecker_pod_port)
-        return requests.get(net_status_url)
+        return requests.get(net_status_url, timeout=5)
 
     @staticmethod
     def wait_netchecker_running(kube_host_ip, timeout=120, interval=5):
