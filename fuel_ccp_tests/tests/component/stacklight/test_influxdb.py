@@ -12,6 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import contextlib
+import functools
 import time
 import uuid
 
@@ -83,17 +85,56 @@ class TestMetrics(object):
             "df | grep -E {}$ | awk '{{ print $4 }}'".format(
                 mount_point)).stdout_str)
 
+    def get_root_device(self, remote):
+        return remote.check_call(
+            "lsblk -l | grep -E '/$' | awk '{ print $1 }'").stdout_str
+
     def _get_cpu_metrics(self, remote):
         output = remote.check_call('cat /proc/stat | head -n1').stdout_str
         return map(int, output.split()[1:])
 
-    def get_node_user_cpu_percentage(self, remote):
-        old_values = self._get_cpu_metrics(remote)
-        time.sleep(1)
-        new_values = self._get_cpu_metrics(remote)
-        diff = map(lambda x: x[0] - x[1], zip(new_values, old_values))
-        # user_cpu is 1st value from metrics
-        return diff[0] * 100.0 / sum(diff)
+    def _get_disk_metrics(self, remote, device):
+        output = remote.check_call('cat /proc/diskstats | grep {}'.format(
+            device)).stdout_str
+        return map(int, output.split()[3:])
+
+    @contextlib.contextmanager
+    def _get_diff(self, get_values):
+        """Call `get_values` on enter and exit and update result with diff
+
+        Many linux kernel metrics (like /proc/stat, proc/diskstat) are
+        cummulative. To retrieve changes of values we should read this file
+        before and after some interval and calculate differences between
+        values
+
+        :param get_values: callable, which returns list of ints
+        :param interval: interval between reads in seconds
+        """
+        result = []
+        old_values = get_values()
+        yield result
+        new_values = get_values()
+        result += map(lambda x: x[0] - x[1], zip(new_values, old_values))
+
+    @contextlib.contextmanager
+    def node_cpu_stat(self, remote):
+        get_values = functools.partial(self._get_cpu_metrics, remote)
+        with self._get_diff(get_values) as values:
+            yield values
+
+    @contextlib.contextmanager
+    def node_disk_stat(self, remote, device):
+        """Return values per seconds for /proc/diskstat during context manager
+            executing"""
+        get_values = functools.partial(self._get_disk_metrics,
+                                       remote,
+                                       device=device)
+        start = time.time()
+        result = []
+        with self._get_diff(get_values) as values:
+            yield result
+        duration = time.time() - start
+        result += map(lambda x: x / duration, values)
 
     def get_node_loadavg(self, remote):
         return float(remote.check_call(
@@ -180,50 +221,34 @@ class TestMetrics(object):
             hostname=hostname)
 
         # Compare last 5 metrics
-        host_percentages = []
-        influxdb_percentages = []
-        kwargs = {}
-        for i in range(5):
-            data = influxdb_actions.get_last_record(
+        count = 5
+        with self.node_cpu_stat(admin_node) as host_cpu_stat:
+            influxdb_records = influxdb_actions.get_new_records(
                 user_percentage_serie,
                 conditions=query_conditions,
-                **kwargs)
-            kwargs['updated_after'] = data['time']
-            # Get user_percentage from admin_node
-            user_percentage = self.get_node_user_cpu_percentage(admin_node)
-            host_percentages.append(user_percentage)
-            influxdb_percentages.append(data['value'])
-        err_msg = ("Mean CPU user load for last 5 times from influxdb -  {0} "
-                   "and same value from host - {1} "
-                   "are significantly different").format(
-                       sum(influxdb_percentages) / 5,
-                       sum(host_percentages) / 5)
-        assert sum(host_percentages) == pytest.approx(
-            sum(influxdb_percentages), rel=0.5), err_msg
+                count=count)
+        # user_cpu is 1st value from metrics
+        host_user_percentage = host_cpu_stat[0] * 100.0 / sum(host_cpu_stat)
+        influx_user_percentage = sum(x['value']
+                                     for x in influxdb_records) / count
+        assert host_user_percentage == pytest.approx(influx_user_percentage,
+                                                     rel=0.5)
 
         # start workload
         cpu_workload()
 
-        # Compare last 5 metrics
-        host_percentages = []
-        influxdb_percentages = []
-        for i in range(5):
-            data = influxdb_actions.get_last_record(
+        # Get influxdb and admin_node values again
+        with self.node_cpu_stat(admin_node) as host_cpu_stat:
+            influxdb_records = influxdb_actions.get_new_records(
                 user_percentage_serie,
                 conditions=query_conditions,
-                **kwargs)
-            kwargs['updated_after'] = data['time']
-            # Get user_percentage from admin_node
-            user_percentage = self.get_node_user_cpu_percentage(admin_node)
-            host_percentages.append(user_percentage)
-            influxdb_percentages.append(data['value'])
-        err_msg = ("Mean CPU user load for last 5 times from influxdb -  {0} "
-                   "and same value from host - {1} "
-                   "are significantly different").format(
-                       sum(influxdb_percentages) / 5,
-                       sum(host_percentages) / 5)
-        assert sum(host_percentages) == pytest.approx(
-            sum(influxdb_percentages), rel=0.5), err_msg
+                count=count)
+        # user_cpu is 1st value from metrics
+        host_user_percentage = host_cpu_stat[0] * 100.0 / sum(host_cpu_stat)
+        influx_user_percentage = sum(x['value']
+                                     for x in influxdb_records) / count
+        assert host_user_percentage == pytest.approx(influx_user_percentage,
+                                                     rel=0.5)
 
     def test_load_metrics(self, influxdb_actions, admin_node, dd_workload):
         """Check reporting load metrics in InfluxDb
@@ -266,3 +291,62 @@ class TestMetrics(object):
                                                conditions=query_conditions)
         loadavg = self.get_node_loadavg(admin_node)
         assert loadavg == pytest.approx(data['value'], rel=0.5)
+
+    def test_disk_metrics(self, influxdb_actions, admin_node):
+        """Check reporting disk metrics in InfluxDb
+
+        Scenario:
+            * Get measurements starts with `intel.procfs.disk`
+            * Get information from influxdb pod for all filesystem series:
+                    kubectl exec -it <pod name> -- influx -host <ip> \
+                    -database ccp -execute "select count(value) \
+                    from \"<series>\" where time > now() - 1d"
+            * Check that all series contains some data
+            * Check that intel.procfs.disk.ops_read value from influxdb
+                nearly equal to `cat /proc/diskstats` output
+            * Create some disk load on admin_node
+            * Check that intel.procfs.disk.ops_read value from influxdb
+                nearly equal to `cat /proc/diskstats` output
+        """
+        # Get all disk series
+        series = influxdb_actions.get_measurements('/intel\.procfs\.disk*/')
+
+        # Check all series contains records
+        for serie in series:
+            influxdb_actions.check_serie_contains_records(serie)
+
+        # Get admin_node intel.procfs.disk.ops_read
+        ops_read_serie = "intel.procfs.disk.ops_read"
+        hostname = admin_node.check_call('hostname').stdout_str
+        root_dev = self.get_root_device(admin_node)
+        query_conditions = ("hostname='{hostname}' and disk='{disk}'").format(
+            hostname=hostname, disk=root_dev)
+
+        # Compare last `count` metrics from influxdb and host value
+        count = 5
+        with self.node_disk_stat(admin_node, root_dev) as host_disk_stat:
+            influxdb_records = influxdb_actions.get_new_records(
+                ops_read_serie,
+                conditions=query_conditions,
+                count=count)
+        host_ops_read = host_disk_stat[0]
+        influx_ops_read = sum(x['value'] for x in influxdb_records) / count
+        assert host_ops_read == pytest.approx(influx_ops_read, abs=50, rel=0.4)
+
+        # Make some load
+        workload = workload_fixture_generator(
+            'sudo dd if=/dev/{} of=/dev/null '
+            '< /dev/null > /dev/null 2>&1'.format(root_dev))
+        with contextlib.contextmanager(workload)(admin_node) as wl:
+            wl()
+
+            # Get influxdb and admin_node values again
+            with self.node_disk_stat(admin_node, root_dev) as host_disk_stat:
+                influxdb_records = influxdb_actions.get_new_records(
+                    ops_read_serie,
+                    conditions=query_conditions,
+                    count=count)
+            host_ops_read = host_disk_stat[0]
+            influx_ops_read = sum(x['value'] for x in influxdb_records) / count
+            assert host_ops_read == pytest.approx(
+                influx_ops_read, abs=50, rel=0.4)
