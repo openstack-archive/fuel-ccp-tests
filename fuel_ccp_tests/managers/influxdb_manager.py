@@ -99,10 +99,21 @@ class InfluxDBManager(object):
             timeout_msg="Timeout waiting data for query `{}`".format(query))
         return data[-1]
 
+    def get_new_records(self, serie, count, conditions=None, timeout=2 * 60):
+        """Return `count` new record (what will appear in future) from db"""
+        record = self.get_last_record(serie, conditions)
+        records = []
+        for n in range(count):
+            record = self.get_last_record(serie,
+                                          conditions,
+                                          updated_after=record['time'],
+                                          timeout=timeout)
+            records.append(record)
+        return records
+
     def get_new_record(self, serie, conditions=None, timeout=2 * 60):
         """Return first new record (what will appear in future) from db"""
-        data = self.get_last_record(serie, conditions)
-        return self.get_last_record(serie,
-                                    conditions,
-                                    updated_after=data['time'],
-                                    timeout=timeout)
+        return self.get_new_records(serie=serie,
+                                    count=1,
+                                    conditions=conditions,
+                                    timeout=timeout)[0]
