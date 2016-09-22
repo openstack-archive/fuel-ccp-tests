@@ -26,11 +26,12 @@ class InfluxDBManager(object):
         self.remote_factory = remote_factory
         self.pod_name = pod_name
 
-    def _make_query(self, query):
+    def _make_query(self, query, verbose=True):
         cmd = ('kubectl exec -it {0.pod_name} -- '
                'influx -host {0.pod_name} -database ccp -execute "{1}" '
                '-format json'.format(self, query.replace('"', '\\"')))
-        LOG.info("Performing {} on admin_node".format(cmd))
+        if verbose:
+            LOG.info("Performing `{}` on admin_node".format(cmd))
         with self.remote_factory() as remote:
             response = remote.check_call(cmd)
         data = json.loads(response.stdout_str)
@@ -85,17 +86,19 @@ class InfluxDBManager(object):
         data = []
 
         def _get_data():
-            result = self._make_query(query)
+            result = self._make_query(query, verbose=_get_data.verbose)
+            _get_data.verbose = False
             try:
                 data.append(result[0][serie][0])
                 return True
             except IndexError:
                 return False
 
+        _get_data.verbose = True
         helpers.wait(
             _get_data,
             timeout=timeout,
-            interval=timeout / 10,
+            interval=1,
             timeout_msg="Timeout waiting data for query `{}`".format(query))
         return data[-1]
 
