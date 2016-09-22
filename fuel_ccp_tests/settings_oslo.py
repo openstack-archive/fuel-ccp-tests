@@ -158,12 +158,8 @@ def load_config(config_files):
     return config
 
 
-def reload_snapshot_config(config, snapshot_name, env_name=None):
+def reload_snapshot_config(config, test_config_path):
     """Reset config to the state from test_config file"""
-    if env_name is None:
-        env_name = 'config'
-    test_config_path = os.path.join(
-        settings.LOGS_DIR, '{0}_{1}.ini'.format(env_name, snapshot_name))
     config(args=[], default_config_files=[test_config_path])
     return config
 
