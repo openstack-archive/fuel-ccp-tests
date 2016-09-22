@@ -82,6 +82,26 @@ mem_workload = workload_fixture_generator(
     command='dd bs=512M if=/dev/zero of=/dev/null <&- > /dev/null 2>&1')
 
 
+@pytest.yield_fixture
+def make_swap(admin_node):
+
+    files = []
+
+    def _make_swap(size_mb):
+        path = '/tmp/swap_{}'.format(uuid.uuid4())
+        files.append(path)
+        admin_node.check_call('sudo fallocate -l {}M {}'.format(size_mb, path))
+        admin_node.check_call('sudo mkswap {}'.format(path))
+        admin_node.check_call('sudo swapon {}'.format(path))
+        return
+
+    yield _make_swap
+
+    for f in files:
+        admin_node.execute('sudo swapoff {}'.format(f))
+        admin_node.execute('sudo rm {}'.format(f))
+
+
 @pytest.mark.revert_snapshot(ext.SNAPSHOT.ccp_deployed)
 class TestMetrics(object):
     def get_node_free_space(self, remote, mount_point='/'):
@@ -519,3 +539,47 @@ class TestMetrics(object):
                          host_meminfo['Buffers'] - host_meminfo['Cached'] -
                          host_meminfo['Slab'])
         assert host_used_mem == pytest.approx(data['value'], abs=100 * 1024**2)
+
+    def test_swap_metrics(self, influxdb_actions, admin_node, make_swap):
+        """Check reporting swap metrics in InfluxDb
+
+        Scenario:
+            * Get measurements starts with `intel.procfs.swap`
+            * Get information from influxdb pod for all memory series:
+                    kubectl exec -it <pod name> -- influx -host <ip> \
+                    -database ccp -execute "select count(value) \
+                    from \"<series>\" where time > now() - 1d"
+            * Check that all series contains some data
+            * Check that swap.all.free_bytes value from influxdb nearly equal
+                to `cat /proc/meminfo` output
+            * Create some memory on admin_node
+            * Check that swap.all.free_bytes value from influxdb nearly equal
+                to `cat /proc/meminfo` output again
+        """
+        # Get all swap series
+        series = influxdb_actions.get_measurements('/intel\.procfs\.swap*/')
+
+        # Check all series contains records
+        for serie in series:
+            influxdb_actions.check_serie_contains_records(serie)
+
+        # # Get admin_node free swap
+        free_swap_serie = "intel.procfs.swap.all.free_bytes"
+        hostname = admin_node.check_call('hostname').stdout_str
+        query_conditions = ("hostname='{hostname}'").format(hostname=hostname)
+        data = influxdb_actions.get_new_record(free_swap_serie,
+                                               conditions=query_conditions)
+        # Get /proc/meminfo values from admin_node
+        host_meminfo = self.get_meminfo(admin_node)
+        assert host_meminfo['SwapFree'] == pytest.approx(data['value'],
+                                                         abs=10 * 1024**2)
+
+        # Make some load
+        make_swap(512)
+
+        # Get influxdb and admin_node values again
+        data = influxdb_actions.get_new_record(free_swap_serie,
+                                               conditions=query_conditions)
+        host_meminfo = self.get_meminfo(admin_node)
+        assert host_meminfo['SwapFree'] == pytest.approx(data['value'],
+                                                         abs=100 * 1024**2)
