@@ -583,3 +583,48 @@ class TestMetrics(object):
         host_meminfo = self.get_meminfo(admin_node)
         assert host_meminfo['SwapFree'] == pytest.approx(data['value'],
                                                          abs=100 * 1024**2)
+
+    def test_processes_metrics(self, influxdb_actions, admin_node,
+                               cpu_workload):
+        """Check reporting processes metrics in InfluxDb
+
+        Scenario:
+            * Get measurements starts with `intel.procfs.processes`
+            * Get information from influxdb pod for all memory series:
+                    kubectl exec -it <pod name> -- influx -host <ip> \
+                    -database ccp -execute "select count(value) \
+                    from \"<series>\" where time > now() - 1d"
+            * Check that all series contains some data
+            * Get min of processes.running value from influxdb
+            * Run process
+            * Check that min of processes.running value from influxdb greater
+                than before
+        """
+        # Get all processes series
+        series = influxdb_actions.get_measurements(
+            '/intel\.procfs\.processes*/')
+
+        # Check all series contains records
+        for serie in series:
+            influxdb_actions.check_serie_contains_records(serie)
+
+        # # Get admin_node running processes count
+        running_processes_serie = "intel.procfs.processes.running"
+        hostname = admin_node.check_call('hostname').stdout_str
+        query_conditions = ("hostname='{hostname}'").format(hostname=hostname)
+        data = influxdb_actions.get_new_records(running_processes_serie,
+                                                conditions=query_conditions,
+                                                count=5)
+
+        old_influxdb_value = min(x['value'] for x in data)
+
+        # Make some workload
+        cpu_workload()
+
+        # Get influxdb values again
+        data = influxdb_actions.get_new_records(running_processes_serie,
+                                                conditions=query_conditions,
+                                                count=5)
+
+        new_influxdb_value = min(x['value'] for x in data)
+        assert new_influxdb_value > old_influxdb_value
