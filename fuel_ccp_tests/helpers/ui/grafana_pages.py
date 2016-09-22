@@ -178,6 +178,15 @@ class DashboardPage(base_pages.PageObject):
         return next(v for k, v in self._get_panels_mapping().items()
                     if k.startswith('Traffic on'))
 
+    def get_if_traffic_panel(self, iface):
+        return self._get_panels_mapping()['Network traffic on {}'.format(iface)]
+
+    def get_if_packets_panel(self, iface):
+        return self._get_panels_mapping()['Packets on {}'.format(iface)]
+
+    def get_if_errors_panel(self, iface):
+        return self._get_panels_mapping()['Errors on {}'.format(iface)]
+
     def get_fs_free_space(self):
         panel = self._get_panels_mapping()['Free space']
         return panel.find_element(*self._singlestat_panel_value_selector).text
@@ -241,9 +250,9 @@ class MainPage(base_pages.PageObject):
             self.dropdown_menu.click()
 
     def open_dashboard(self, dashboard_name):
-        dashboards_mapping = {dashboard.text.lower(): dashboard
+        dashboards_mapping = {dashboard.text: dashboard
                               for dashboard in self.dashboards}
-        dashboards_mapping[dashboard_name.lower()].click()
+        dashboards_mapping[dashboard_name].click()
         dashboard_page = DashboardPage(self.driver, dashboard_name)
         dashboard_page.is_dashboards_page()
         return dashboard_page
