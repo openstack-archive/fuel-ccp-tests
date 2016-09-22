@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import os
 import pytest
 
 from fuel_ccp_tests import logger
@@ -88,3 +89,37 @@ def k8scluster(revert_snapshot, request, config,
         pass
 
     return k8s_actions
+
+
+@pytest.fixture(scope='class')
+def check_netchecker_files(request):
+    files_missing = []
+    for arg in request.cls.netchecker_files:
+        if not os.path.isfile(arg):
+            files_missing.append(arg)
+    assert len(files_missing) == 0, \
+        ("The following netchecker files not found: "
+         "{0}!".format(', '.join(files_missing)))
+
+
+@pytest.fixture(scope='class')
+def check_netchecker_images_settings():
+    settings_missing = []
+    for setting in ('MCP_NETCHECKER_AGENT_IMAGE_REPO',
+                    'MCP_NETCHECKER_AGENT_VERSION',
+                    'MCP_NETCHECKER_SERVER_IMAGE_REPO',
+                    'MCP_NETCHECKER_SERVER_VERSION'):
+        if not getattr(settings, setting, None):
+            settings_missing.append(setting)
+    assert len(settings_missing) == 0, \
+        ("The following environment variables are not set: "
+         "{0}!".format(', '.join(settings_missing)))
+
+
+@pytest.fixture(scope='class')
+def check_calico_images_settings():
+    assert settings.DEFAULT_CUSTOM_YAML['kube_network_plugin'] == 'calico', \
+        "Calico network plugin isn't enabled!"
+    if not any(settings.CALICO.values()):
+        LOG.warning("No custom settings are provided for Calico! "
+                    "Defaults will be used!")
