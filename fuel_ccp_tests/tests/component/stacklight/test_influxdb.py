@@ -14,6 +14,7 @@
 
 import contextlib
 import functools
+import re
 import subprocess
 import time
 import uuid
@@ -77,6 +78,8 @@ cpu_workload = workload_fixture_generator(
     command='gzip < /dev/zero > /dev/null 2>&1')
 dd_workload = workload_fixture_generator(
     command='dd if=/dev/zero of=/dev/null <&- > /dev/null 2>&1')
+mem_workload = workload_fixture_generator(
+    command='dd bs=512M if=/dev/zero of=/dev/null <&- > /dev/null 2>&1')
 
 
 @pytest.mark.revert_snapshot(ext.SNAPSHOT.ccp_deployed)
@@ -99,6 +102,25 @@ class TestMetrics(object):
             "ip -o -4 a show  {} | "
             "awk '{{ gsub(\"/[0-9]+\",\"\"); print $4 }}'".format(
                 iface)).stdout_str
+
+    def get_meminfo(self, remote):
+        """Returns dict with memory info from /proc/meminfo"""
+        output = remote.check_call('cat /proc/meminfo').stdout
+        result = {}
+        regexp = re.compile(
+            r'(?P<name>[^:].+):\s+(?P<value>\d+)(\s+(?P<unit>.+))?')
+        for line in output:
+            search_results = regexp.search(line).groupdict()
+            if search_results['unit'] is None:
+                factor = 1
+            elif search_results['unit'] == 'kB':
+                factor = 1024
+            else:
+                raise Exception('Unknown unit %s from %s',
+                                search_results['unit'], line)
+            result[search_results['name']] = factor * int(search_results[
+                'value'])
+        return result
 
     def _get_cpu_metrics(self, remote):
         output = remote.check_call('head -n1 /proc/stat').stdout_str
@@ -445,3 +467,51 @@ class TestMetrics(object):
         assert host_tx_bytes - host_tx_bytest_old >= 1024**2, err_msg
         assert host_tx_bytes == pytest.approx(influxdb_rx_bytes['value'],
                                               abs=100 * 1024)
+
+    def test_memory_metrics(self, influxdb_actions, admin_node, mem_workload):
+        """Check reporting memory metrics in InfluxDb
+
+        Scenario:
+            * Get measurements starts with `intel.procfs.meminfo`
+            * Get information from influxdb pod for all memory series:
+                    kubectl exec -it <pod name> -- influx -host <ip> \
+                    -database ccp -execute "select count(value) \
+                    from \"<series>\" where time > now() - 1d"
+            * Check that all series contains some data
+            * Check that meminfo.mem_used value from influxdb nearly equal to
+                `cat /proc/meminfo` output
+            * Create some memory on admin_node
+            * Check that meminfo.mem_used value from influxdb nearly equal to
+                `cat /proc/meminfo` output again
+        """
+        # Get all meminfo series
+        series = influxdb_actions.get_measurements('/intel\.procfs\.meminfo*/')
+
+        # Check all series contains records
+        for serie in series:
+            influxdb_actions.check_serie_contains_records(serie)
+
+        # Get admin_node load min1
+        free_mem_serie = "intel.procfs.meminfo.mem_used"
+        hostname = admin_node.check_call('hostname').stdout_str
+        query_conditions = ("hostname='{hostname}'").format(hostname=hostname)
+        data = influxdb_actions.get_new_record(free_mem_serie,
+                                               conditions=query_conditions)
+        # Get /proc/meminfo values from admin_node
+        host_meminfo = self.get_meminfo(admin_node)
+        host_used_mem = (host_meminfo['MemTotal'] - host_meminfo['MemFree'] -
+                         host_meminfo['Buffers'] - host_meminfo['Cached'] -
+                         host_meminfo['Slab'])
+        assert host_used_mem == pytest.approx(data['value'], abs=100 * 1024**2)
+
+        # Make some load
+        mem_workload()
+
+        # Get influxdb and admin_node values again
+        data = influxdb_actions.get_new_record(free_mem_serie,
+                                               conditions=query_conditions)
+        host_meminfo = self.get_meminfo(admin_node)
+        host_used_mem = (host_meminfo['MemTotal'] - host_meminfo['MemFree'] -
+                         host_meminfo['Buffers'] - host_meminfo['Cached'] -
+                         host_meminfo['Slab'])
+        assert host_used_mem == pytest.approx(data['value'], abs=100 * 1024**2)
