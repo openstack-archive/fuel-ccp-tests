@@ -98,7 +98,6 @@ class TestFuelCCPInstaller(base_test.SystemBaseTest,
         self.check_number_kube_nodes(underlay, k8sclient)
         self.check_list_required_images(
             underlay, required_images=self.base_images)
-        self.calico_ipip_exists(underlay)
         self.check_etcd_health(underlay)
         nginx = self.get_nginx_spec()
         pod = k8s_actions.check_pod_create(body=nginx)
@@ -140,7 +139,8 @@ class TestFuelCCPInstaller(base_test.SystemBaseTest,
         self.check_number_kube_nodes(underlay, k8sclient)
         self.check_list_required_images(underlay,
                                         required_images=required_images)
-        self.calico_ipip_exists(underlay)
+        if kube_settings['ipip']:
+            self.calico_ipip_exists(underlay)
         self.check_etcd_health(underlay)
         nginx = self.get_nginx_spec()
         pod = k8s_actions.check_pod_create(body=nginx)
@@ -182,7 +182,8 @@ class TestFuelCCPInstaller(base_test.SystemBaseTest,
         self.check_number_kube_nodes(underlay, k8sclient)
         self.check_list_required_images(underlay,
                                         required_images=required_images)
-        self.calico_ipip_exists(underlay)
+        if kube_settings['ipip']:
+            self.calico_ipip_exists(underlay)
         self.check_etcd_health(underlay)
         nginx = self.get_nginx_spec()
         pod = k8s_actions.check_pod_create(body=nginx)
@@ -218,7 +219,6 @@ class TestFuelCCPInstaller(base_test.SystemBaseTest,
         self.check_number_kube_nodes(underlay, k8sclient)
         self.check_list_required_images(
             underlay, required_images=self.base_images)
-        self.calico_ipip_exists(underlay)
         self.check_etcd_health(underlay)
         nginx = self.get_nginx_spec()
         pod = k8s_actions.check_pod_create(body=nginx)
