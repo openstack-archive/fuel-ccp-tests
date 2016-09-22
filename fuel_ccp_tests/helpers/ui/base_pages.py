@@ -139,9 +139,8 @@ class PageObject(BaseWebObject):
     def wait_for_page_load(self, timeout=10):
         old_page = self.driver.find_element_by_tag_name('html')
         yield
-        Support.WebDriverWait(
-            self.driver,
-            timeout).until(expected_conditions.staleness_of(old_page))
+        self.get_wait(timeout).until(expected_conditions.staleness_of(
+            old_page))
 
     def is_the_current_page(self, do_assert=False):
         found_expected_title = self.page_title.startswith(self._page_title)

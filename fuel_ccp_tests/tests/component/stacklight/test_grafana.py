@@ -43,7 +43,7 @@ def system_dashboard(request, driver):
     """Login and return grafana system dashboard page"""
     login_page = grafana_pages.LoginPage(driver).open()
     main_page = login_page.login(username='admin', password='admin')
-    return main_page.open_dashboard('system')
+    return main_page.open_dashboard('System')
 
 
 @pytest.mark.revert_snapshot(ext.SNAPSHOT.ccp_deployed)
@@ -214,6 +214,51 @@ class TestGrafana(object):
                             disk=disk,
                             panel_name=panel_name,
                             key=key)
+                    assert key in tooltip_values, err_msg
+                    self.check_decimal_values(
+                        tooltip_values[key],
+                        value_name="{} panel {}".format(panel_name, key))
+
+    def test_interface_metrics(self, system_dashboard):
+        """Check interface metrics on Grafana system dashboard
+
+        Scenario:
+            * Login to Grafana
+            * Go to system dashboard page
+            * Select 1'st hostname
+            * Select 1'st interface
+            * Move mouse to "Network traffic on <interface>" graph
+            * Check that "read" and "write" values are present on tooltip
+            * Move mouse to "Packets on <disk>" graph
+            * Check that "read" and "write" values are present on tooltip
+            * Move mouse to "Errors on <disk>" graph
+            * Check that "read" and "write" values are present on tooltip
+            * Repeat last 6 steps for each hostname and each interface
+        """
+        for host in system_dashboard.get_hostnames_list():
+            system_dashboard.choose_hostname(host)
+            interfaces_names = [
+                x for x in system_dashboard.get_interfaces_list()
+                if not x.startswith('cali') and not x.startswith('br-')
+            ]
+            interfaces_types = {re.sub('\d+', '', x): x
+                                for x in interfaces_names}
+            for interface in interfaces_types.values():
+                system_dashboard.choose_interface(interface)
+                for panel_name in ('if_traffic', 'if_packets', 'if_errors'):
+                    panel = getattr(
+                        system_dashboard,
+                        'get_{}_panel'.format(panel_name))(iface=interface)
+                    tooltip = system_dashboard.get_panel_tooltip(panel)
+                    tooltip_values = system_dashboard.get_tooltop_values(
+                        tooltip)
+                for key in ("read", "write"):
+                    err_msg = ("Grafana {host} host {interface} interface "
+                               "{panel_name} panel tooltip doesn't contains "
+                               "{key} value").format(host=host,
+                                                     interface=interface,
+                                                     panel_name=panel_name,
+                                                     key=key)
                     assert key in tooltip_values, err_msg
                     self.check_decimal_values(
                         tooltip_values[key],
