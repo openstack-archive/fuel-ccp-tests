@@ -60,6 +60,7 @@ class EnvironmentManager(object):
         except error.DevopsObjNotFound:
             LOG.info("Environment doesn't exist, creating a new one")
             self._create_environment()
+        self.set_dns_config()
 
     @property
     def _devops_config(self):
@@ -245,7 +246,6 @@ class EnvironmentManager(object):
             )
             raise exceptions.EnvironmentAlreadyExists(env_name)
         self._env.define()
-        self.set_dns_config()
         LOG.info(
             'Environment "{0}" created and started'.format(env_name)
         )
