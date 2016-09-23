@@ -139,8 +139,6 @@ class TestFuelCCPInstaller(base_test.SystemBaseTest,
         self.check_number_kube_nodes(underlay, k8sclient)
         self.check_list_required_images(underlay,
                                         required_images=required_images)
-        if kube_settings['ipip']:
-            self.calico_ipip_exists(underlay)
         self.check_etcd_health(underlay)
         nginx = self.get_nginx_spec()
         pod = k8s_actions.check_pod_create(body=nginx)
@@ -182,8 +180,6 @@ class TestFuelCCPInstaller(base_test.SystemBaseTest,
         self.check_number_kube_nodes(underlay, k8sclient)
         self.check_list_required_images(underlay,
                                         required_images=required_images)
-        if kube_settings['ipip']:
-            self.calico_ipip_exists(underlay)
         self.check_etcd_health(underlay)
         nginx = self.get_nginx_spec()
         pod = k8s_actions.check_pod_create(body=nginx)
@@ -223,6 +219,48 @@ class TestFuelCCPInstaller(base_test.SystemBaseTest,
         nginx = self.get_nginx_spec()
         pod = k8s_actions.check_pod_create(body=nginx)
         self.check_nginx_pod_is_reached(underlay, pod.status.pod_ip)
+        k8s_actions.check_pod_delete(pod)
+
+    @pytest.mark.test_k8s_installed_with_ipip
+    @pytest.mark.revert_snapshot(ext.SNAPSHOT.underlay)
+    @pytest.mark.fail_snapshot
+    def test_k8s_installed_with_ipip(self, underlay, k8s_actions, show_step):
+        """Test for deploying an k8s environment with IPIP tunnels for Calico
+           and check it
+
+        Scenario:
+            1. Enable 'ipip' in the settings
+            2. Install k8s.
+            3. Check Calico IPIP tunnels exist
+            4. Basic check of running containers on nodes.
+            5. Create nginx pod.
+            6. Check created pod is reached
+            7. Delete pod.
+
+        Duration: 1200
+        """
+        show_step(1)
+        settings.CALICO['ipip'] = True
+        settings.DEFAULT_CUSTOM_YAML['ipip'] = True
+
+        show_step(2)
+        k8s_actions.install_k8s(custom_yaml=settings.DEFAULT_CUSTOM_YAML)
+
+        show_step(3)
+        self.calico_ipip_exists(underlay)
+
+        show_step(4)
+        self.check_list_required_images(
+            underlay, required_images=self.base_images)
+
+        show_step(5)
+        nginx = self.get_nginx_spec()
+        pod = k8s_actions.check_pod_create(body=nginx)
+
+        show_step(6)
+        self.check_nginx_pod_is_reached(underlay, pod.status.pod_ip)
+
+        show_step(7)
         k8s_actions.check_pod_delete(pod)
 
 
