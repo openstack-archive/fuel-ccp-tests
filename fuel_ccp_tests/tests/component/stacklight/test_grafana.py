@@ -263,3 +263,27 @@ class TestGrafana(object):
                     self.check_decimal_values(
                         tooltip_values[key],
                         value_name="{} panel {}".format(panel_name, key))
+
+    def test_memory_metrics(self, system_dashboard):
+        """Check memory metrics on Grafana system dashboard
+
+        Scenario:
+            * Login to Grafana
+            * Go to system dashboard page
+            * Select 1'st hostname
+            * Move mouse to Memory graph
+            * Check that "used" and "free" values are present on tooltip
+            * Repeat last 2 steps for each hostname
+        """
+        for host in system_dashboard.get_hostnames_list():
+            system_dashboard.choose_hostname(host)
+            memory_panel = system_dashboard.get_memory_panel()
+            tooltip = system_dashboard.get_panel_tooltip(memory_panel)
+            tooltip_values = system_dashboard.get_tooltop_values(tooltip)
+            for key in ("used", "free"):
+                err_msg = ("Grafana Memory panel tooltip "
+                           "doesn't contains {} value").format(key)
+                assert key in tooltip_values, err_msg
+                self.check_decimal_values(
+                    tooltip_values[key],
+                    value_name="system load {}".format(key))
