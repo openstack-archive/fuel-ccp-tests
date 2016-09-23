@@ -58,7 +58,6 @@ KUBE_VERSION = os.environ.get("KUBE_VERSION", "v1.3.5")
 
 KUBE_NETWORK_PLUGIN = os.environ.get("KUBE_NETWORK_PLUGIN", "calico")
 KUBE_PROXY_MODE = os.environ.get("KUBE_PROXY_MODE", "iptables")
-IPIP_USAGE = get_var_as_bool('IPIP_USAGE', True)
 DOCKER_VERSION = float(os.environ.get("DOCKER_VERSION", "1.12"))
 
 HYPERKUBE_IMAGE_REPO = os.environ.get('HYPERKUBE_IMAGE_REPO',
@@ -91,7 +90,6 @@ DEFAULT_CUSTOM_YAML = {
     "etcd_deployment_type": ETCD_DEPLOYMENT_TYPE,
     "hyperkube_image_tag": HYPERKUBE_IMAGE_TAG,
     "hyperkube_image_repo": HYPERKUBE_IMAGE_REPO,
-    "ipip": IPIP_USAGE,
     "kube_version": KUBE_VERSION,
     "use_hyperkube_cni": str("true"),
     "searchdomains": SEARCH_DOMAINS,
@@ -106,10 +104,11 @@ CALICO = {
     "calico_cni_ipam_download_url": os.environ.get(
         'CALICO_CNI_IPAM_DOWNLOAD_URL'),
     "calico_cni_ipam_checksum": os.environ.get('CALICO_CNI_IPAM_CHECKSUM'),
+    "ipip": get_var_as_bool('IPIP_USAGE', None),
 }
 
 for key, val in CALICO.items():
-    if val:
+    if val is not None:
         DEFAULT_CUSTOM_YAML[key] = val
 
 DEPLOY_CONFIG = '/tmp/ccp-globals.yaml'
