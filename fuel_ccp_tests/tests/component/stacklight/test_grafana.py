@@ -314,3 +314,50 @@ class TestGrafana(object):
                 self.check_decimal_values(
                     tooltip_values[key],
                     value_name="system load {}".format(key))
+
+    def test_swap_metrics(self, system_dashboard):
+        """Check disk metrics on Grafana system dashboard
+
+        Scenario:
+            * Login to Grafana
+            * Go to system dashboard page
+            * Select 1'st hostname
+            * Move mouse to "Swap memory" graph
+            * Check that "used", "free" and "cached" values are present
+                on tooltip
+            * Move mouse to "Swap page operations" graph
+            * Check that "read" and "write" values are present on tooltip
+            * Repeat last 4 steps for each hostname and each dick
+        """
+        for host in system_dashboard.get_hostnames_list():
+            system_dashboard.choose_hostname(host)
+            # Check Swap memory panel
+            swap_memory_panel = system_dashboard.get_swap_mem_panel()
+            tooltip = system_dashboard.get_panel_tooltip(swap_memory_panel)
+            tooltip_values = system_dashboard.get_tooltop_values(
+                tooltip)
+            for key in ("used", "free", "cached"):
+                err_msg = (
+                    "Grafana {host} host Swap memory panel tooltip "
+                    "doesn't contains {key} value").format(
+                        host=host,
+                        key=key)
+                assert key in tooltip_values, err_msg
+                self.check_decimal_values(
+                    tooltip_values[key],
+                    value_name="Swap memory panel {}".format(key))
+            # Check Swap page operations panel
+            swap_ops_panel = system_dashboard.get_swap_ops_panel()
+            tooltip = system_dashboard.get_panel_tooltip(swap_ops_panel)
+            tooltip_values = system_dashboard.get_tooltop_values(
+                tooltip)
+            for key in ("read", "write"):
+                err_msg = (
+                    "Grafana {host} host Swap page operations panel tooltip "
+                    "doesn't contains {key} value").format(
+                        host=host,
+                        key=key)
+                assert key in tooltip_values, err_msg
+                self.check_decimal_values(
+                    tooltip_values[key],
+                    value_name="Swap page operations panel {}".format(key))
