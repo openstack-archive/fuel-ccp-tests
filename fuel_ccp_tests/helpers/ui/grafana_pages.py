@@ -166,6 +166,9 @@ class DashboardPage(base_pages.PageObject):
     def get_load_panel(self):
         return self._get_panels_mapping()['System load']
 
+    def get_memory_panel(self):
+        return self._get_panels_mapping()['Memory']
+
     def get_merged_operations_panel(self):
         return next(v for k, v in self._get_panels_mapping().items()
                     if k.startswith('Merged operations on'))
