@@ -172,6 +172,12 @@ class DashboardPage(base_pages.PageObject):
     def get_processes_panel(self):
         return self._get_panels_mapping()['Processes']
 
+    def get_swap_mem_panel(self):
+        return self._get_panels_mapping()['Swap memory']
+
+    def get_swap_ops_panel(self):
+        return self._get_panels_mapping()['Swap page operations']
+
     def get_merged_operations_panel(self):
         return next(v for k, v in self._get_panels_mapping().items()
                     if k.startswith('Merged operations on'))
