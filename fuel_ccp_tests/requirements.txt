@@ -10,3 +10,4 @@ urllib3
 psycopg2
 python-k8sclient==0.3.0
 junit-xml
+elasticsearch>=2.0.0,<=3.0.0 # Apache-2.0
