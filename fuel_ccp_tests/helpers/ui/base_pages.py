@@ -143,6 +143,8 @@ class PageObject(BaseWebObject):
             old_page))
 
     def is_the_current_page(self, do_assert=False):
+        self.get_wait().until(expected_conditions.title_contains(
+            self._page_title))
         found_expected_title = self.page_title.startswith(self._page_title)
         if do_assert:
             err_msg = ("Expected to find %s in page title, instead found: %s" %
