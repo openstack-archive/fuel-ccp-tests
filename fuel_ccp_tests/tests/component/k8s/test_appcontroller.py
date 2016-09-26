@@ -11,10 +11,11 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-import pytest
+import iso8601
 
 from devops.helpers import helpers
 from k8sclient.client import rest
+import pytest
 import yaml
 
 from fuel_ccp_tests import logger
@@ -50,6 +51,14 @@ class AppControllerResoucesStatus(object):
         self.__linear_order = []
         self.register_linear_objects(expected_result)
 
+    def get_k8s_object(self, resource):
+        resource_type, resource_name = resource.split('/')
+        if resource_name is None:
+            raise ValueError("Resource '{}' has wrong format".format(
+                resource
+            ))
+        return self.__managers[resource_type]().get(name=resource_name)
+
     def register_linear_objects(self, list_resources=None):
         """Method to register check actions for each type of resources
 
@@ -58,14 +67,7 @@ class AppControllerResoucesStatus(object):
         """
         # The following object will return function (checker) to run
         def obj_exists(resource):
-            resource_type, resource_name = resource.split('/')
-            if resource_name is None:
-                raise ValueError("Resource '{}' has wrong format".format(
-                    resource
-                ))
-            return (
-                lambda: self.__managers[resource_type]().get(
-                    name=resource_name) is not None)
+            return lambda: self.get_k8s_object(resource) is not None
         if list_resources:
             if not isinstance(list_resources, list):
                 raise TypeError("list_resources must be a list instance!")
@@ -92,8 +94,6 @@ class AppControllerResoucesStatus(object):
         must_created = getattr(func, '__to_be_created', None)
         try:
             result = func()
-            if must_created is None:
-                raise Exception("{} is already created!".format(resource_repr))
             LOG.info("{} is created".format(resource_repr))
         except rest.ApiException as err:
             LOG.debug(err)
@@ -106,12 +106,21 @@ class AppControllerResoucesStatus(object):
     def linear_check(self):
         """Action to wait until all checks are done
         Each check has own timeout equals 300 secs"""
+        creation_dates = []
         for item in self.__linear_order:
             resource_repr = getattr(item, '__resource_repr')
             helpers.wait(
                 lambda: self._linear_check(item), timeout=300, interval=2,
                 timeout_msg="{} creation timeout reached".format(resource_repr)
             )
+            k8s_obj = self.get_k8s_object(resource_repr)
+            creation_date = iso8601.parse_date(
+                k8s_obj.metadata.creation_timestamp)
+            creation_dates.append(creation_date)
+            if len(creation_dates) > 1:
+                assert creation_dates[-2] <= creation_dates[-1], (
+                    "The order of linear objects is broken!")
+        LOG.info("Linear check passed!")
 
     def thirdparty_resources(self):
         result = yaml.load(
@@ -129,83 +138,76 @@ class TestAppController(object):
         "hyperkube_image_repo": settings.HYPERKUBE_IMAGE_REPO,
         "hyperkube_image_tag": settings.HYPERKUBE_IMAGE_TAG,
         "searchdomains": settings.SEARCH_DOMAINS,
-        "use_hyperkube_cni": str("true"),
+        "use_hyperkube_cni": "true",
     }
 
     @pytest.mark.ac_linear_test
     @pytest.mark.revert_snapshot(ext.SNAPSHOT.k8s_deployed)
-    @pytest.mark.skipif(settings.AC_REPO == "",
-                        reason="ApplicationController repo is not set!")
-    def test_linear(self, underlay, k8scluster):
+    @pytest.mark.skipif(settings.AC_PATH is None,
+                        reason="ApplicationController repo path is not set!")
+    def test_linear(self, underlay, k8scluster, show_step):
         """Linear test of AppController work
 
         Scenario:
-            1. Get AppController source on master node
-            2. Create AppController in k8s
-            3. Wait until pod with AppController is Running
-            4. Wait until required thirdparty resources are created
-            5. Create dependencies from test
-            6. Create definitions from test
-            7. Run AppController to create defined resources
-            8. Check if resources are created in expected order
+            1. Create AppController in k8s
+            2. Wait until pod with AppController is Running
+            3. Wait until required thirdparty resources are created
+            4. Create dependencies from test
+            5. Create definitions from test
+            6. Run AppController to create defined resources
+            7. Check if resources are created in expected order
         """
         node_name = underlay.node_names()[0]
         remote = underlay.remote(node_name=underlay.node_names()[0])
+        ac_path = settings.AC_PATH
+        ac_filepath = "%s/manifests/appcontroller.yaml" % ac_path
+        LOG.info("Trying to read %s" % ac_filepath)
+        with open(ac_filepath, 'r') as f:
+            ac_pod = yaml.load(f.read())
         cmd_ac_run = "kubectl exec -i k8s-appcontroller ac-run"
 
-        # Install additional software if it's needed
-        underlay.sudo_check_call(
-            cmd="which unzip || apt-get install unzip",
-            node_name=node_name)
-
-        cmd = """wget -qO ac.zip {url} &&
-        unzip -qq ac && mv k8s-AppController-{commit} k8s-AppController &&
-        cd k8s-AppController && pwd""".format(
-            url=settings.AC_ZIP_URL, commit=settings.AC_COMMIT)
-
-        LOG.info("1. Get AppController source on master node")
-        ac_path = underlay.check_call(
-            cmd, node_name=node_name).stdout_str
-
-        LOG.info("2. Create AppController in k8s")
-        underlay.check_call(
-            "kubectl create -f {}/manifests/appcontroller.yaml".format(
-                ac_path),
-            node_name=node_name)
-
-        LOG.info("3. Wait until pod with AppController is Running")
-        k8scluster.wait_pod_phase(
-            pod_name="k8s-appcontroller", phase="Running", timeout=300)
+        show_step(1)
+        show_step(2)
+        k8scluster.check_pod_create(body=ac_pod)
 
         # Load expected order to perform future checks
-        file_name = "{}/tests/linear/expected_order.yaml".format(ac_path)
-        with remote.open(file_name) as f:
+        expected_filepath = "%s/tests/linear/expected_order.yaml" % ac_path
+        LOG.info(
+            "Trying to read file with expected order %s" % expected_filepath)
+        with open(expected_filepath) as f:
             expected_order = yaml.load(f.read())
             acr = AppControllerResoucesStatus(k8scluster.api, remote,
                                               expected_order)
-        LOG.info("4. Wait until required thirdparty resources are created")
+        show_step(3)
         helpers.wait(
             lambda: set(acr.thirdparty_resources()).issubset(acr.resources),
             timeout=120, interval=2, timeout_msg="Resources creation timeout"
         )
 
-        LOG.info("5. Create dependencies from test")
-        cmd = "kubectl create -f {}/tests/linear/dependencies.yaml".format(
-            ac_path)
+        create_cmd_template = "echo '{}' | kubectl create -f -"
+
+        show_step(4)
+        deps_filename = "%s/tests/linear/dependencies.yaml" % ac_path
+        LOG.info("Trying to read dependencies file %s" % deps_filename)
+        with open(deps_filename) as f:
+            deps_content = f.read()
+        cmd = create_cmd_template.format(deps_content)
         helpers.wait(
             lambda: underlay.check_call(
                 cmd, node_name=node_name, expected=[0, 1]
             ).exit_code == 0,
             timeout=30, interval=2, timeout_msg="Dependencies creation failed")
 
-        LOG.info("6. Create definitions from test")
-        underlay.check_call(
-            "kubectl create -f {}/tests/linear/definitions.yaml".format(
-                ac_path),
-            node_name=node_name)
+        show_step(5)
+        defs_filename = "%s/tests/linear/definitions.yaml" % ac_path
+        LOG.info("Trying to read definitions file %s" % defs_filename)
+        with open(defs_filename) as f:
+            defs_content = f.read()
+        cmd = create_cmd_template.format(defs_content)
+        underlay.check_call(cmd, node_name=node_name)
 
-        LOG.info("7. Run AppController to create defined resources")
+        show_step(6)
         underlay.check_call(cmd_ac_run, node_name=node_name)
 
-        LOG.info("8. Check if resources are created in expected order")
+        show_step(7)
         acr.linear_check()

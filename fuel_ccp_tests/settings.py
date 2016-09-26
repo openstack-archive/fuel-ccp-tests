@@ -168,15 +168,8 @@ MCP_NETCHECKER_SERVER_VERSION = os.environ.get(
     'MCP_NETCHECKER_SERVER_VERSION')
 
 # Settings for AppController testing
-# AC_ZIP_URL is used to get link for zip archive with AppController, and by
-#  default it's built from AC_REPO (github link to AppController project) and
-#  AC_COMMIT (specific commit or master). You should provide AC_REPO (with
-#  or without AC_COMMIT) for now to pass AppController tests..
-AC_COMMIT = os.environ.get("AC_COMMIT", "master")
-AC_REPO = os.environ.get("AC_REPO", "")
-AC_ZIP_URL = os.environ.get(
-    "AC_ZIP_URL", "{repo}/archive/{commit}.zip".format(
-        repo=AC_REPO, commit=AC_COMMIT))
+# AC_PATH - path to k8s-AppController repo
+AC_PATH = os.environ.get("AC_PATH")
 
 LVM_PLUGIN_DIRNAME = os.environ.get("LVM_PLUGIN_DIRNAME", 'mirantis.com~lvm')
 LVM_PLUGIN_DIR = os.path.join(
