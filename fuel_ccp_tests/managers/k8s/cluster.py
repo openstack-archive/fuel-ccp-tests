@@ -54,7 +54,8 @@ class K8sCluster(object):
     def __init__(self, schema="https", user=None, password=None,
                  host='localhost', port='443', default_namespace='default'):
         if user and password:
-            auth = base64.encodestring('%s:%s' % (user, password))[:-1]
+            auth_string = '%s:%s' % (user, password)
+            auth = base64.encodestring(auth_string.encode()).decode()[:-1]
             auth = "Basic {}".format(auth)
             self._client = api_client.ApiClient(
                 '{schema}://{host}:{port}/'.format(

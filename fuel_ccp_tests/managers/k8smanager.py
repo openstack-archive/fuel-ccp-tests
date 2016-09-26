@@ -177,10 +177,10 @@ class K8SManager(object):
                                          'registry_templates/' \
                                          'service-registry.yaml'
 
-        with file(registry_pod) as f:
-            registry = yaml.load(f)
-        with file(service_registry) as f:
-            service = yaml.load(f)
+        with open(registry_pod) as f:
+            registry = yaml.load(f.read())
+        with open(service_registry) as f:
+            service = yaml.load(f.read())
 
         registry_pod = self.api.pods.create(body=registry, namespace='default')
         self.api.services.create(body=service, namespace='default')
