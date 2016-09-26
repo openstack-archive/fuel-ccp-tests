@@ -46,6 +46,14 @@ def system_dashboard(request, driver):
     return main_page.open_dashboard('System')
 
 
+@pytest.fixture
+def k8s_dashboard(request, driver):
+    """Login and return grafana system dashboard page"""
+    login_page = grafana_pages.LoginPage(driver).open()
+    main_page = login_page.login(username='admin', password='admin')
+    return main_page.open_dashboard('Kubernetes')
+
+
 @pytest.mark.revert_snapshot(ext.SNAPSHOT.ccp_deployed)
 class TestGrafana(object):
     def check_percent_value(self, value, value_name):
@@ -334,14 +342,11 @@ class TestGrafana(object):
             # Check Swap memory panel
             swap_memory_panel = system_dashboard.get_swap_mem_panel()
             tooltip = system_dashboard.get_panel_tooltip(swap_memory_panel)
-            tooltip_values = system_dashboard.get_tooltop_values(
-                tooltip)
+            tooltip_values = system_dashboard.get_tooltop_values(tooltip)
             for key in ("used", "free", "cached"):
-                err_msg = (
-                    "Grafana {host} host Swap memory panel tooltip "
-                    "doesn't contains {key} value").format(
-                        host=host,
-                        key=key)
+                err_msg = ("Grafana {host} host Swap memory panel tooltip "
+                           "doesn't contains {key} value").format(host=host,
+                                                                  key=key)
                 assert key in tooltip_values, err_msg
                 self.check_decimal_values(
                     tooltip_values[key],
@@ -349,15 +354,88 @@ class TestGrafana(object):
             # Check Swap page operations panel
             swap_ops_panel = system_dashboard.get_swap_ops_panel()
             tooltip = system_dashboard.get_panel_tooltip(swap_ops_panel)
-            tooltip_values = system_dashboard.get_tooltop_values(
-                tooltip)
+            tooltip_values = system_dashboard.get_tooltop_values(tooltip)
             for key in ("read", "write"):
                 err_msg = (
                     "Grafana {host} host Swap page operations panel tooltip "
-                    "doesn't contains {key} value").format(
-                        host=host,
-                        key=key)
+                    "doesn't contains {key} value").format(host=host,
+                                                           key=key)
                 assert key in tooltip_values, err_msg
                 self.check_decimal_values(
                     tooltip_values[key],
                     value_name="Swap page operations panel {}".format(key))
+
+    def test_k8s_resource_usage(self, k8s_dashboard):
+        """Check resources usage on Grafana Kubernetes dashboard
+
+        Scenario:
+            * Login to Grafana
+            * Go to kubernetes dashboard page
+            * Select 1'st hostname
+            * Select 1'st namespace
+            * Move mouse to "CPU usage" graph
+            * Check that "<namespace>" and "all namespaces" values are present
+                on tooltip
+            * Move mouse to "Memory usage" graph
+            * Check that "usage <namespace>",  "usage all namespaces",
+                "working set <namespace>" and "working set all namespaces"
+                values are present on tooltip
+            * Move mouse to "Pods count" graph
+            * Check that "<namespace>" and "all namespaces" values are present
+                on tooltip
+            * Move mouse to "Major page faultse" graph
+            * Check that "<namespace>" and "all namespaces" values are present
+                on tooltip
+            * Move mouse to "Minor page faults" graph
+            * Check that "<namespace>" and "all namespaces" values are present
+                on tooltip
+            * Move mouse to "Network traffic" graph
+            * Check that "read <namespace>",  "read all namespaces",
+                "write <namespace>" and "write all namespaces"
+                values are present on tooltip
+            * Check that page contains "CPU usage per pod" and
+                "Memory usage per pod" panels
+            * Repeat last 13 steps for each hostname and each namespace
+        """
+        graph_panels = {
+            'CPU usage': ('"{}" namespace', 'all namespaces'),
+            'Memory usage': ('usage "{}" namespace', 'usage all namespaces',
+                             'working set "{}" namespace',
+                             'working set all namespaces'),
+            'Pods count': ('"{}" namespace', 'all namespaces'),
+            'Major page faults': ('"{}" namespace', 'all namespaces'),
+            'Minor page faults': ('"{}" namespace', 'all namespaces'),
+            'Network traffic':
+            ('read "{}" namespace', 'read all namespace',
+             'write "{}" namespace', 'write all namespaces')
+        }
+        list_panels = ('CPU usage per pod', 'Memory usage per pod')
+        for host in k8s_dashboard.get_hostnames_list():
+            k8s_dashboard.choose_hostname(host)
+            for namespace in k8s_dashboard.get_namespaces_list():
+                k8s_dashboard.choose_namespace(namespace)
+                for panel_name, keys in graph_panels.items():
+                    panel = k8s_dashboard.get_panel(panel_name)
+                    tooltip = k8s_dashboard.get_panel_tooltip(panel)
+                    tooltip_values = k8s_dashboard.get_tooltop_values(tooltip)
+                    for key in keys:
+                        key = key.format(namespace)
+                        err_msg = (
+                            "Grafana k8s {host} host {namespace} namespace "
+                            "{panel} panel tooltip doesn't contains "
+                            "{key} value").format(host=host,
+                                                  namespace=namespace,
+                                                  panel=panel_name,
+                                                  key=key)
+                        assert key in tooltip_values, err_msg
+                        self.check_decimal_values(
+                            tooltip_values[key],
+                            value_name="{} panel {}".format(panel_name, key))
+
+                for panel_name in list_panels:
+                    err_msg = ("Expected that k8s dasboard has {panel} panel "
+                               "for {namespace} namespace and {host} host"
+                               ).format(panel=panel_name,
+                                        namespace=namespace,
+                                        host=host)
+                    assert k8s_dashboard.has_panel(panel_name), err_msg

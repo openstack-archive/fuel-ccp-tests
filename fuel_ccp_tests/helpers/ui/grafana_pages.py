@@ -67,6 +67,8 @@ class DashboardPage(base_pages.PageObject):
                            _submenu_item_xpath_tpl.format('Interface:'))
     _filesystem_selector = (by.By.XPATH,
                             _submenu_item_xpath_tpl.format('Filesystem:'))
+    _namespace_selector = (by.By.XPATH,
+                           _submenu_item_xpath_tpl.format('Namespace:'))
     _variable_option_selector = (by.By.CLASS_NAME, 'variable-option')
 
     _panel_selector = (by.By.TAG_NAME, 'grafana-panel')
@@ -147,10 +149,23 @@ class DashboardPage(base_pages.PageObject):
         return self._choose_submenu_item_value(self._filesystem_selector,
                                                value)
 
+    def get_namespaces_list(self):
+        return self._get_submenu_items_names(self._namespace_selector)
+
+    def choose_namespace(self, value):
+        return self._choose_submenu_item_value(self._namespace_selector,
+                                               value)
+
     def _get_panels_mapping(self):
         panels = self._get_elements(*self._panel_selector)
         return {x.find_element(*self._panel_title_text_selector).text: x
                 for x in panels}
+
+    def get_panel(self, name):
+        return self._get_panels_mapping()[name]
+
+    def has_panel(self, name):
+        return name in self._get_panels_mapping()
 
     def get_cpu_panel(self):
         return self._get_panels_mapping()['CPU']
