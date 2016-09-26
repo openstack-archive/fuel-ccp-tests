@@ -1,0 +1,10 @@
+Verified+1: Mirantis CCP CI <mirantis-fuel-ccp-ci@mirantis.com>
+Code-Review+1: Sergey Lebedev <slebedev@mirantis.com>
+Code-Review+2: Dmitry Tyzhnenko <dtyzhnenko@mirantis.com>
+Workflow+1: Dmitry Tyzhnenko <dtyzhnenko@mirantis.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Mon, 26 Sep 2016 10:55:44 +0000
+Reviewed-on: https://review.openstack.org/372634
+Project: openstack/fuel-ccp-tests
+Branch: refs/heads/master
