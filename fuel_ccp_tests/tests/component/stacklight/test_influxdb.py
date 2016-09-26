@@ -46,24 +46,34 @@ def make_file(admin_node):
         admin_node.execute('rm /tmp/{}'.format(filename))
 
 
-@pytest.yield_fixture
-def cpu_workload(admin_node):
+def workload_fixture_generator(command):
+    @pytest.yield_fixture
+    def workload(admin_node):
 
-    pids = set()
+        pids = set()
 
-    def _make_workload():
-        pid = admin_node.check_call(
-            'gzip < /dev/zero > /dev/null 2>&1 & echo $!').stdout_str
-        # check process is running
-        cmd = 'ls /proc/{}'.format(pid)
-        err_msg = "Background process with pid `{}` is not found".format(pid)
-        assert admin_node.execute(cmd).exit_code == 0, err_msg
-        pids.add(pid)
+        def _make_workload():
+            pid = admin_node.check_call('{} & echo $!'.format(
+                command)).stdout_str
+            # check process is running
+            cmd = 'ls /proc/{}'.format(pid)
+            err_msg = "Background process with pid `{}` is not found".format(
+                pid)
+            assert admin_node.execute(cmd).exit_code == 0, err_msg
+            pids.add(pid)
 
-    yield _make_workload
+        yield _make_workload
 
-    for pid in pids:
-        admin_node.execute('kill {}'.format(pid))
+        for pid in pids:
+            admin_node.execute('kill {}'.format(pid))
+
+    return workload
+
+
+cpu_workload = workload_fixture_generator(
+    command='gzip < /dev/zero > /dev/null 2>&1')
+dd_workload = workload_fixture_generator(
+    command='dd if=/dev/zero of=/dev/null < /dev/null > /dev/null 2>&1')
 
 
 @pytest.mark.revert_snapshot(ext.SNAPSHOT.ccp_deployed)
@@ -84,6 +94,20 @@ class TestMetrics(object):
         diff = map(lambda x: x[0] - x[1], zip(new_values, old_values))
         # user_cpu is 1st value from metrics
         return diff[0] * 100.0 / sum(diff)
+
+    def get_node_loadavg(self, remote):
+        return float(remote.check_call(
+            "cat /proc/loadavg | awk '{ print $1 }'").stdout_str)
+
+    def get_influxdb_measurements(self, influxdb, measure_regexp):
+        """Returns list of measurements matched `measure_regexp`
+
+        :param measure_regexp: string like '/intel\.procfs\.filesystem*/'
+        """
+        query = "SHOW MEASUREMENTS WITH MEASUREMENT =~ {}".format(
+            measure_regexp)
+        results = influxdb(query)
+        return [x['name'] for y in results for x in y['measurements']]
 
     def test_filesystem_metrics(self, make_file, influxdb_actions, admin_node):
         """Check reporting filesystem metrics in InfluxDb
@@ -112,8 +136,8 @@ class TestMetrics(object):
         hostname = admin_node.check_call('hostname').stdout_str
         query_conditions = ("hostname='{hostname}' and "
                             "filesystem='rootfs'").format(hostname=hostname)
-        data = influxdb_actions.get_last_record(free_space_serie,
-                                                conditions=query_conditions)
+        data = influxdb_actions.get_new_record(free_space_serie,
+                                               conditions=query_conditions)
         # Get df free space from admin_node
         free = self.get_node_free_space(admin_node)
         assert free == pytest.approx(data['value'], rel=0.1)
@@ -121,12 +145,8 @@ class TestMetrics(object):
         # Create file
         make_file(size_mb=100)
 
-        # Retrive data twice for avoiding old record retriving
-        for _ in range(2):
-            data = influxdb_actions.get_last_record(
-                free_space_serie,
-                conditions=query_conditions,
-                updated_after=data['time'])
+        data = influxdb_actions.get_new_record(free_space_serie,
+                                               conditions=query_conditions)
         # Get df free space from admin_node
         free = self.get_node_free_space(admin_node)
         assert free == pytest.approx(data['value'], rel=0.1)
@@ -204,3 +224,45 @@ class TestMetrics(object):
                        sum(host_percentages) / 5)
         assert sum(host_percentages) == pytest.approx(
             sum(influxdb_percentages), rel=0.5), err_msg
+
+    def test_load_metrics(self, influxdb_actions, admin_node, dd_workload):
+        """Check reporting load metrics in InfluxDb
+
+        Scenario:
+            * Get measurements starts with `intel.procfs.load`
+            * Get information from influxdb pod for all filesystem series:
+                    kubectl exec -it <pod name> -- influx -host <ip> \
+                    -database ccp -execute "select count(value) \
+                    from \"<series>\" where time > now() - 1d"
+            * Check that all series contains some data
+            * Check that load.mi1 value from influxdb nearly equal to
+                `cat /proc/loadavg` output
+            * Create some load on admin_node
+            * Check that load.mi1 value from influxdb nearly equal to
+                `cat /proc/loadavg` output again
+        """
+        # Get all load series
+        series = influxdb_actions.get_measurements('/intel\.procfs\.load*/')
+
+        # Check all series contains records
+        for serie in series:
+            influxdb_actions.check_serie_contains_records(serie)
+
+        # Get admin_node load min1
+        load_serie = "intel.procfs.load.min1"
+        hostname = admin_node.check_call('hostname').stdout_str
+        query_conditions = ("hostname='{hostname}'").format(hostname=hostname)
+        data = influxdb_actions.get_new_record(load_serie,
+                                               conditions=query_conditions)
+        # Get /proc/loadavd 1st value from admin_node
+        loadavg = self.get_node_loadavg(admin_node)
+        assert loadavg == pytest.approx(data['value'], rel=0.5)
+
+        # Make some load
+        dd_workload()
+
+        # Get influxdb and admin_node values again
+        data = influxdb_actions.get_new_record(load_serie,
+                                               conditions=query_conditions)
+        loadavg = self.get_node_loadavg(admin_node)
+        assert loadavg == pytest.approx(data['value'], rel=0.5)
