@@ -20,10 +20,11 @@ from fuel_ccp_tests.logger import logger
 
 
 class CliMessages(object):
-    error_message = "ccp show-dep: error: too few arguments"
+    error_message = ["ccp show-dep: error: too few arguments"]
     usage_message = "usage: ccp [-h] "
-    usage_show_dep_message = \
-        "usage: ccp show-dep [-h] components [components ...]"
+    usage_show_dep_message = [
+        "usage: ccp show-dep [-h] components [components ...]",
+        "Show dependencies of CCP components"]
     help_message = [
         "positional arguments:",
         "components  CCP components to show dependencies",
@@ -116,7 +117,7 @@ class TestCppCliNormalMessageInShowDep(object):
         cmd = "ccp show-dep -h"
         result = admin_node.check_call(cmd, expected=[0])
         assert len(utils.reduce_occurrences(
-            [CliMessages.usage_show_dep_message] + CliMessages.help_message,
+            CliMessages.usage_show_dep_message + CliMessages.help_message,
             " ".join(result['stdout'])).strip()) == 0
 
     @pytest.mark.fail_snapshot
@@ -131,7 +132,7 @@ class TestCppCliNormalMessageInShowDep(object):
         cmd = "ccp show-dep --help"
         result = admin_node.check_call(cmd, expected=[0])
         assert len(utils.reduce_occurrences(
-            [CliMessages.usage_show_dep_message] + CliMessages.help_message,
+            CliMessages.usage_show_dep_message + CliMessages.help_message,
             " ".join(result['stdout'])).strip()) == 0
 
     @pytest.mark.fail_snapshot
@@ -217,8 +218,8 @@ class TestCppCliErrorMessageInShowDep(object):
         result = admin_node.check_call(cmd, expected=[expected])
         assert len(
             utils.reduce_occurrences(
-                [CliMessages.error_message,
-                 CliMessages.usage_show_dep_message],
+                CliMessages.error_message +
+                [CliMessages.usage_show_dep_message[0]],
                 "".join(
                     result['stderr'])).strip()) == 0
         assert len(
