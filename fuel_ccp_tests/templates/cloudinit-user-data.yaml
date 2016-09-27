@@ -23,8 +23,8 @@
    # Prepare network connection
    - sudo ifup {interface_name}
    - sudo route add default gw {gateway} {interface_name}
-   - sudo ifup enp0s4
-   - sudo ifup enp0s5
+   - sudo ifup ens4
+   - sudo ifup ens5
 
    # Prepare necessary packages on the node
    - sudo apt-get update
@@ -41,14 +41,14 @@
   write_files:
    - path: /etc/network/interfaces.d/99-fuel-ccp-tests.cfg
      content: |
-          auto enp0s3
-          iface enp0s3 inet dhcp
+          auto ens3
+          iface ens3 inet dhcp
 
-          auto enp0s4
-          iface enp0s4 inet dhcp
+          auto ens4
+          iface ens4 inet dhcp
 
           # 3rd interface should be UP without IP address
-          auto enp0s5
-          iface enp0s5 inet manual
+          auto ens5
+          iface ens5 inet manual
               pre-up ifconfig $IFACE up
               post-down ifconfig $IFACE down
