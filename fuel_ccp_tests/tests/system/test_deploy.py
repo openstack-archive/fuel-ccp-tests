@@ -11,7 +11,11 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+import datetime
+import json
+
 import pytest
+from junit_xml import TestSuite, TestCase
 
 import base_test
 from fuel_ccp_tests import logger
@@ -63,3 +67,57 @@ class TestDeployOpenstack(base_test.SystemBaseTest):
             "source openrc-{}; bash fuel-ccp/tools/deploy-test-vms.sh -a"
             " create".format(settings.CCP_CONF["kubernetes"]["namespace"]),
             timeout=600)
+
+    @pytest.mark.revert_snapshot(ext.SNAPSHOT.ccp_deployed)
+    @pytest.mark.fail_snapshot
+    @pytest.mark.openstack_tempest
+    def test_deploy_openstack_run_tempest(self, underlay, config,
+                                          ccpcluster, k8s_actions, rally):
+        """Deploy base environment
+
+        Scenario:
+        1. Revert snapshot
+        2. Install ccp
+        3. Deploy environment
+        4. Run tempest
+
+        Duration 35 min
+        """
+        remote = underlay.remote(host=config.k8s.kube_host)
+        if settings.BUILD_IMAGES:
+            k8s_actions.create_registry()
+            ccpcluster.build()
+        else:
+            if not settings.REGISTRY:
+                raise ValueError("The REGISTRY variable should be set with "
+                                 "external registry address, "
+                                 "current value {0}".format(settings.REGISTRY))
+        ccpcluster.deploy()
+        post_os_deploy_checks.check_jobs_status(k8s_actions.api)
+        post_os_deploy_checks.check_pods_status(k8s_actions.api)
+        rally.prepare()
+        rally.pull_image()
+        rally.run()
+        post_os_deploy_checks.check_jobs_status(k8s_actions.api)
+        LOG.info('Check pods are running')
+        post_os_deploy_checks.check_pods_status(k8s_actions.api)
+
+        rally.run_tempest()
+        LOG.info('Storing tests results...')
+        res_file_name = 'result.json'
+        file_prefix = 'results_' + datetime.datetime.now().strftime(
+            '%Y%m%d_%H%M%S') + '_'
+        file_dst = '{0}/logs/{1}{2}'.format(
+            settings.LOGS_DIR, file_prefix, res_file_name)
+        remote.download(
+            '/home/{0}/rally/{1}'.format(settings.SSH_LOGIN, res_file_name),
+            file_dst)
+        res = json.load(remote.open('/home/{}/rally/result.json'.format(
+            settings.SSH_LOGIN)))
+
+        ts = TestSuite("tempest", [TestCase(case) for
+                                   case in res['test_cases']])
+        with open('tempest.xml', 'w') as f:
+            ts.to_file(f, [ts], prettyprint=False)
+        fail_msg = 'Tempest verification fails {}'.format(res)
+        assert res['failures'] == 0, fail_msg
