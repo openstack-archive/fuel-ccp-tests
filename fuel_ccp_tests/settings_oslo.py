@@ -68,7 +68,7 @@ underlay_opts = [
 # KUBE_ADMIN_PASS = os.environ.get('KUBE_ADMIN_PASS', 'changeme')
 # KUBE_HOST = os.environ.get('KUBE_HOST', None)
 # KUBE_VERSION = os.environ.get("KUBE_VERSION", "v1.3.0")
-# IPIP_USAGE = get_var_as_bool('IPIP_USAGE', True)
+# IPIP_USAGE = get_var_as_bool('IPIP_USAGE', None)
 # DEPLOY_SCRIPT = os.environ.get("DEPLOY_SCRIPT", None)
 
 # Deploy options for a new K8S cluster
@@ -76,7 +76,7 @@ k8s_deploy_opts = [
     ct.Cfg('kube_version', ct.String(),
            help="", default="v1.3.5"),
     ct.Cfg('ipip_usage', ct.Boolean(),
-           help="", default=True),
+           help="", default=False),
     ct.Cfg('deploy_script', ct.String(),
            help="", default=None),
     ct.Cfg('kube_settings', ct.JSONDict(),
