@@ -39,6 +39,6 @@ roles:
     - openvswitch-db
     - openvswitch-vswitchd
 configs:
-    private_interface: eth0
-    public_interface: eth1
-    neutron_external_interface: eth2
+    public_interface: ens3
+    private_interface: ens4
+    neutron_external_interface: ens5
