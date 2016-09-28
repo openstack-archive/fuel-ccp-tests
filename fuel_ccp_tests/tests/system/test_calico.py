@@ -25,7 +25,6 @@ LOG = logger.logger
 @pytest.mark.usefixtures("check_netchecker_files")
 @pytest.mark.usefixtures("check_netchecker_images_settings")
 @pytest.mark.usefixtures("check_calico_images_settings")
-@pytest.mark.component
 class TestFuelCCPCalico(base_test.SystemBaseTest,
                         test_netchecker.TestFuelCCPNetCheckerMixin):
     """Test class for Calico network plugin in k8s"""

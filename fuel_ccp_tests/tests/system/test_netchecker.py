@@ -139,7 +139,6 @@ class TestFuelCCPNetCheckerMixin:
 
 @pytest.mark.usefixtures("check_netchecker_files")
 @pytest.mark.usefixtures("check_netchecker_images_settings")
-@pytest.mark.component
 class TestFuelCCPNetChecker(base_test.SystemBaseTest,
                             TestFuelCCPNetCheckerMixin):
     """Test class for network connectivity verification in k8s"""
@@ -147,8 +146,8 @@ class TestFuelCCPNetChecker(base_test.SystemBaseTest,
     @pytest.mark.fail_snapshot
     @pytest.mark.snapshot_needed
     @pytest.mark.revert_snapshot(ext.SNAPSHOT.k8s_deployed)
-    def test_k8s_netchecker_calico(self, underlay, k8scluster, config,
-                                   show_step):
+    def test_k8s_netchecker(self, underlay, k8scluster, config,
+                            show_step):
         """Test for deploying an k8s environment with Calico and check
            connectivity between its networks
 
