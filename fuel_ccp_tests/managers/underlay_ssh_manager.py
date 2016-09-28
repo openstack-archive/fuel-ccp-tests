@@ -176,6 +176,8 @@ class UnderlaySSHManager(object):
         """
         def get_actions(lvm_id):
             return [
+                ("sed -i -e 's/\\(\\budev_sync = \\)1/\\10/' "
+                 "-e 's/\\(\\budev_rules = \\)1/\\10/' /etc/lvm/lvm.conf"),
                 "systemctl enable lvm2-lvmetad.service",
                 "systemctl enable lvm2-lvmetad.socket",
                 "systemctl start lvm2-lvmetad.service",
