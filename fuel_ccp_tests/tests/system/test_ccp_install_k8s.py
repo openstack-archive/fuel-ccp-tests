@@ -79,7 +79,6 @@ class TestFuelCCPInstaller(base_test.SystemBaseTest,
     @pytest.mark.snapshot_needed
     @pytest.mark.revert_snapshot(ext.SNAPSHOT.underlay)
     @pytest.mark.fail_snapshot
-    @pytest.mark.bvt
     def test_k8s_installed_default(self, underlay, k8s_actions):
         """Test for deploying an k8s environment and check it
 
@@ -104,6 +103,50 @@ class TestFuelCCPInstaller(base_test.SystemBaseTest,
         nginx = self.get_nginx_spec()
         pod = k8s_actions.check_pod_create(body=nginx)
         self.check_nginx_pod_is_reached(underlay, pod.status.pod_ip)
+        k8s_actions.check_pod_delete(pod)
+
+    @pytest.mark.k8s_installed_custom
+    @pytest.mark.snapshot_needed
+    @pytest.mark.revert_snapshot(ext.SNAPSHOT.underlay)
+    @pytest.mark.fail_snapshot
+    @pytest.mark.bvt
+    def test_k8s_installed_custom(self, underlay, k8s_actions, show_step):
+        """Test for deploying an k8s environment with custom parameters
+        and check it
+
+        Scenario:
+            1. Install k8s with custom parameters
+            2. Check number of nodes.
+            3. Basic check of running containers on nodes.
+            4. Check etcd health.
+            5. Create nginx pod.
+            6. Check created pod is reached.
+            7. Delete pod.
+
+        Duration: 1200
+        """
+        show_step(1)
+        k8s_actions.install_k8s(self.kube_settings)
+        k8sclient = k8s_actions.api
+
+        show_step(2)
+        self.check_number_kube_nodes(underlay, k8sclient)
+
+        show_step(3)
+        self.check_list_required_images(
+            underlay, required_images=self.base_images)
+
+        show_step(4)
+        self.check_etcd_health(underlay)
+
+        show_step(5)
+        nginx = self.get_nginx_spec()
+        pod = k8s_actions.check_pod_create(body=nginx)
+
+        show_step(6)
+        self.check_nginx_pod_is_reached(underlay, pod.status.pod_ip)
+
+        show_step(7)
         k8s_actions.check_pod_delete(pod)
 
     @pytest.mark.k8s_installed_with_etcd_on_host
