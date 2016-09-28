@@ -83,6 +83,10 @@ class K8sPodManager(K8sBaseManager):
 
     def _delete(self, body, name, namespace=None, **kwargs):
         namespace = namespace or self.namespace
+        # NOTE: the following two lines should be deleted after
+        # serialization is fixed in python-k8sclient
+        if isinstance(body, self.resource_class):
+            body = body.swagger_types
         return self.api.delete_namespaced_pod(
             body=body, name=name, namespace=namespace, **kwargs)
 
