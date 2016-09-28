@@ -76,7 +76,7 @@ BUILDER_WORKERS = os.environ.get('BUILDER_WORKERS', 1)
 BUILD_IMAGES = get_var_as_bool('BUILD_IMAGES', True)
 REGISTRY = os.environ.get('REGISTRY', "127.0.0.1:31500")
 IMAGES_NAMESPACE = os.environ.get('IMAGES_NAMESPACE', 'mcp')
-IMAGES_TAG = os.environ.get('IMAGES_TAG', 'latest')
+IMAGES_TAG = os.environ.get('IMAGES_TAG', 'newton')
 
 
 DEFAULT_CUSTOM_YAML = {
@@ -116,6 +116,38 @@ DEPLOY_CONFIG = '/tmp/ccp-globals.yaml'
 FUEL_CCP_KEYSTONE_LOCAL_REPO = os.environ.get('FUEL_CCP_KEYSTONE_LOCAL_REPO',
                                               None)
 
+OS_RELEASE = os.environ.get('OS_RELEASE', 'stable/newton')
+OS_REPOS = {
+    "openstack/horizon": {
+        "git_url": "https://github.com/openstack/horizon.git",
+        "git_ref": OS_RELEASE
+    },
+    "openstack/keystone": {
+        "git_url": "https://github.com/openstack/keystone.git",
+        "git_ref": OS_RELEASE
+    },
+    "openstack/nova": {
+        "git_url": "https://github.com/openstack/nova.git",
+        "git_ref": OS_RELEASE
+    },
+    "openstack/glance": {
+        "git_url": "https://github.com/openstack/glance.git",
+        "git_ref": OS_RELEASE
+    },
+    "openstack/heat": {
+        "git_url": "https://github.com/openstack/heat.git",
+        "git_ref": OS_RELEASE
+    },
+    "openstack/neutron": {
+        "git_url": "https://github.com/openstack/neutron.git",
+        "git_ref": OS_RELEASE
+    },
+    "openstack/sahara": {
+        "git_url": "https://github.com/openstack/sahara.git",
+        "git_ref": OS_RELEASE
+    }
+}
+
 CCP_CONF = {
     'builder': {
         'workers': BUILDER_WORKERS,
@@ -134,7 +166,8 @@ CCP_CONF = {
     'images': {
         'namespace': IMAGES_NAMESPACE,
         'tag': IMAGES_TAG
-    }
+    },
+    'sources': OS_REPOS
 }
 
 CCP_CLI_PARAMS = {
