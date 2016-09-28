@@ -116,6 +116,34 @@ DEPLOY_CONFIG = '/tmp/ccp-globals.yaml'
 FUEL_CCP_KEYSTONE_LOCAL_REPO = os.environ.get('FUEL_CCP_KEYSTONE_LOCAL_REPO',
                                               None)
 
+OS_RELEASE = os.environ.get('OS_RELEASE', 'stable/newton')
+OS_REPOS = {
+    "openstack/horizon": {
+        "git_url": "https://github.com/openstack/horizon.git",
+        "git_ref": OS_RELEASE
+    },
+    "openstack/keystone": {
+        "git_url": "https://github.com/openstack/keystone.git",
+        "git_ref": OS_RELEASE
+    },
+    "openstack/nova": {
+        "git_url": "https://github.com/openstack/nova.git",
+        "git_ref": OS_RELEASE
+    },
+    "openstack/glance": {
+        "git_url": "https://github.com/openstack/glance.git",
+        "git_ref": OS_RELEASE
+    },
+    "openstack/heat": {
+        "git_url": "https://github.com/openstack/heat.git",
+        "git_ref": OS_RELEASE
+    },
+    "openstack/neutron": {
+        "git_url": "https://github.com/openstack/neutron.git",
+        "git_ref": OS_RELEASE
+    }
+}
+
 CCP_CONF = {
     'builder': {
         'workers': BUILDER_WORKERS,
@@ -134,7 +162,8 @@ CCP_CONF = {
     'images': {
         'namespace': IMAGES_NAMESPACE,
         'tag': IMAGES_TAG
-    }
+    },
+    'sources': OS_REPOS
 }
 
 CCP_CLI_PARAMS = {
