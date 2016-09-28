@@ -32,7 +32,8 @@ class TestDeployOpenstack(base_test.SystemBaseTest):
     @pytest.mark.deploy_openstack
     @pytest.mark.fail_snapshot
     @pytest.mark.smoke
-    def test_fuel_ccp_deploy_microservices(self, ccpcluster, k8s_actions):
+    def test_fuel_ccp_deploy_microservices(
+            self, underlay, config, ccpcluster, k8s_actions):
         """Deploy base environment
 
         Scenario:
@@ -54,3 +55,9 @@ class TestDeployOpenstack(base_test.SystemBaseTest):
         ccpcluster.deploy()
         post_os_deploy_checks.check_jobs_status(k8s_actions.api)
         post_os_deploy_checks.check_pods_status(k8s_actions.api)
+
+        remote = underlay.remote(host=config.k8s.kube_host)
+        remote.check_call(
+            "source openrc-{}; bash fuel-ccp/tools/deploy-test-vms.sh -a"
+            " create".format(settings.CCP_CONF["kubernetes"]["namespace"]),
+            timeout=600)
