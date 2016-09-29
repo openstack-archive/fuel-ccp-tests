@@ -39,6 +39,7 @@ template:
             stp: False
             hpet: False
             use_host_cpu: !os_env DRIVER_USE_HOST_CPU, true
+            enable_acpi: True
 
         network_pools:
           public: public-pool01
@@ -74,7 +75,7 @@ template:
               boot:
                 - hd
               cloud_init_volume_name: iso
-              cloud_init_iface_up: enp0s3
+              cloud_init_iface_up: ens3
               volumes:
                 - name: system
                   capacity: !os_env NODE_VOLUME_SIZE, 150
@@ -90,23 +91,23 @@ template:
                   cloudinit_user_data: !include cloudinit-user-data.yaml
 
               interfaces:
-                - label: enp0s3
+                - label: ens3
                   l2_network_device: public
                   interface_model: *interface_model
-                - label: enp0s4
+                - label: ens4
                   l2_network_device: private
                   interface_model: *interface_model
-                - label: enp0s5
+                - label: ens5
                   l2_network_device: neutron
                   interface_model: *interface_model
               network_config:
-                enp0s3:    # Will get an IP from DHCP public-pool01
+                ens3:    # Will get an IP from DHCP public-pool01
                   networks:
                     - public
-                enp0s4:    # Will get an IP from DHCP private-pool01
+                ens4:    # Will get an IP from DHCP private-pool01
                   networks:
                     - private
-                enp0s5:    # Won't get an IP, no DHCP in ovs-pool01
+                ens5:    # Won't get an IP, no DHCP in ovs-pool01
                   networks:
                     - neutron
 
