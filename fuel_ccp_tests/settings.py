@@ -91,7 +91,6 @@ DEFAULT_CUSTOM_YAML = {
     "hyperkube_image_tag": HYPERKUBE_IMAGE_TAG,
     "hyperkube_image_repo": HYPERKUBE_IMAGE_REPO,
     "kube_version": KUBE_VERSION,
-    "use_hyperkube_cni": str("true"),
     "searchdomains": SEARCH_DOMAINS,
 }
 
@@ -105,6 +104,8 @@ CALICO = {
         'CALICO_CNI_IPAM_DOWNLOAD_URL'),
     "calico_cni_ipam_checksum": os.environ.get('CALICO_CNI_IPAM_CHECKSUM'),
     "ipip": get_var_as_bool('IPIP_USAGE', None),
+    "overwrite_hyperkube_cni": get_var_as_bool('OVERWRITE_HYPERKUBE_CNI',
+                                               None),
 }
 
 for key, val in CALICO.items():

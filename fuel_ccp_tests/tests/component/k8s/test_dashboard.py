@@ -28,7 +28,6 @@ class TestK8sDashboard(object):
         "hyperkube_image_repo": settings.HYPERKUBE_IMAGE_REPO,
         "hyperkube_image_tag": settings.HYPERKUBE_IMAGE_TAG,
         "searchdomains": settings.SEARCH_DOMAINS,
-        "use_hyperkube_cni": "true",
     }
 
     @pytest.mark.revert_snapshot(ext.SNAPSHOT.k8s_deployed)
