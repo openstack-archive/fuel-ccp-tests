@@ -129,7 +129,6 @@ class TestAppController(object):
         "hyperkube_image_repo": settings.HYPERKUBE_IMAGE_REPO,
         "hyperkube_image_tag": settings.HYPERKUBE_IMAGE_TAG,
         "searchdomains": settings.SEARCH_DOMAINS,
-        "use_hyperkube_cni": str("true"),
     }
 
     @pytest.mark.ac_linear_test
