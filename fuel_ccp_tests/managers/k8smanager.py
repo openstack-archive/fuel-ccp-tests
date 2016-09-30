@@ -49,7 +49,8 @@ class K8SManager(object):
             lvm_nodes = [
                 node for node in self.api.nodes.list()
                 if any(
-                    ip.address in lvm_nodes_ips for ip in node.addresses)]
+                    ip.address in lvm_nodes_ips
+                    for ip in node.status.addresses)]
 
             for node in lvm_nodes:
                 node.add_labels(lvm_mark)
