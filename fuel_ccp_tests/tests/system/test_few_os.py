@@ -31,7 +31,7 @@ class TestDeployTwoOS(base_test.SystemBaseTest):
     @pytest.mark.revert_snapshot(ext.SNAPSHOT.ccp_deployed)
     @pytest.mark.deploy_two_os
     @pytest.mark.fail_snapshot
-    @pytest.mark.system
+    @pytest.mark.system_few_os
     def test_deploy_two_os(self, underlay, config, ccpcluster, k8s_actions):
         """Deploy base environment
 
