@@ -22,6 +22,7 @@ from fuel_ccp_tests.logger import logger
 def admin_node(config, underlay, ccpcluster):
     """Return <remote> object to k8s admin node"""
     logger.info("Get SSH access to admin node")
+    logger.info("host=%s" % str(config.k8s.kube_host))
     with underlay.remote(host=config.k8s.kube_host) as remote:
         yield remote
 
@@ -43,21 +44,32 @@ class TestCppCliErrorInFetch(object):
     """
 
     @pytest.mark.fail_snapshot
-    def test_wrong_repo_name(self, admin_node):
-        cmd = ('ccp --repositories-names maria fetch')
+    def test_wrong_repo_name(self, admin_node, ccpcluster):
+        key = 'repositories'
+        new_value = {'names': ['fuel-ccp-maria']}
+        ccpcluster.update_ccp_yaml(new_value, key=key)
+        cmd = 'ccp fetch'
         admin_node.check_call(cmd, expected=[1], verbose=True)
 
     @pytest.mark.fail_snapshot
-    def test_wrong_repo_url(self, admin_node):
-        cmd = ('ccp --repositories-fuel-ccp-debian-base '
-               'http://example.org fetch')
+    def test_wrong_repo_url(self, admin_node, ccpcluster):
+        key = 'repositories'
+        new_values = [{'names': ['fuel-ccp-maria']},
+                      {'fuel_ccp_debian_base': 'http://example.org'}]
+        for value in new_values:
+            ccpcluster.update_ccp_yaml(value, key=key)
+        cmd = 'ccp fetch'
         admin_node.check_call(cmd, expected=[1], verbose=True)
         clean_repos(admin_node)
 
     @pytest.mark.fail_snapshot
-    def test_wrong_scheme_url(self, admin_node):
-        cmd = ('ccp --repositories-fuel-ccp-debian-base '
-               'htt://example.org fetch')
+    def test_wrong_scheme_url(self, admin_node, ccpcluster):
+        key = 'repositories'
+        new_values = [{'names': ['fuel-ccp-maria']},
+                      {'fuel_ccp_debian_base': 'htt://example.org'}]
+        for value in new_values:
+            ccpcluster.update_ccp_yaml(value, key=key)
+        cmd = 'ccp fetch'
         admin_node.check_call(cmd, expected=[1], verbose=True)
         clean_repos(admin_node)
 
@@ -73,14 +85,19 @@ class TestCppCliBuildExitCode(object):
        module pytest.mark: ccp_cli_errexit_codes
     """
     @pytest.mark.fail_snapshot
-    def test_nonexistent_repo_name(self, admin_node):
-        cmd = 'ccp build --components example'
+    def test_nonexistent_repo_name(self, admin_node, ccpcluster):
+        new_value = {'action': {'components': ['example']}}
+        ccpcluster.update_ccp_yaml(new_value)
+        cmd = 'ccp build'
         admin_node.check_call(cmd, expected=[1], verbose=True)
         clean_repos(admin_node)
 
     @pytest.mark.fail_snapshot
-    def test_error_build_image(self, admin_node):
-        cmd = ('ccp --repositories-names fuel-ccp-debian-base fetch && '
+    def test_error_build_image(self, admin_node, ccpcluster):
+        key = 'repositories'
+        new_value = {'names': ['fuel-ccp-debian-base']}
+        ccpcluster.update_ccp_yaml(new_value, key=key)
+        cmd = ('ccp fetch && '
                'echo "RUN exit 1" >> '
                '~/ccp-repos/fuel-ccp-debian-base/'
                'docker/base/Dockerfile.j2')
@@ -102,8 +119,10 @@ class TestCppCliDeploy(object):
     """
 
     @pytest.mark.fail_snapshot
-    def test_nonexistent_repo_name(self, admin_node):
-        cmd = 'ccp deploy --components example'
+    def test_nonexistent_repo_name(self, admin_node, ccpcluster):
+        new_value = {'action': {'components': ['example']}}
+        ccpcluster.update_ccp_yaml(new_value)
+        cmd = 'ccp deploy'
         admin_node.check_call(cmd, expected=[1], verbose=True)
         clean_repos(admin_node)
 
@@ -115,7 +134,7 @@ class TestCppCliErrorInShowDep(object):
     @pytest.mark.ccp_cli_errexit_codes
     @pytest.mark.ccp_cli_deploy_exit_code
     @pytest.mark.revert_snapshot(ext.SNAPSHOT.ccp_deployed)
-    def test_nonexistent_component_given(self, admin_node):
+    def test_nonexistent_component_given(self, admin_node, ccpcluster):
         """Test for ccp show-dep with non existing component exit code
         Scenario:
             1. exec ccp show-dep wrong_component

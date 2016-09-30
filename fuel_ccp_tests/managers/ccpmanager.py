@@ -56,7 +56,7 @@ class CCPManager(object):
                 LOG.info("Use defaults config from ccp")
                 cmd = ('cat fuel-ccp/etc/topology-example.yaml '
                        '>> {deploy_config}').format(
-                           deploy_config=settings.DEPLOY_CONFIG)
+                    deploy_config=settings.DEPLOY_CONFIG)
                 remote.check_call(cmd, verbose=True)
 
     @property
@@ -185,3 +185,22 @@ class CCPManager(object):
                 "/home/{user}/ccp-repos/fuel-ccp-{service}".format(
                     user=settings.SSH_LOGIN,
                     service=service_name))
+
+    def update_ccp_yaml(self, new_value, key=None):
+        """Add update new key[value] data
+
+        :param new_value: new dict value
+        :param key: use when updating dict in dict
+        """
+        path = settings.CCP_CLI_PARAMS['config-file']
+        with self.__underlay.remote(
+                host=self.__config.k8s.kube_host) as remote:
+            raw_config = remote.execute(
+                "cat {0}".format(path))['stdout_str']
+        config = yaml.load(raw_config)
+        if key and isinstance(config[key], dict):
+            config[key].update(new_value)
+        else:
+            config.update(new_value)
+        config = yaml.dump(config, default_flow_style=False)
+        self.put_raw_config(path, config)
