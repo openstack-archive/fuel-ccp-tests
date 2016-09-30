@@ -64,7 +64,7 @@ template:
             dhcp: false
 
         group_volumes:
-         - name: baseimage   # This name is used for 'backing_store' option for node volumes.
+         - name: cloudimage
            source_image: !os_env IMAGE_PATH
            format: qcow2
 
@@ -75,32 +75,41 @@ template:
               vcpu: !os_env SLAVE_NODE_CPU, 2
               memory: !os_env SLAVE_NODE_MEMORY, 8192
               boot:
-                - network
                 - hd
+              cloud_init_volume_name: iso
+              cloud_init_iface_up: ens3
               volumes:
                 - name: system
                   capacity: !os_env NODE_VOLUME_SIZE, 150
-                  backing_store: baseimage
+                  backing_store: cloudimage
                   format: qcow2
+                - name: iso  # Volume with name 'iso' will be used
+                             # for store image with cloud-init metadata.
+                  capacity: 1
+                  format: raw
+                  device: cdrom
+                  bus: ide
+                  cloudinit_meta_data: !include cloudinit-meta-data.yaml
+                  cloudinit_user_data: !include cloudinit-user-default-data.yaml
 
               interfaces:
-                - label: iface0
+                - label: ens3
                   l2_network_device: public
                   interface_model: *interface_model
-                - label: iface1
+                - label: ens4
                   l2_network_device: private
                   interface_model: *interface_model
-                - label: iface2
+                - label: ens5
                   l2_network_device: neutron
                   interface_model: *interface_model
               network_config:
-                iface0:
+                ens3:    # Will get an IP from DHCP public-pool01
                   networks:
                     - public
-                iface1:
+                ens4:    # Will get an IP from DHCP private-pool01
                   networks:
                     - private
-                iface2:
+                ens5:    # Won't get an IP, no DHCP in ovs-pool01
                   networks:
                     - neutron
 
