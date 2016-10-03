@@ -93,16 +93,16 @@ class TestDeployOpenstack(base_test.SystemBaseTest):
                                  "external registry address, "
                                  "current value {0}".format(settings.REGISTRY))
         ccpcluster.deploy()
-        post_os_deploy_checks.check_jobs_status(k8s_actions.api)
-        post_os_deploy_checks.check_pods_status(k8s_actions.api)
+        post_os_deploy_checks.check_jobs_status(k8s_actions.api, timeout=4500)
+        post_os_deploy_checks.check_pods_status(k8s_actions.api, timeout=4500)
+
+        # prepare rally
         rally.prepare()
         rally.pull_image()
         rally.run()
-        post_os_deploy_checks.check_jobs_status(k8s_actions.api, timeout=4500)
-        LOG.info('Check pods are running')
-        post_os_deploy_checks.check_pods_status(k8s_actions.api, timeout=4500)
-
+        # run tempest
         rally.run_tempest()
+
         LOG.info('Storing tests results...')
         res_file_name = 'result.json'
         file_prefix = 'results_' + datetime.datetime.now().strftime(
@@ -114,9 +114,43 @@ class TestDeployOpenstack(base_test.SystemBaseTest):
             file_dst)
         res = json.load(remote.open('/home/{}/rally/result.json'.format(
             settings.SSH_LOGIN)))
+        formatted_tc = []
+        failed_cases = [res['test_cases'][case]
+                        for case in res['test_cases']
+                        if res['test_cases'][case]['status']
+                        in 'fail']
+        for case in failed_cases:
+            if case:
+                tc = TestCase(case['name'])
+                tc.add_failure_info(case['traceback'])
+                formatted_tc.append(tc)
 
-        ts = TestSuite("tempest", [TestCase(case) for
-                                   case in res['test_cases']])
+        skipped_cases = [res['test_cases'][case]
+                         for case in res['test_cases']
+                         if res['test_cases'][case]['status'] in 'skip']
+        for case in skipped_cases:
+            if case:
+                tc = TestCase(case['name'])
+                tc.add_skipped_info(case['reason'])
+                formatted_tc.append(tc)
+
+        error_cases = [res['test_cases'][case] for case in res['test_cases']
+                       if res['test_cases'][case]['status'] in 'error']
+
+        for case in error_cases:
+            if case:
+                tc = TestCase(case['name'])
+                tc.add_error_info(case['traceback'])
+                formatted_tc.append(tc)
+
+        success = [res['test_cases'][case] for case in res['test_cases']
+                   if res['test_cases'][case]['status'] in 'success']
+        for case in success:
+            if case:
+                tc = TestCase(case['name'])
+                formatted_tc.append(tc)
+
+        ts = TestSuite("tempest", formatted_tc)
         with open('tempest.xml', 'w') as f:
             ts.to_file(f, [ts], prettyprint=False)
         fail_msg = 'Tempest verification fails {}'.format(res)
