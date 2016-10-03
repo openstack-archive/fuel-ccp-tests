@@ -95,6 +95,9 @@ rally verify showconfig"""
         docker_exec = ('source /home/{user}/rally/openrc; '
                        'docker exec -i {docker_id} bash -c "{cmd}"')
         commands = [
+            docker_exec.format(cmd="pip install pycparser",
+                               user=settings.SSH_LOGIN,
+                               docker_id=self.docker_id),
             docker_exec.format(cmd="./install_tempest.sh",
                                user=settings.SSH_LOGIN,
                                docker_id=self.docker_id),

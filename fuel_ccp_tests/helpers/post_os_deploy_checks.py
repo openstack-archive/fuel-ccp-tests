@@ -20,7 +20,7 @@ LOG.addHandler(logger.console)
 
 
 # TODO: replace check with deployment status request
-def check_pods_status(k8sclient, timeout=1500, namespace='ccp'):
+def check_pods_status(k8sclient, timeout=4500, namespace='ccp'):
     LOG.info("Check pods status")
 
     def is_pod_running(cluster, pod_name, namespace=namespace):
@@ -45,7 +45,7 @@ def check_pods_status(k8sclient, timeout=1500, namespace='ccp'):
 
 
 # TODO: replace check with deployment status request
-def check_jobs_status(k8sclient, timeout=1500, namespace='ccp'):
+def check_jobs_status(k8sclient, timeout=4500, namespace='ccp'):
     LOG.info("Check jobs status")
 
     def is_job_successful(cluster, job_name, namespace=namespace):
