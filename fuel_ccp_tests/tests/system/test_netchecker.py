@@ -109,7 +109,8 @@ class TestFuelCCPNetCheckerMixin:
 
     def check_network(self, kube_host_ip, works=True):
         if works:
-            assert self.get_netchecker_status(kube_host_ip).status_code == 204
+            assert self.get_netchecker_status(kube_host_ip).status_code in \
+                   (200, 204)
         else:
             assert self.get_netchecker_status(kube_host_ip).status_code == 400
 
