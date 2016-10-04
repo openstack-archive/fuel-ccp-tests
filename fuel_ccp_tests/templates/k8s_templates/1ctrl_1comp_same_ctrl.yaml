@@ -1,10 +1,10 @@
 nodes:
-  node4:
+  node1:
     roles:
       - openvswitch
       - controller-net-host
       - controller-net-bridge
-  node5:
+  node[4-5]:
     roles:
       - openvswitch
       - compute
@@ -38,7 +38,3 @@ roles:
     - neutron-openvswitch-agent
     - openvswitch-db
     - openvswitch-vswitchd
-configs:
-    public_interface: ens3
-    private_interface: ens4
-    neutron_external_interface: ens5
