@@ -15,7 +15,6 @@
 import pytest
 
 from fuel_ccp_tests.helpers import ext
-from fuel_ccp_tests.helpers import utils
 from fuel_ccp_tests.logger import logger
 
 
@@ -45,32 +44,20 @@ class TestCppCliErrorInFetch(object):
 
     @pytest.mark.fail_snapshot
     def test_wrong_repo_name(self, admin_node):
-        utils.update_yaml(["repositories"], {'names': ['fuel-ccp-maria']},
-                          yaml_file='./.ccp.yaml', remote=admin_node)
-        cmd = 'ccp fetch'
+        cmd = ('ccp --repositories-names maria fetch')
         admin_node.check_call(cmd, expected=[1], verbose=True)
 
     @pytest.mark.fail_snapshot
     def test_wrong_repo_url(self, admin_node):
-        utils.update_yaml(
-            ["repositories"], {'names': ['fuel-ccp-debian-base']},
-            yaml_file="./.ccp.yaml", remote=admin_node)
-        utils.update_yaml(
-            ["repositories"], {'fuel_ccp_debian_base': 'http://example.org'},
-            yaml_file="./.ccp.yaml", remote=admin_node)
-        cmd = 'ccp fetch'
+        cmd = ('ccp --repositories-fuel-ccp-debian-base '
+               'http://example.org fetch')
         admin_node.check_call(cmd, expected=[1], verbose=True)
         clean_repos(admin_node)
 
     @pytest.mark.fail_snapshot
     def test_wrong_scheme_url(self, admin_node):
-        utils.update_yaml(
-            ["repositories"], {'names': ['fuel-ccp-debian-base']},
-            yaml_file="./.ccp.yaml", remote=admin_node)
-        utils.update_yaml(
-            ["repositories"], {'fuel_ccp_debian_base': 'htt://example.org'},
-            yaml_file="./.ccp.yaml", remote=admin_node)
-        cmd = 'ccp fetch'
+        cmd = ('ccp --repositories-fuel-ccp-debian-base '
+               'htt://example.org fetch')
         admin_node.check_call(cmd, expected=[1], verbose=True)
         clean_repos(admin_node)
 
@@ -86,20 +73,14 @@ class TestCppCliBuildExitCode(object):
        module pytest.mark: ccp_cli_errexit_codes
     """
     @pytest.mark.fail_snapshot
-    def test_nonexistent_repo_name_build(self, admin_node):
-        utils.update_yaml(
-            ['action'], {'components': ['example']},
-            yaml_file="./.ccp.yaml", remote=admin_node)
-        cmd = 'ccp build'
+    def test_nonexistent_repo_name(self, admin_node):
+        cmd = 'ccp build --components example'
         admin_node.check_call(cmd, expected=[1], verbose=True)
         clean_repos(admin_node)
 
     @pytest.mark.fail_snapshot
     def test_error_build_image(self, admin_node):
-        utils.update_yaml(
-            ['repositories'], {'names': ['fuel-ccp-debian-base']},
-            yaml_file="./.ccp.yaml", remote=admin_node)
-        cmd = ('ccp fetch && '
+        cmd = ('ccp --repositories-names fuel-ccp-debian-base fetch && '
                'echo "RUN exit 1" >> '
                '~/ccp-repos/fuel-ccp-debian-base/'
                'docker/base/Dockerfile.j2')
@@ -121,11 +102,8 @@ class TestCppCliDeploy(object):
     """
 
     @pytest.mark.fail_snapshot
-    def test_nonexistent_repo_name_deploy(self, admin_node):
-        utils.update_yaml(
-            ['action'], {'components': ['example']},
-            yaml_file="./.ccp.yaml", remote=admin_node)
-        cmd = 'ccp deploy'
+    def test_nonexistent_repo_name(self, admin_node):
+        cmd = 'ccp deploy --components example'
         admin_node.check_call(cmd, expected=[1], verbose=True)
         clean_repos(admin_node)
 
