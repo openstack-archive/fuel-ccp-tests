@@ -51,10 +51,10 @@ class K8sServiceManager(K8sBaseManager):
         return self.api.replace_namespaced_service(
             body=body, name=name, namespace=namespace, **kwargs)
 
-    def _delete(self, body, name, namespace=None, **kwargs):
+    def _delete(self, name, namespace=None, **kwargs):
         namespace = namespace or self.namespace
         return self.api.delete_namespaced_service(
-            body=body, name=name, namespace=namespace, **kwargs)
+            name=name, namespace=namespace, **kwargs)
 
     def full_list(self, *args, **kwargs):
         lst = self._full_list(*args, **kwargs)
