@@ -41,7 +41,7 @@ class TestDeployTwoOS(base_test.SystemBaseTest):
         3. Deploy one OS cluster
         4. Check deployment
         5. Create 2 vms
-        6. Deploy another OS cluster
+        6. Deploy another OS cluster on different nodes
         7. Check deployment
         8. Create 2 vms
 
@@ -69,9 +69,9 @@ class TestDeployTwoOS(base_test.SystemBaseTest):
 
         topology_path = \
             os.getcwd() + '/fuel_ccp_tests/templates/k8s_templates/' \
-                          '1ctrl_1comp_2.yaml'
+                          '1ctrl_1comp_diff.yaml'
         remote.upload(topology_path, '/tmp')
-        utils.update_yaml(["deploy_config"], "/tmp/1ctrl_1comp_2.yaml",
+        utils.update_yaml(["deploy_config"], "/tmp/1ctrl_1comp_diff.yaml",
                           yaml_file="./.ccp.yaml", remote=remote)
         utils.update_yaml(["kubernetes", "namespace"], "ccp-second",
                           yaml_file="./.ccp.yaml", remote=remote)
@@ -80,6 +80,178 @@ class TestDeployTwoOS(base_test.SystemBaseTest):
                                                 namespace="ccp-second")
         post_os_deploy_checks.check_pods_status(k8s_actions.api,
                                                 namespace="ccp-second")
+        remote.check_call(
+            "source openrc-ccp-second;"
+            " bash fuel-ccp/tools/deploy-test-vms.sh -a create",
+            timeout=600)
+
+    @pytest.mark.revert_snapshot(ext.SNAPSHOT.ccp_deployed)
+    @pytest.mark.snapshot_needed(name="two_os")
+    @pytest.mark.deploy_two_os
+    @pytest.mark.fail_snapshot
+    @pytest.mark.system_few_os
+    def test_deploy_two_os_same_ctrl(self, underlay, config,
+                                     ccpcluster, k8s_actions):
+        """Deploy base environment
+
+        Scenario:
+        1. Revert snapshot
+        2. Install microservices
+        3. Deploy one OS cluster
+        4. Check deployment
+        5. Create 2 vms
+        6. Deploy another OS cluster, controller on the same node
+        7. Check deployment
+        8. Create 2 vms
+
+        Duration 90 min
+        """
+        if not settings.REGISTRY:
+            k8s_actions.create_registry()
+            ccpcluster.build()
+        topology_path = \
+            os.getcwd() + '/fuel_ccp_tests/templates/k8s_templates/' \
+                          '1ctrl_1comp.yaml'
+        remote = underlay.remote(host=config.k8s.kube_host)
+        remote.upload(topology_path, '/tmp')
+        utils.update_yaml(["deploy_config"], "/tmp/1ctrl_1comp.yaml",
+                          yaml_file="./.ccp.yaml", remote=remote)
+        underlay.sudo_check_call("pip install python-openstackclient",
+                                 host=config.k8s.kube_host)
+        ccpcluster.deploy()
+        post_os_deploy_checks.check_jobs_status(k8s_actions.api, timeout=2000)
+        post_os_deploy_checks.check_pods_status(k8s_actions.api)
+        remote.check_call(
+            "source openrc-{}; bash fuel-ccp/tools/deploy-test-vms.sh -a"
+            " create".format(settings.CCP_CONF["kubernetes"]["namespace"]),
+            timeout=600)
+
+        topology_path = \
+            os.getcwd() + '/fuel_ccp_tests/templates/k8s_templates/' \
+                          '1ctrl_1comp_same.yaml'
+        remote.upload(topology_path, '/tmp')
+        utils.update_yaml(["deploy_config"], "/tmp/1ctrl_1comp_same.yaml",
+                          yaml_file="./.ccp.yaml", remote=remote)
+        utils.update_yaml(["kubernetes", "namespace"], "ccp-second",
+                          yaml_file="./.ccp.yaml", remote=remote)
+        ccpcluster.deploy()
+        post_os_deploy_checks.check_jobs_status(k8s_actions.api, timeout=2000,
+                                                namespace="ccp-second")
+        post_os_deploy_checks.check_pods_status(k8s_actions.api,
+                                                namespace="ccp-second")
+        remote.check_call(
+            "source openrc-ccp-second;"
+            " bash fuel-ccp/tools/deploy-test-vms.sh -a create",
+            timeout=600)
+
+    @pytest.mark.revert_snapshot(ext.SNAPSHOT.ccp_deployed)
+    @pytest.mark.deploy_two_os
+    @pytest.mark.fail_snapshot
+    @pytest.mark.system_few_os
+    def test_deploy_3_ctrl(self, underlay, config, ccpcluster, k8s_actions):
+        """Deploy base environment
+
+        Scenario:
+        1. Revert snapshot
+        2. Install microservices
+        3. Deploy one OS cluster with 1 controller
+        4. Check deployment
+        5. Create flavor
+        6. Deploy another OS cluster with 1 controller
+        7. Check deployment
+        8. Create flavor
+        9. Deploy another OS cluster with 1 controller
+        10. Check deployment
+        11. Create flavor
+
+        Duration 60 min
+        """
+        if not settings.REGISTRY:
+            k8s_actions.create_registry()
+            ccpcluster.build()
+        topology_path = \
+            os.getcwd() + '/fuel_ccp_tests/templates/k8s_templates/' \
+                          '1ctrl.yaml'
+        remote = underlay.remote(host=config.k8s.kube_host)
+        remote.upload(topology_path, '/tmp')
+        utils.update_yaml(["deploy_config"], "/tmp/1ctrl.yaml",
+                          yaml_file="./.ccp.yaml", remote=remote)
+        underlay.sudo_check_call("pip install python-openstackclient",
+                                 host=config.k8s.kube_host)
+        ccpcluster.deploy()
+        post_os_deploy_checks.check_jobs_status(k8s_actions.api, timeout=2000)
+        post_os_deploy_checks.check_pods_status(k8s_actions.api)
+        remote.check_call(
+            "source openrc-{}; openstack flavor create"
+            " test".format(settings.CCP_CONF["kubernetes"]["namespace"]),
+            timeout=600)
+
+        remote.check_call("sed -i '/node[1-9]/c\  node2:' /tmp/1ctrl.yaml")
+        utils.update_yaml(["kubernetes", "namespace"], "ccp-second",
+                          yaml_file="./.ccp.yaml", remote=remote)
+        ccpcluster.deploy()
+        post_os_deploy_checks.check_jobs_status(k8s_actions.api, timeout=2000,
+                                                namespace="ccp-second")
+        post_os_deploy_checks.check_pods_status(k8s_actions.api,
+                                                namespace="ccp-second")
+        remote.check_call(
+            "source openrc-ccp-second;"
+            " openstack flavor create test",
+            timeout=600)
+        remote.check_call("sed -i '/node[1-9]/c\  node3:' /tmp/1ctrl.yaml")
+        utils.update_yaml(["kubernetes", "namespace"], "ccp-third",
+                          yaml_file="./.ccp.yaml", remote=remote)
+        ccpcluster.deploy()
+        post_os_deploy_checks.check_jobs_status(k8s_actions.api, timeout=2000,
+                                                namespace="ccp-third")
+        post_os_deploy_checks.check_pods_status(k8s_actions.api,
+                                                namespace="ccp-third")
+        remote.check_call(
+            "source openrc-ccp-third;"
+            " openstack flavor create test",
+            timeout=600)
+
+    @pytest.mark.revert_snapshot(name="two_os")
+    @pytest.mark.deploy_two_os
+    @pytest.mark.fail_snapshot
+    @pytest.mark.system_few_os
+    def test_deploy_two_os_kill_keystone(self, underlay, config, k8s_actions):
+        """Deploy base environment
+
+        Scenario:
+        1. Revert snapshot with 2 deployed OS
+        2. Delete keystone service from first deployment
+        3. Check second cluster is operational
+
+        Duration 15 min
+        """
+        remote = underlay.remote(host=config.k8s.kube_host)
+        k8s_actions.api.services.delete(
+            name='keystone',
+            namespace=settings.CCP_CONF["kubernetes"]["namespace"])
+        remote.check_call(
+            "source openrc-ccp-second;"
+            " bash fuel-ccp/tools/deploy-test-vms.sh -a create",
+            timeout=600)
+
+    @pytest.mark.revert_snapshot(name="two_os")
+    @pytest.mark.deploy_two_os
+    @pytest.mark.fail_snapshot
+    @pytest.mark.system_few_os
+    def test_deploy_two_os_kill_nova(self, underlay, config, k8s_actions):
+        """Deploy base environment
+
+        Scenario:
+        1. Revert snapshot with 2 deployed OS
+        2. Delete nova-api service from first deployment
+        3. Check second cluster is operational
+
+        Duration 90 min
+        """
+        remote = underlay.remote(host=config.k8s.kube_host)
+        k8s_actions.api.services.delete(
+            name='nova-api',
+            namespace=settings.CCP_CONF["kubernetes"]["namespace"])
         remote.check_call(
             "source openrc-ccp-second;"
             " bash fuel-ccp/tools/deploy-test-vms.sh -a create",
