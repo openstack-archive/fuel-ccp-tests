@@ -56,7 +56,7 @@ class CCPManager(object):
                 LOG.info("Use defaults config from ccp")
                 cmd = ('cat fuel-ccp/etc/topology-example.yaml '
                        '>> {deploy_config}').format(
-                           deploy_config=settings.DEPLOY_CONFIG)
+                    deploy_config=settings.DEPLOY_CONFIG)
                 remote.check_call(cmd, verbose=True)
 
     @property
