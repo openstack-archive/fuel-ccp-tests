@@ -136,8 +136,9 @@ class K8SManager(object):
 
         # Use Subprocess.execute instead of Subprocess.check_call until
         # check_call is not fixed (fuel-devops3.0.2)
-        result = _subprocess_runner.Subprocess.execute(cmd, verbose=verbose,
-                                                       timeout=2400)
+        result = _subprocess_runner.Subprocess.execute(
+            cmd, verbose=verbose, timeout=settings.KARGO_TIMEOUT)
+
         if expected_ec is None:
             expected_ec = [0]
         if result.exit_code not in expected_ec:
