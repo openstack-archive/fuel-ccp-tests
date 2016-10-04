@@ -116,6 +116,9 @@ DEPLOY_CONFIG = '/tmp/ccp-globals.yaml'
 FUEL_CCP_KEYSTONE_LOCAL_REPO = os.environ.get('FUEL_CCP_KEYSTONE_LOCAL_REPO',
                                               None)
 
+FUEL_CCP_SAHARA_LOCAL_REPO = os.environ.get('FUEL_CCP_SAHARA_LOCAL_REPO',
+                                            None)
+
 CCP_CONF = {
     'builder': {
         'workers': BUILDER_WORKERS,
