@@ -17,24 +17,22 @@ from fuel_ccp_tests.helpers import post_os_deploy_checks
 from fuel_ccp_tests.helpers import ext
 
 
-class TestPreCommitKeystone(object):
-    """docstring for TestPreCommitKeystone
+class TestPreCommitSahara(object):
+    """docstring for TestPreCommitSahara"""
 
-    """
-
-    @pytest.mark.keystone_test
-    @pytest.mark.keystone_component
+    @pytest.mark.sahara_test
+    @pytest.mark.sahara_component
     @pytest.mark.revert_snapshot(ext.SNAPSHOT.ccp_deployed)
-    def test_deploy_os_with_custom_keystone(
+    def test_deploy_os_with_custom_sahara(
             self, ccpcluster, k8s_actions, underlay, rally):
         """
         Scenario:
             1. Install k8s
             2. Install fuel-ccp
             3. Fetch all repositories
-            4. Fetch keystone from review
+            4. Fetch sahara from review
             5. Fetch containers from external registry
-            6. Build keytone container
+            6. Build sahara container
             7. Deploy Openstack
             8. Run tempest
 
@@ -42,7 +40,7 @@ class TestPreCommitKeystone(object):
 
         k8s_actions.create_registry()
         ccpcluster.fetch()
-        ccpcluster.update_service('keystone')
+        ccpcluster.update_service('sahara')
         ccpcluster.build('base-tools', suppress_output=False)
         ccpcluster.build(suppress_output=False)
         ccpcluster.deploy()
@@ -54,4 +52,4 @@ class TestPreCommitKeystone(object):
                                                 namespace='ccp')
         post_os_deploy_checks.check_pods_status(k8s_actions.api, timeout=2500,
                                                 namespace='ccp')
-        rally.run_tempest('--regex ^tempest.api.identity.*')
+        rally.run_tempest('--regex ^tempest.api.data_processing.*')
