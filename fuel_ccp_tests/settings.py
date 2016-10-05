@@ -164,7 +164,6 @@ CCP_CONF = {
     'kubernetes': {
         'namespace': 'ccp'
     },
-    'deploy_config': DEPLOY_CONFIG,
     'images': {
         'namespace': IMAGES_NAMESPACE,
         'tag': IMAGES_TAG
