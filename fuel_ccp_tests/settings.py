@@ -112,7 +112,12 @@ for key, val in CALICO.items():
     if val is not None:
         DEFAULT_CUSTOM_YAML[key] = val
 
-DEPLOY_CONFIG = '/tmp/ccp-globals.yaml'
+CCP_DEPLOY_CONFIG = '~/.ccp.deploy-config.yaml'
+CCP_DEPLOY_TOPOLOGY = '~/.ccp.deploy-topology.yaml'
+TOPOLOGY_PATH = os.environ.get('TOPOLOGY_PATH',
+                               os.getcwd() + '/fuel_ccp_tests/templates/'
+                               'k8s_templates/k8s_topology.yaml')
+
 
 FUEL_CCP_KEYSTONE_LOCAL_REPO = os.environ.get('FUEL_CCP_KEYSTONE_LOCAL_REPO',
                                               None)
@@ -163,11 +168,14 @@ CCP_CONF = {
     'kubernetes': {
         'namespace': 'ccp'
     },
-    'deploy_config': DEPLOY_CONFIG,
     'images': {
         'namespace': IMAGES_NAMESPACE,
         'tag': IMAGES_TAG
-    },
+    }
+}
+
+CCP_SOURCES_CONFIG = '~/.ccp.build-sources.yaml'
+CCP_BUILD_SOURCES = {
     'sources': OS_REPOS
 }
 
@@ -177,11 +185,17 @@ CCP_CLI_PARAMS = {
     "log-file": "ccp.log",
 }
 
+IFACES = {
+    "public": os.environ.get("IFACE_PUBLIC", "ens3"),
+    "private": os.environ.get("IFACE_PRIVATE", "ens4"),
+    "neutron": os.environ.get("IFACE_NEUTRON", "ens5"),
+}
+
 CCP_DEFAULT_GLOBALS = {
     "configs": {
-        "private_interface": "eth0",
-        "public_interface": "eth1",
-        "neutron_external_interface": "eth2"
+        "private_interface": IFACES['private'],
+        "public_interface": IFACES['public'],
+        "neutron_external_interface": IFACES['neutron']
     }
 }
 

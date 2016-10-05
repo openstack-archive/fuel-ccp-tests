@@ -52,13 +52,6 @@ class CCPManager(object):
                 LOG.debug("*** Result STDOUT:\n{0}".format(result.stdout_str))
                 LOG.debug("*** Result STDERR:\n{0}".format(result.stderr_str))
 
-            if use_defaults:
-                LOG.info("Use defaults config from ccp")
-                cmd = ('cat fuel-ccp/etc/topology-example.yaml '
-                       '>> {deploy_config}').format(
-                    deploy_config=settings.DEPLOY_CONFIG)
-                remote.check_call(cmd, verbose=True)
-
     @property
     def default_params(self):
         if hasattr(self, '_default_params'):
@@ -69,8 +62,21 @@ class CCPManager(object):
     def default_params(self, v):
         self._default_params = v.copy()
 
-    def init_default_config(self):
+    def init_default_config(self, include_files=None):
         self.put_yaml_config('~/.ccp.yaml', settings.CCP_CONF)
+        self.add_includes('~/.ccp.yaml', include_files)
+
+    def add_includes(self, path, files):
+        def clear_tilda(p):
+            return p.replace('~/', '')
+
+        content = "---\n!include\n{}".format(
+            '\n'.join(['- ' + clear_tilda(f) for f in files]))
+        cmd = 'echo "{content}" >> {path}'.format(
+            path=path, content=content)
+        with self.__underlay.remote(
+                host=self.__config.k8s.kube_host) as remote:
+            remote.execute(cmd)
 
     def put_raw_config(self, path, content):
         """Put config content to file on admin node at path
@@ -84,6 +90,16 @@ class CCPManager(object):
                 host=self.__config.k8s.kube_host) as remote:
             remote.execute(cmd)
 
+    def get_raw_config(self, path):
+        """Get config content from file at path on admin node
+
+        :param path: path to config file
+        :return: str
+        """
+        with self.__underlay.remote(
+                host=self.__config.k8s.kube_host) as remote:
+            return remote.open(path).read()
+
     def put_yaml_config(self, path, config):
         """Convert config dict to yaml and put it to admin node at path
 
@@ -96,6 +112,16 @@ class CCPManager(object):
         with self.__underlay.remote(
                 host=self.__config.k8s.kube_host) as remote:
             remote.execute(cmd)
+
+    def get_yaml_config(self, path):
+        """Get config content from file at path on admin node
+
+        :param path: path to config file
+        :return: dict
+        """
+        with self.__underlay.remote(
+                host=self.__config.k8s.kube_host) as remote:
+            return yaml.load(remote.open(path))
 
     def __build_param_string(self, params=None):
         if params is None:

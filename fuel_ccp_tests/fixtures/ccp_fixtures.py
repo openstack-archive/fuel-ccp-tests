@@ -70,10 +70,23 @@ def ccpcluster(revert_snapshot, config, hardware,
     # Install CCP
     if config.ccp.os_host == '0.0.0.0':
         ccp_actions.install_ccp()
+
         ccp_actions.put_yaml_config(
-            settings.DEPLOY_CONFIG,
-            settings.CCP_DEFAULT_GLOBALS)
-        ccp_actions.init_default_config()
+            path=settings.CCP_DEPLOY_CONFIG,
+            config=settings.CCP_DEFAULT_GLOBALS)
+        ccp_actions.put_yaml_config(
+            path=settings.CCP_SOURCES_CONFIG,
+            config=settings.CCP_BUILD_SOURCES)
+
+        with open(settings.TOPOLOGY_PATH, 'r') as f:
+            ccp_actions.put_raw_config(
+                path=settings.CCP_DEPLOY_TOPOLOGY,
+                content=f.read())
+
+        ccp_actions.init_default_config(include_files=[
+            settings.CCP_DEPLOY_CONFIG,
+            settings.CCP_SOURCES_CONFIG,
+            settings.CCP_DEPLOY_TOPOLOGY])
         config.ccp.os_host = config.k8s.kube_host
 
         hardware.create_snapshot(ext.SNAPSHOT.ccp_deployed)
