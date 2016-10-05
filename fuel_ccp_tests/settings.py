@@ -149,6 +149,13 @@ OS_REPOS = {
     }
 }
 
+
+CCP_DEFAULT_GLOBALS = {
+        "private_interface": "ens3",
+        "public_interface": "ens4",
+        "neutron_external_interface": "ens5"
+    }
+
 CCP_CONF = {
     'builder': {
         'workers': BUILDER_WORKERS,
@@ -158,12 +165,12 @@ CCP_CONF = {
         'address': REGISTRY
     },
     'repositories': {
-        'skip_empty': True
+        'skip_empty': True,
     },
+    'configs': CCP_DEFAULT_GLOBALS,
     'kubernetes': {
         'namespace': 'ccp'
     },
-    'deploy_config': DEPLOY_CONFIG,
     'images': {
         'namespace': IMAGES_NAMESPACE,
         'tag': IMAGES_TAG
@@ -176,15 +183,6 @@ CCP_CLI_PARAMS = {
     "debug": "",
     "log-file": "ccp.log",
 }
-
-CCP_DEFAULT_GLOBALS = {
-    "configs": {
-        "private_interface": "eth0",
-        "public_interface": "eth1",
-        "neutron_external_interface": "eth2"
-    }
-}
-
 NETCHECKER_SERVER_DIR = os.environ.get(
     'NETCHECKER_SERVER_DIR', os.path.join(os.getcwd(), 'mcp-netchecker-server')
 )

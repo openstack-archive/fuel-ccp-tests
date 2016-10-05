@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 import yaml
+import os
 
 from devops.error import DevopsCalledProcessError
 
@@ -84,18 +85,29 @@ class CCPManager(object):
                 host=self.__config.k8s.kube_host) as remote:
             remote.execute(cmd)
 
-    def put_yaml_config(self, path, config):
+    def load_yaml_from_file(self, path=None):
+        if not path:
+            path = os.getcwd() + '/fuel_ccp_tests/templates/' \
+                                 'k8s_templates/k8s_topology.yaml'
+            with open(path) as stream:
+                return yaml.load(stream)
+
+    def put_yaml_config(self, path, config, topology=None):
         """Convert config dict to yaml and put it to admin node at path
 
         :param path: path to config file
         :param config: dict with configuration data
         """
+        tmp = self.load_yaml_from_file()
         content = yaml.dump(config, default_flow_style=False)
         cmd = "cat >> {path} << EOF\n{content}\nEOF".format(
             path=path, content=content)
+        cmd1 = "cat >> {path} << EOF\n{topology}\nEOF".format(
+            path=path, topology=yaml.dump(tmp))
         with self.__underlay.remote(
                 host=self.__config.k8s.kube_host) as remote:
             remote.execute(cmd)
+            remote.execute(cmd1)
 
     def __build_param_string(self, params=None):
         if params is None:
