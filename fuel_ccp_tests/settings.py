@@ -77,7 +77,7 @@ BUILDER_WORKERS = os.environ.get('BUILDER_WORKERS', 1)
 BUILD_IMAGES = get_var_as_bool('BUILD_IMAGES', True)
 REGISTRY = os.environ.get('REGISTRY', "127.0.0.1:31500")
 IMAGES_NAMESPACE = os.environ.get('IMAGES_NAMESPACE', 'mcp')
-IMAGES_TAG = os.environ.get('IMAGES_TAG', 'newton')
+IMAGES_TAG = os.environ.get('IMAGES_TAG', 'latest')
 
 
 DEFAULT_CUSTOM_YAML = {
