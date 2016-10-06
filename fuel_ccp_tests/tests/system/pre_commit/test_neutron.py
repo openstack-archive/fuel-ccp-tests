@@ -16,7 +16,6 @@ import json
 import pytest
 
 from fuel_ccp_tests.helpers import post_os_deploy_checks
-from fuel_ccp_tests.helpers import ext
 from fuel_ccp_tests import logger
 from fuel_ccp_tests import settings
 
@@ -39,7 +38,7 @@ class TestPreCommitNeutron(object):
     """
 
     @pytest.mark.test_neutron_on_commit
-    @pytest.mark.revert_snapshot(ext.SNAPSHOT.ccp_deployed)
+    @pytest.mark.revert_snapshot(settings.PRECOMMIT_SNAPSHOT_NAME)
     def test_deploy_os_with_custom_neutron(
             self, ccpcluster, k8s_actions, rally, underlay, config):
         """
@@ -54,10 +53,15 @@ class TestPreCommitNeutron(object):
 
         """
         remote = underlay.remote(host=config.k8s.kube_host)
-        k8s_actions.create_registry()
-        ccpcluster.fetch()
-        ccpcluster.update_service('neutron')
-        ccpcluster.build(suppress_output=False)
+
+        if settings.REGISTRY == '127.0.0.1:31500':
+            k8s_actions.create_registry()
+
+        if settings.BUILD_IMAGES:
+            ccpcluster.fetch()
+            ccpcluster.update_service('neutron')
+            ccpcluster.build(suppress_output=False)
+
         ccpcluster.deploy()
         rally.prepare()
         rally.pull_image()

@@ -13,8 +13,8 @@
 #    under the License.
 import pytest
 
+from fuel_ccp_tests import settings
 from fuel_ccp_tests.helpers import post_os_deploy_checks
-from fuel_ccp_tests.helpers import ext
 
 
 class TestPreCommitKeystone(object):
@@ -24,7 +24,7 @@ class TestPreCommitKeystone(object):
 
     @pytest.mark.keystone_test
     @pytest.mark.keystone_component
-    @pytest.mark.revert_snapshot(ext.SNAPSHOT.ccp_deployed)
+    @pytest.mark.revert_snapshot(settings.PRECOMMIT_SNAPSHOT_NAME)
     def test_deploy_os_with_custom_keystone(
             self, ccpcluster, k8s_actions, underlay, rally):
         """
@@ -39,12 +39,15 @@ class TestPreCommitKeystone(object):
             8. Run tempest
 
         """
+        if settings.REGISTRY == '127.0.0.1:31500':
+            k8s_actions.create_registry()
 
-        k8s_actions.create_registry()
-        ccpcluster.fetch()
-        ccpcluster.update_service('keystone')
-        ccpcluster.build('base-tools', suppress_output=False)
-        ccpcluster.build(suppress_output=False)
+        if settings.BUILD_IMAGES:
+            ccpcluster.fetch()
+            ccpcluster.update_service('keystone')
+            ccpcluster.build('base-tools', suppress_output=False)
+            ccpcluster.build(suppress_output=False)
+
         ccpcluster.deploy()
         rally.prepare()
         rally.pull_image()
