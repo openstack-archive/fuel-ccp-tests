@@ -64,8 +64,10 @@ class TestDeployOpenstack(base_test.SystemBaseTest):
         underlay.sudo_check_call("pip install python-openstackclient",
                                  host=config.k8s.kube_host)
         remote.check_call(
-            "source openrc-{}; bash fuel-ccp/tools/deploy-test-vms.sh -a"
-            " create".format(settings.CCP_CONF["kubernetes"]["namespace"]),
+            "source openrc-{0}; bash fuel-ccp/tools/deploy-test-vms.sh -a"
+            " create -i {1}".format(
+                settings.CCP_CONF["kubernetes"]["namespace"],
+                settings.IFACES['public']),
             timeout=600)
 
     @pytest.mark.revert_snapshot(ext.SNAPSHOT.ccp_deployed)
