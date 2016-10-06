@@ -14,8 +14,8 @@
 import pytest
 
 from fuel_ccp_tests import logger
+from fuel_ccp_tests import settings
 from fuel_ccp_tests.helpers import post_os_deploy_checks
-from fuel_ccp_tests.helpers import ext
 
 LOG = logger.logger
 
@@ -25,7 +25,7 @@ class TestPreCommitMariadb(object):
     """
 
     @pytest.mark.test_mariadb_on_commit
-    @pytest.mark.revert_snapshot(ext.SNAPSHOT.ccp_deployed)
+    @pytest.mark.revert_snapshot(settings.PRECOMMIT_SNAPSHOT_NAME)
     def test_deploy_os_with_custom_mariadb(
             self, ccpcluster, k8s_actions, config, underlay, namespace='ccp'):
         """Precommit test for mariadb
@@ -40,10 +40,12 @@ class TestPreCommitMariadb(object):
         8. Check db
         """
 
-        k8s_actions.create_registry()
-        ccpcluster.fetch()
-        ccpcluster.update_service('mariadb')
-        ccpcluster.build(suppress_output=False)
+        if settings.REGISTRY == '127.0.0.1:31500':
+            k8s_actions.create_registry()
+            ccpcluster.fetch()
+            ccpcluster.update_service('mariadb')
+            ccpcluster.build(suppress_output=False)
+
         ccpcluster.deploy()
 
         post_os_deploy_checks.check_jobs_status(k8s_actions.api, timeout=2500)

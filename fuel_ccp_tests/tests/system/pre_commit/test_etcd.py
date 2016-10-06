@@ -15,8 +15,9 @@
 import pytest
 
 from fuel_ccp_tests import logger
+from fuel_ccp_tests import settings
 from fuel_ccp_tests.helpers import post_os_deploy_checks
-from fuel_ccp_tests.helpers import ext
+
 
 LOG = logger.logger
 
@@ -24,7 +25,7 @@ LOG = logger.logger
 class TestPreCommitEtcd(object):
 
     @pytest.mark.test_etcd_on_commit
-    @pytest.mark.revert_snapshot(ext.SNAPSHOT.ccp_deployed)
+    @pytest.mark.revert_snapshot(settings.PRECOMMIT_SNAPSHOT_NAME)
     def test_deploy_os_with_custom_etcd(
             self, ccpcluster, k8s_actions, config, underlay, show_step):
         """Precommit test for etcd
@@ -41,16 +42,14 @@ class TestPreCommitEtcd(object):
         """
         show_step(1)
         show_step(2)
-        k8s_actions.create_registry()
-
-        show_step(3)
-        ccpcluster.fetch()
-
-        show_step(4)
-        ccpcluster.update_service('etcd')
-
-        show_step(5)
-        ccpcluster.build(suppress_output=False)
+        if settings.REGISTRY == '127.0.0.1:31500':
+            k8s_actions.create_registry()
+            show_step(3)
+            ccpcluster.fetch()
+            show_step(4)
+            ccpcluster.update_service('etcd')
+            show_step(5)
+            ccpcluster.build(suppress_output=False)
 
         show_step(6)
         ccpcluster.deploy()

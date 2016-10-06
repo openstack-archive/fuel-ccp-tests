@@ -17,7 +17,6 @@ import pytest
 
 from fuel_ccp_tests import logger
 from fuel_ccp_tests import settings
-from fuel_ccp_tests.helpers import ext
 from fuel_ccp_tests.helpers import post_os_deploy_checks
 
 
@@ -26,8 +25,7 @@ LOG.addHandler(logger.console)
 
 
 class TestServiceGlance(object):
-
-    @pytest.mark.revert_snapshot(ext.SNAPSHOT.ccp_deployed)
+    @pytest.mark.revert_snapshot(settings.PRECOMMIT_SNAPSHOT_NAME)
     @pytest.mark.glance_test
     @pytest.mark.fail_snapshot
     def test_glance_api(self, config, underlay,
@@ -47,9 +45,11 @@ class TestServiceGlance(object):
         k8sclient = k8scluster.api
         remote = underlay.remote(host=config.k8s.kube_host)
 
-        ccpcluster.fetch()
-        k8scluster.create_registry()
-        ccpcluster.build()
+        if settings.REGISTRY == '127.0.0.1:31500':
+            k8scluster.create_registry()
+            ccpcluster.fetch()
+            ccpcluster.build()
+
         topology_path = os.getcwd() + '/fuel_ccp_tests/templates/' \
                                       'k8s_templates/k8s_topology.yaml'
         remote.upload(topology_path, './')

@@ -15,6 +15,8 @@ import os
 import pkg_resources
 import time
 
+from fuel_ccp_tests.helpers import ext
+
 _boolean_states = {'1': True, 'yes': True, 'true': True, 'on': True,
                    '0': False, 'no': False, 'false': False, 'off': False}
 
@@ -224,3 +226,6 @@ LVM_PLUGIN_DIR = os.path.join(
     '/usr/libexec/kubernetes/kubelet-plugins/volume/exec', LVM_PLUGIN_DIRNAME)
 LVM_PLUGIN_PATH = os.environ.get("LVM_PLUGIN_PATH", "~/lvm")
 LVM_FILENAME = os.path.basename(LVM_PLUGIN_PATH)
+
+PRECOMMIT_SNAPSHOT_NAME = os.environ.get(
+    'PRECOMMIT_SNAPSHOT_NAME', ext.SNAPSHOT.ccp_deployed)
