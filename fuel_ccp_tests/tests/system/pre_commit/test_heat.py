@@ -14,15 +14,15 @@
 import pytest
 
 from fuel_ccp_tests import logger
+from fuel_ccp_tests import settings
 from fuel_ccp_tests.helpers import post_os_deploy_checks
-from fuel_ccp_tests.helpers import ext
 
 LOG = logger.logger
 LOG.addHandler(logger.console)
 
 
 class TestDeployHeat(object):
-    @pytest.mark.revert_snapshot(ext.SNAPSHOT.ccp_deployed)
+    @pytest.mark.revert_snapshot(settings.PRECOMMIT_SNAPSHOT_NAME)
     @pytest.mark.heat_component
     def test_heat_component(self, ccpcluster, k8s_actions, rally):
         """Heat pre-commit test
@@ -36,15 +36,22 @@ class TestDeployHeat(object):
         7. Run heat tests
         Duration 60 min
         """
-        LOG.info('Fetch repositories...')
-        ccpcluster.fetch()
-        LOG.info('Update service...')
-        ccpcluster.update_service('heat')
-        LOG.info('Create registry')
-        k8s_actions.create_registry()
-        LOG.info('Build images')
-        ccpcluster.build('base-tools', suppress_output=False)
-        ccpcluster.build(suppress_output=False)
+
+        if settings.BUILD_IMAGES:
+            LOG.info('Fetch repositories...')
+            ccpcluster.fetch()
+            LOG.info('Update service...')
+            ccpcluster.update_service('heat')
+            LOG.info('Create registry')
+            k8s_actions.create_registry()
+            LOG.info('Build images')
+            ccpcluster.build('base-tools', suppress_output=False)
+            ccpcluster.build(suppress_output=False)
+        else:
+            if not settings.REGISTRY:
+                raise ValueError("The REGISTRY variable should be set with "
+                                 "external registry address, "
+                                 "current value {0}".format(settings.REGISTRY))
         LOG.info('Deploy services')
         ccpcluster.deploy()
         LOG.info('Check jobs are ready')

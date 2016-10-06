@@ -17,7 +17,6 @@ import pytest
 from fuel_ccp_tests import logger
 from fuel_ccp_tests import settings
 from fuel_ccp_tests.helpers import post_os_deploy_checks
-from fuel_ccp_tests.helpers import ext
 
 LOG = logger.logger
 LOG.addHandler(logger.console)
@@ -33,7 +32,7 @@ class TestServiceHorizon(object):
      /horizon-master/openstack_dashboard/test/integration_tests
     '''.format(registry=settings.REGISTRY, tag='ccp')
 
-    @pytest.mark.revert_snapshot(ext.SNAPSHOT.ccp_deployed)
+    @pytest.mark.revert_snapshot(settings.PRECOMMIT_SNAPSHOT_NAME)
     @pytest.mark.horizon_component
     def test_horizon_component(self, config, underlay,
                                k8scluster, ccpcluster):
@@ -57,10 +56,17 @@ class TestServiceHorizon(object):
 
         remote = underlay.remote(host=config.k8s.kube_host)
 
-        ccpcluster.fetch()
-        ccpcluster.update_service('horizon')
-        k8scluster.create_registry()
-        ccpcluster.build()
+        if settings.BUILD_IMAGES:
+            ccpcluster.fetch()
+            ccpcluster.update_service('horizon')
+            k8scluster.create_registry()
+            ccpcluster.build()
+        else:
+            if not settings.REGISTRY:
+                raise ValueError("The REGISTRY variable should be set with "
+                                 "external registry address, "
+                                 "current value {0}".format(settings.REGISTRY))
+
         topology_path = os.getcwd() + '/fuel_ccp_tests/templates/' \
                                       'k8s_templates/k8s_topology.yaml'
         remote.upload(topology_path, settings.CCP_CLI_PARAMS['deploy-config'])

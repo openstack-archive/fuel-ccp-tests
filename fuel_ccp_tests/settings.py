@@ -224,3 +224,6 @@ LVM_PLUGIN_DIR = os.path.join(
     '/usr/libexec/kubernetes/kubelet-plugins/volume/exec', LVM_PLUGIN_DIRNAME)
 LVM_PLUGIN_PATH = os.environ.get("LVM_PLUGIN_PATH", "~/lvm")
 LVM_FILENAME = os.path.basename(LVM_PLUGIN_PATH)
+
+PRECOMMIT_SNAPSHOT_NAME = os.environ.get(
+    'PRECOMMIT_SNAPSHOT_NAME', 'ccp_deployed')

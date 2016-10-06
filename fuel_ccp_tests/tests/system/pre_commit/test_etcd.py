@@ -15,8 +15,9 @@
 import pytest
 
 from fuel_ccp_tests import logger
+from fuel_ccp_tests import settings
 from fuel_ccp_tests.helpers import post_os_deploy_checks
-from fuel_ccp_tests.helpers import ext
+
 
 LOG = logger.logger
 
@@ -24,7 +25,7 @@ LOG = logger.logger
 class TestPreCommitEtcd(object):
 
     @pytest.mark.test_etcd_on_commit
-    @pytest.mark.revert_snapshot(ext.SNAPSHOT.ccp_deployed)
+    @pytest.mark.revert_snapshot(settings.PRECOMMIT_SNAPSHOT_NAME)
     def test_deploy_os_with_custom_etcd(
             self, ccpcluster, k8s_actions, config, underlay, show_step):
         """Precommit test for etcd
@@ -39,19 +40,21 @@ class TestPreCommitEtcd(object):
         6. Deploy openstack
         7. Check etcd
         """
-        show_step(1)
-        show_step(2)
-        k8s_actions.create_registry()
-
-        show_step(3)
-        ccpcluster.fetch()
-
-        show_step(4)
-        ccpcluster.update_service('etcd')
-
-        show_step(5)
-        ccpcluster.build(suppress_output=False)
-
+        if settings.BUILD_IMAGES:
+            show_step(1)
+            show_step(2)
+            k8s_actions.create_registry()
+            show_step(3)
+            ccpcluster.fetch()
+            show_step(4)
+            ccpcluster.update_service('etcd')
+            show_step(5)
+            ccpcluster.build(suppress_output=False)
+        else:
+            if not settings.REGISTRY:
+                raise ValueError("The REGISTRY variable should be set with "
+                                 "external registry address, "
+                                 "current value {0}".format(settings.REGISTRY))
         show_step(6)
         ccpcluster.deploy()
         post_os_deploy_checks.check_jobs_status(k8s_actions.api, timeout=2500)

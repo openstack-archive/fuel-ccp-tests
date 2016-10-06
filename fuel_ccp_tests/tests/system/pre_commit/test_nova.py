@@ -14,7 +14,7 @@
 import pytest
 
 from fuel_ccp_tests.helpers import post_os_deploy_checks
-from fuel_ccp_tests.helpers import ext
+from fuel_ccp_tests import settings
 
 
 class TestPreCommitNova(object):
@@ -32,7 +32,7 @@ class TestPreCommitNova(object):
     """
 
     @pytest.mark.test_nova_on_commit
-    @pytest.mark.revert_snapshot(ext.SNAPSHOT.ccp_deployed)
+    @pytest.mark.revert_snapshot(settings.PRECOMMIT_SNAPSHOT_NAME)
     def test_deploy_os_with_custom_nova(
             self, ccpcluster, k8s_actions, rally):
         """
@@ -46,11 +46,16 @@ class TestPreCommitNova(object):
             7. Run compute tempest suite
 
         """
-
-        k8s_actions.create_registry()
-        ccpcluster.fetch()
-        ccpcluster.update_service('nova')
-        ccpcluster.build(suppress_output=False)
+        if settings.BUILD_IMAGES:
+            k8s_actions.create_registry()
+            ccpcluster.fetch()
+            ccpcluster.update_service('nova')
+            ccpcluster.build(suppress_output=False)
+        else:
+            if not settings.REGISTRY:
+                raise ValueError("The REGISTRY variable should be set with "
+                                 "external registry address, "
+                                 "current value {0}".format(settings.REGISTRY))
         ccpcluster.deploy()
         rally.prepare()
         rally.pull_image()

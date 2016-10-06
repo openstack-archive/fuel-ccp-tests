@@ -13,8 +13,8 @@
 #    under the License.
 import pytest
 
+from fuel_ccp_tests import settings
 from fuel_ccp_tests.helpers import post_os_deploy_checks
-from fuel_ccp_tests.helpers import ext
 
 
 class TestPreCommitSahara(object):
@@ -22,7 +22,7 @@ class TestPreCommitSahara(object):
 
     @pytest.mark.sahara_test
     @pytest.mark.sahara_component
-    @pytest.mark.revert_snapshot(ext.SNAPSHOT.ccp_deployed)
+    @pytest.mark.revert_snapshot(settings.PRECOMMIT_SNAPSHOT_NAME)
     def test_deploy_os_with_custom_sahara(
             self, ccpcluster, k8s_actions, underlay, rally):
         """
@@ -38,11 +38,17 @@ class TestPreCommitSahara(object):
 
         """
 
-        k8s_actions.create_registry()
-        ccpcluster.fetch()
-        ccpcluster.update_service('sahara')
-        ccpcluster.build('base-tools', suppress_output=False)
-        ccpcluster.build(suppress_output=False)
+        if settings.BUILD_IMAGES:
+            k8s_actions.create_registry()
+            ccpcluster.fetch()
+            ccpcluster.update_service('sahara')
+            ccpcluster.build('base-tools', suppress_output=False)
+            ccpcluster.build(suppress_output=False)
+        else:
+            if not settings.REGISTRY:
+                raise ValueError("The REGISTRY variable should be set with "
+                                 "external registry address, "
+                                 "current value {0}".format(settings.REGISTRY))
         ccpcluster.deploy()
         rally.prepare()
         rally.pull_image()
