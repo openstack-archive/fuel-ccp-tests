@@ -4,11 +4,6 @@ nodes:
       - openvswitch
       - controller-net-host
       - controller-net-bridge
-  node[2-3]:
-    roles:
-      - openvswitch
-      - compute
-      - controller-net-bridge
 roles:
   controller-net-host:
     - neutron-dhcp-agent
@@ -31,9 +26,6 @@ roles:
     - nova-novncproxy
     - nova-scheduler
     - rabbitmq
-  compute:
-    - nova-compute
-    - nova-libvirt
   openvswitch:
     - neutron-openvswitch-agent
     - openvswitch-db
