@@ -19,7 +19,7 @@ from fuel_ccp_tests.helpers import ext
 LOG = logger.logger
 
 
-@pytest.mark.component
+@pytest.mark.component_k8s
 class TestLVMPluginUsage(object):
     """Tests using k8s' LVM plugin.
 

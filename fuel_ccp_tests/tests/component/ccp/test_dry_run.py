@@ -20,7 +20,7 @@ from fuel_ccp_tests.helpers import ext
 
 @pytest.mark.do_dry_run
 @pytest.mark.revert_snapshot(ext.SNAPSHOT.ccp_deployed)
-@pytest.mark.component
+@pytest.mark.component_ccp_heavy
 class TestDryRun(object):
     """Deploy OpenStack from prebuilt yaml templates
 

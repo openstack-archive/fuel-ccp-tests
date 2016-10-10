@@ -28,7 +28,7 @@ LOG = logger.logger
 @pytest.mark.ccp_cli_reconfig
 @pytest.mark.ccp_cli_redeploy
 @pytest.mark.revert_snapshot(ext.SNAPSHOT.ccp_deployed)
-@pytest.mark.component
+@pytest.mark.component_ccp_heavy
 def test_deploy_and_reconfig_keystone(config, ccpcluster,
                                       k8s_actions, underlay):
 

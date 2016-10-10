@@ -131,7 +131,7 @@ class AppControllerResoucesStatus(object):
 
 
 @pytest.mark.AppController
-@pytest.mark.component
+@pytest.mark.component_k8s
 class TestAppController(object):
 
     kube_settings = {

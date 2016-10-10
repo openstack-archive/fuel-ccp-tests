@@ -21,7 +21,7 @@ LOG = logger.logger
 
 
 @pytest.mark.k8s_dashboard
-@pytest.mark.component
+@pytest.mark.component_k8s
 class TestK8sDashboard(object):
 
     kube_settings = {
