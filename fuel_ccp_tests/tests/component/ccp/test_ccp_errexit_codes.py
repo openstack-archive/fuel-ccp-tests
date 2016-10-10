@@ -43,14 +43,12 @@ class TestCppCliErrorInFetch(object):
        module pytest.mark: ccp_cli_errexit_codes
     """
 
-    @pytest.mark.fail_snapshot
     def test_wrong_repo_name(self, admin_node):
         utils.update_yaml(["repositories"], {'names': ['fuel-ccp-maria']},
                           yaml_file='./.ccp.yaml', remote=admin_node)
         cmd = 'ccp fetch'
         admin_node.check_call(cmd, expected=[1], verbose=True)
 
-    @pytest.mark.fail_snapshot
     def test_wrong_repo_url(self, admin_node):
         utils.update_yaml(
             ["repositories"], {'names': ['fuel-ccp-debian-base']},
@@ -62,7 +60,6 @@ class TestCppCliErrorInFetch(object):
         admin_node.check_call(cmd, expected=[1], verbose=True)
         clean_repos(admin_node)
 
-    @pytest.mark.fail_snapshot
     def test_wrong_scheme_url(self, admin_node):
         utils.update_yaml(
             ["repositories"], {'names': ['fuel-ccp-debian-base']},
@@ -85,7 +82,6 @@ class TestCppCliBuildExitCode(object):
        pytest.mark: ccp_cli_build_exit_code
        module pytest.mark: ccp_cli_errexit_codes
     """
-    @pytest.mark.fail_snapshot
     def test_nonexistent_repo_name_build(self, admin_node):
         utils.update_yaml(
             ['action'], {'components': ['example']},
@@ -94,7 +90,6 @@ class TestCppCliBuildExitCode(object):
         admin_node.check_call(cmd, expected=[1], verbose=True)
         clean_repos(admin_node)
 
-    @pytest.mark.fail_snapshot
     def test_error_build_image(self, admin_node):
         utils.update_yaml(
             ['repositories'], {'names': ['fuel-ccp-debian-base']},
@@ -120,7 +115,6 @@ class TestCppCliDeploy(object):
        module pytest.mark: ccp_cli_errexit_codes
     """
 
-    @pytest.mark.fail_snapshot
     def test_nonexistent_repo_name_deploy(self, admin_node):
         utils.update_yaml(
             ['action'], {'components': ['example']},

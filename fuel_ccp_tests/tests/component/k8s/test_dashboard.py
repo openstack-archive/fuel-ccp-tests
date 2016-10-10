@@ -31,7 +31,6 @@ class TestK8sDashboard(object):
     }
 
     @pytest.mark.revert_snapshot(ext.SNAPSHOT.k8s_deployed)
-    @pytest.mark.fail_snapshot
     @pytest.mark.dashboard_exists
     def test_k8s_dashboard_exists(self, k8scluster):
         """Test existence of k8s dashboard in k8s

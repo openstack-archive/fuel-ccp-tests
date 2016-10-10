@@ -48,7 +48,6 @@ def admin_node(config, underlay, ccpcluster):
 class TestCppCliNormalMessageInShowDep(object):
     """Check info messages when show-dep is success"""
 
-    @pytest.mark.fail_snapshot
     def test_component_have_single_dependency(self, admin_node):
         """Test for ccp show-dep with component having single dependency
 
@@ -67,7 +66,6 @@ class TestCppCliNormalMessageInShowDep(object):
             " ".join(result_no_fetch).replace("\n", " ").strip().split(' ')
         assert set(dependencies) == set(result_normalized)
 
-    @pytest.mark.fail_snapshot
     def test_component_have_multiple_dependencies(self, admin_node):
         """Test for ccp show-dep with component having multiple dependencies
 
@@ -86,7 +84,6 @@ class TestCppCliNormalMessageInShowDep(object):
             " ".join(result_no_fetch).replace("\n", " ").strip().split(' ')
         assert set(dependencies) == set(result_normalized)
 
-    @pytest.mark.fail_snapshot
     def test_component_have_no_dependencies(self, admin_node):
         """Test for ccp show-dep with component having no dependencies
 
@@ -105,7 +102,6 @@ class TestCppCliNormalMessageInShowDep(object):
             " ".join(result_no_fetch).replace("\n", " ").strip().split(' ')
         assert set(dependencies) == set(result_normalized)
 
-    @pytest.mark.fail_snapshot
     def test_component_help_message_via_short(self, admin_node):
         """Test for help message with short option
 
@@ -120,7 +116,6 @@ class TestCppCliNormalMessageInShowDep(object):
             CliMessages.usage_show_dep_message + CliMessages.help_message,
             " ".join(result['stdout'])).strip()) == 0
 
-    @pytest.mark.fail_snapshot
     def test_component_help_message_via_long(self, admin_node):
         """Test for help message with long option
 
@@ -135,7 +130,6 @@ class TestCppCliNormalMessageInShowDep(object):
             CliMessages.usage_show_dep_message + CliMessages.help_message,
             " ".join(result['stdout'])).strip()) == 0
 
-    @pytest.mark.fail_snapshot
     def test_multiple_components_given(self, admin_node):
         """Test for ccp show-dep multiple components(no cross-referenced)
 
@@ -156,7 +150,6 @@ class TestCppCliNormalMessageInShowDep(object):
             " ".join(result_no_fetch).replace("\n", " ").strip().split(' ')
         assert set(dependencies) == set(result_normalized)
 
-    @pytest.mark.fail_snapshot
     def test_multiple_components_given_cross_reference(self, admin_node):
         """Test for ccp show-dep multiple components(cross-referenced)
 
@@ -183,7 +176,6 @@ class TestCppCliNormalMessageInShowDep(object):
 class TestCppCliErrorMessageInShowDep(object):
     """Check error messages when show-dep is failing"""
 
-    @pytest.mark.fail_snapshot
     def test_nonexistent_component_given(self, admin_node):
         """Test for ccp show-dep non-existent component
 
@@ -201,7 +193,6 @@ class TestCppCliErrorMessageInShowDep(object):
         result = admin_node.check_call(cmd, expected=[expected])
         assert error_message in " ".join(result['stderr'])
 
-    @pytest.mark.fail_snapshot
     def test_no_components_given(self, admin_node):
         """Test for ccp show-dep no components
 
