@@ -22,6 +22,7 @@ import traceback
 import paramiko
 import yaml
 from devops.helpers import helpers
+from devops.helpers import ssh_client
 from elasticsearch import Elasticsearch
 
 from fuel_ccp_tests import logger
@@ -277,3 +278,136 @@ def rm_files(node, pod, path,
             pod.name,
             namespace,
             'rm -- {}'.format(path)))
+
+
+class YamlEditor(object):
+    """Manipulations with local or remote .yaml files.
+
+    Usage:
+
+    with YamlEditor("tasks.yaml") as editor:
+        editor.content[key] = "value"
+
+    with YamlEditor("astute.yaml", ip=self.admin_ip) as editor:
+        editor.content[key] = "value"
+    """
+
+    def __init__(self, file_path, ip=None, port=None,
+                 username=None, password=None, keys=None,
+                 document_id=0,
+                 default_flow_style=False, default_style=None):
+        self.file_path = file_path
+        self.ip = ip
+        self.port = port or 22
+        self.username = username
+        self.password = password
+        self.keys = keys or []
+        self.content = None
+        self.documents = [{}, ]
+        self.document_id=document_id,
+        self.original_content = None
+        self.default_flow_style = default_flow_style
+        self.default_style = default_style
+
+    @property
+    def file_path(self):
+        """Open file path
+
+        :rtype: str
+        """
+        return self.__file_path
+
+    @property
+    def content(self):
+        if self.__content is None:
+            self.__content = self.get_content()
+        return self.__content
+
+    @content.setter
+    def content(self, new_content):
+        self.__content = new_content
+
+    def __get_file(self, mode="r"):
+        if self.ip:
+            remote = ssh_client.SSHClient(
+                host=self.ip,
+                port=self.port,
+                username=self.username,
+                password=self.password,
+                private_keys=self.keys)
+
+            return remote.open(self.file_path, mode=mode)
+        else:
+            return open(self.file_path, mode)
+
+    def get_content(self):
+        """Return a single document from YAML"""
+        def multi_constructor(loader, tag_suffix, node):
+            """Stores all unknown tags content into a dict
+
+            Original yaml:
+            !unknown_tag
+            - some content
+
+            Python object:
+            {"!unknown_tag": ["some content", ]}
+            """
+            if type(node.value) is list:
+                if type(node.value[0]) is tuple:
+                    return {node.tag: loader.construct_mapping(node)}
+                else:
+                    return {node.tag: loader.construct_sequence(node)}
+            else:
+                return {node.tag: loader.construct_scalar(node)}
+
+        yaml.add_multi_constructor("!", multi_constructor)
+        with self.__get_file() as file_obj:
+            self.documents = [x for x in yaml.load_all(file_obj)]
+            return self.documents[self.document_id]
+
+    def write_content(self, content=None):
+        if content:
+            self.content = content
+        self.documents[self.document_id] = self.content
+
+        def representer(dumper, data):
+            """Represents a dict key started with '!' as a YAML tag
+
+            Assumes that there is only one !tag in the dict at the
+            current indent.
+
+            Python object:
+            {"!unknown_tag": ["some content", ]}
+
+            Resulting yaml:
+            !unknown_tag
+            - some content
+            """
+            key = data.keys()[0]
+            if key.startswith("!"):
+                value = data[key]
+                if type(value) is dict:
+                    node = dumper.represent_mapping(key, value)
+                elif type(value) is list:
+                    node = dumper.represent_sequence(key, value)
+                else:
+                    node = dumper.represent_scalar(key, value)
+            else:
+                node = dumper.represent_mapping(u'tag:yaml.org,2002:map',data)
+            return node
+
+        yaml.add_representer(dict, representer)
+        with self.__get_file("w") as file_obj:
+            yaml.dump_all(self.documents, file_obj,
+                          default_flow_style=self.default_flow_style,
+                          default_style=self.default_style)
+
+    def __enter__(self):
+        self.content = self.get_content()
+        self.original_content = copy.deepcopy(self.content)
+        return self
+
+    def __exit__(self, x, y, z):
+        if self.content == self.original_content:
+            return
+        self.write_content()

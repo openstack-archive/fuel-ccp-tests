@@ -19,6 +19,7 @@ from devops.helpers import ssh_client
 from paramiko import rsakey
 
 from fuel_ccp_tests import logger
+from fuel_ccp_tests.helpers import utils
 
 LOG = logger.logger
 
@@ -328,3 +329,33 @@ class UnderlaySSHManager(object):
         :return: str, name of node
         """
         return random.choice(self.node_names())
+
+    def yaml_editor(self, file_path, node_name=None, host=None,
+                    address_pool=None):
+        """Returns an initialized YamlEditor instance for context manager
+
+        Usage (with 'underlay' fixture):
+
+        # Local YAML file
+        with underlay.yaml_editor('/path/to/file') as editor:
+            editor.content[key] = "value"
+
+        # Remote YAML file on k8s host
+        with underlay.yaml_editor('/path/to/file',
+                                  host=config.k8s.kube_host) as editor:
+            editor.content[key] = "value"
+        """
+        # Local YAML file
+        if node_name is None and host is None:
+            return utils.YamlEditor(file_path=file_path)
+
+        # Remote YAML file
+        ssh_data = self.__ssh_data(node_name=node_name, host=host,
+                                   address_pool=address_pool)
+        return utils.YamlEditor(
+            file_path=file_path,
+            host=ssh_data['host'],
+            port=ssh_data['port'] or 22,
+            username=ssh_data['login'],
+            password=ssh_data['password'],
+            private_keys=ssh_data['keys'])
