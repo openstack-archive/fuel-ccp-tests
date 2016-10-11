@@ -152,6 +152,26 @@ OS_REPOS = {
     "openstack/sahara": {
         "git_url": "https://github.com/openstack/sahara.git",
         "git_ref": OS_RELEASE
+    },
+    "openstack/sahara-dashboard": {
+        "git_url": "https://github.com/openstack/sahara-dashboard.git",
+        "git_ref": OS_RELEASE
+    },
+    "openstack/murano": {
+        "git_url": "https://github.com/openstack/murano.git",
+        "git_ref": OS_RELEASE
+    },
+    "openstack/murano-dashboard": {
+        "git_url": "https://github.com/openstack/murano-dashboard.git",
+        "git_ref": OS_RELEASE
+    },
+    "openstack/cinder": {
+        "git_url": "https://github.com/openstack/cinder.git",
+        "git_ref": OS_RELEASE
+    },
+    "openstack/ironic": {
+        "git_url": "https://github.com/openstack/ironic.git",
+        "git_ref": OS_RELEASE
     }
 }
 
