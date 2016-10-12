@@ -155,13 +155,14 @@ class TestFuelCCPNetChecker(base_test.SystemBaseTest,
         Scenario:
             1. Install k8s.
             2. Run netchecker-server service
-            3. Run netchecker-agent daemon set
-            4. Get network verification status. Check status is 'OK'
-            5. Randomly choose some k8s node, login to it via SSH, add blocking
+            3. Check that netchecker-server returns 400: 'There are no pods'
+            4. Run netchecker-agent daemon set
+            5. Get network verification status. Check status is 'OK'
+            6. Randomly choose some k8s node, login to it via SSH, add blocking
                rule to the calico policy. Restart network checker server
-            6. Get network verification status, Check status is 'FAIL'
-            7. Recover calico profile state on the node
-            8. Get network verification status. Check status is 'OK'
+            7. Get network verification status, Check status is 'FAIL'
+            8. Recover calico profile state on the node
+            9. Get network verification status. Check status is 'OK'
 
         Duration: 300 seconds
         """
@@ -178,25 +179,29 @@ class TestFuelCCPNetChecker(base_test.SystemBaseTest,
 
         # STEP #3
         show_step(3)
-        self.start_netchecker_agent(underlay, k8scluster)
+        self.wait_check_network(config.k8s.kube_host, works=False)
 
         # STEP #4
         show_step(4)
-        self.wait_check_network(config.k8s.kube_host, works=True)
+        self.start_netchecker_agent(underlay, k8scluster)
 
         # STEP #5
         show_step(5)
-        target_node = underlay.get_random_node()
-        self.calico_block_traffic_on_node(underlay, target_node)
+        self.wait_check_network(config.k8s.kube_host, works=True)
 
         # STEP #6
         show_step(6)
-        self.wait_check_network(config.k8s.kube_host, works=False)
+        target_node = underlay.get_random_node()
+        self.calico_block_traffic_on_node(underlay, target_node)
 
         # STEP #7
         show_step(7)
-        self.calico_unblock_traffic_on_node(underlay, target_node)
+        self.wait_check_network(config.k8s.kube_host, works=False)
 
         # STEP #8
         show_step(8)
+        self.calico_unblock_traffic_on_node(underlay, target_node)
+
+        # STEP #9
+        show_step(9)
         self.wait_check_network(config.k8s.kube_host, works=True)
