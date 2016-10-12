@@ -310,7 +310,7 @@ class TestFuelCCPInstaller(base_test.SystemBaseTest,
 
 
 @pytest.mark.fuel_ccp_installer_idempotency
-@pytest.mark.system
+@pytest.mark.system_idempotency
 class TestFuelCCPInstallerIdempotency(base_test.SystemBaseTest,
                                       FuelCCPInstallerConfigMixin):
 
