@@ -163,9 +163,6 @@ CCP_CONF = {
         'workers': BUILDER_WORKERS,
         'push': True
     },
-    'registry': {
-        'address': REGISTRY
-    },
     'repositories': {
         'skip_empty': True
     },
@@ -181,6 +178,12 @@ CCP_CONF = {
 CCP_SOURCES_CONFIG = '~/.ccp.build-sources.yaml'
 
 CCP_FETCH_CONFIG = '~/.ccp.fetch.yaml'
+
+CCP_FETCH_PARAMS = {
+    'registry': {
+        'address': REGISTRY
+    }
+}
 
 CCP_BUILD_SOURCES = {
     'sources': OS_REPOS
