@@ -166,9 +166,6 @@ CCP_CONF = {
     'registry': {
         'address': REGISTRY
     },
-    'repositories': {
-        'skip_empty': True
-    },
     'kubernetes': {
         'namespace': 'ccp'
     },
@@ -181,6 +178,12 @@ CCP_CONF = {
 CCP_SOURCES_CONFIG = '~/.ccp.build-sources.yaml'
 
 CCP_FETCH_CONFIG = '~/.ccp.fetch.yaml'
+
+CCP_FETCH_PARAMS = {
+    'repositories': {
+        'skip_empty': True
+    }
+}
 
 CCP_BUILD_SOURCES = {
     'sources': OS_REPOS

@@ -79,6 +79,9 @@ def ccpcluster(revert_snapshot, config, hardware,
         ccp_actions.put_yaml_config(
             path=settings.CCP_SOURCES_CONFIG,
             config=settings.CCP_BUILD_SOURCES)
+        ccp_actions.put_yaml_config(
+            path=settings.CCP_FETCH_CONFIG,
+            config=settings.CCP_FETCH_PARAMS)
 
         with open(settings.TOPOLOGY_PATH, 'r') as f:
             ccp_actions.put_raw_config(
