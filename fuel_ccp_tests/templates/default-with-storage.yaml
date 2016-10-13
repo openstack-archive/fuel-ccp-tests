@@ -19,15 +19,14 @@ template:
             gateway: +1
             l2_network_device: +1
           ip_ranges:
-            dhcp: [+128, -32]
-            rack-01: [+2, +127]
+            dhcp: [+2, -2]
       private-pool01:
         net: *pool_default
         params:
           ip_reserved:
             l2_network_device: +1
           ip_ranges:
-            dhcp: [+128, -32]
+            dhcp: [+2, -2]
       neutron-pool01:
         net: *pool_default
 
