@@ -215,18 +215,15 @@ def underlay(revert_snapshot, config, hardware):
 def gather_logs(request, config, underlay):
     """Fixture executes Ansible command that gather logs from the K8s cluster
     nodes into a tarball and store results to the 'logs' directory.
-    Logs collection starts if the test is failed and marked with
-    'gather_logs_if_test_failed' marker.
+    Logs collection starts if the test is failed.
 
     :param request: pytest.python.FixtureRequest
     :param config: fixture provides oslo.config
     :param underlay: fixture provides underlay manager
     """
-    collect_logs = request.keywords.get('gather_logs_if_test_fails')
 
     def test_fin():
-        if hasattr(request.node, 'rep_call') \
-                and request.node.rep_call.failed and collect_logs:
+        if hasattr(request.node, 'rep_call') and request.node.rep_call.failed:
             remote = underlay.remote(host=config.k8s.kube_host)
             cmd = "/usr/bin/ansible-playbook " \
                   "--ssh-extra-args '-o\ StrictHostKeyChecking=no' " \
@@ -245,11 +242,12 @@ def gather_logs(request, config, underlay):
             )
             remote.execute(cmd)
             tarball_name = 'logs.tar.gz'
+            path_to_tarball = 'workspace/kargo/scripts/' + tarball_name
             tarball_prefix = request.node.function.__name__ + '_' + \
                 datetime.now().strftime('%Y%m%d_%H%M%S') + '_'
             tarball_dst = settings.LOGS_DIR + '/logs/' + tarball_prefix + \
                 tarball_name
-            remote.download(tarball_name, tarball_dst)
+            remote.download(path_to_tarball, tarball_dst)
             LOG.info("Logs are copied into: {}".format(tarball_dst))
 
     request.addfinalizer(test_fin)
