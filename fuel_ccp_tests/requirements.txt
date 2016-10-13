@@ -1,4 +1,4 @@
-git+git://github.com/openstack/fuel-devops.git@3.0.1
+git+git://github.com/openstack/fuel-devops.git@3.0.3
 paramiko
 six
 requests>=2.2.0
