@@ -189,6 +189,39 @@ class K8SManager(object):
 
         registry_pod.wait_running()
 
+    def create_secured_registry(self, config, underlay):
+        """Create Secured Pod and Service for K8S registry"""
+        commands = ["apt install apache2-utils -y",
+                    "htpasswd -b "
+                    "-c ~/registry.htpasswd vagrant vagrant",
+                    "mkdir ~/certs",
+                    "docker run --rm  "
+                    "-e COMMON_NAME=127.0.0.1 "
+                    "-e KEY_NAME=registry "
+                    "-v ~/certs:/certs centurylink/openssl",
+                    "kubectl create secret generic registry-tls-secret "
+                    "--from-file=registry.crt=certs/registry.crt "
+                    "--from-file=registry.key=certs/registry.key"]
+        for cmd in commands:
+            underlay.sudo_check_call(cmd,
+                                     host=config.k8s.kube_host,
+                                     verbose=True,
+                                     expected=[0])
+        registry_pod = os.getcwd() + '/fuel_ccp_tests/templates/' \
+                                     'registry_templates/' \
+                                     'secure-registry-pod.yaml'
+        service_registry = os.getcwd() + '/fuel_ccp_tests/templates/' \
+                                         'registry_templates/' \
+                                         'secure-service-registry.yaml'
+        with file(registry_pod) as f:
+            registry = yaml.load(f)
+        with file(service_registry) as f:
+            service = yaml.load(f)
+        registry_pod = self.api.pods.create(body=registry,
+                                            namespace='default')
+        self.api.services.create(body=service, namespace='default')
+        registry_pod.wait_running()
+
     def get_pod_phase(self, pod_name, namespace=None):
         return self.api.pods.get(
             name=pod_name, namespace=namespace).phase

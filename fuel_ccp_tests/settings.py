@@ -43,7 +43,10 @@ CONF_PATH = os.environ.get('CONF_PATH', os.path.abspath(_default_conf))
 SHUTDOWN_ENV_ON_TEARDOWN = get_var_as_bool('SHUTDOWN_ENV_ON_TEARDOWN', True)
 DEPLOY_SCRIPT = os.environ.get("DEPLOY_SCRIPT", None)
 
-PRIVATE_REGISTRY = os.environ.get('PRIVATE_REGISTRY', None)
+PRIVATE_REGISTRY = os.environ.get('PRIVATE_REGISTRY', '127.0.0.1:31500')
+PRIVATE_REGISTRY_LOGIN = os.environ.get('PRIVATE_REGISTRY_LOGIN', 'vagrant')
+PRIVATE_REGISTRY_PASSWORD = os.environ.get('PRIVATE_REGISTRY_PASSWORD',
+                                           'vagrant')
 
 CCP_REPO = os.environ.get('CCP_REPO',
                           'https://github.com/openstack/fuel-ccp.git')
@@ -259,6 +262,10 @@ LVM_PLUGIN_DIR = os.path.join(
     '/usr/libexec/kubernetes/kubelet-plugins/volume/exec', LVM_PLUGIN_DIRNAME)
 LVM_PLUGIN_PATH = os.environ.get("LVM_PLUGIN_PATH", "~/lvm")
 LVM_FILENAME = os.path.basename(LVM_PLUGIN_PATH)
+
+REGISTRY_HTTP_TLS_DIR = '/home/vagrant/certs'
+REGISTRY_HTTP_TLS_CERTIFICATE = '/home/vagrant/certs/registry.crt'
+REGISTRY_HTTP_TLS_KEY = '/home/vagrant/certs/registry.key'
 
 PRECOMMIT_SNAPSHOT_NAME = os.environ.get(
     'PRECOMMIT_SNAPSHOT_NAME', ext.SNAPSHOT.ccp_deployed)
