@@ -30,6 +30,9 @@ class TestDaemonsetsUpdates():
     to_nginx_image = 'nginx:1.11'
 
     def get_nginx_spec(self):
+        """Create specification for DaemonSet with Nginx containers
+            :return: nested dict
+        """
         return {
             'apiVersion': 'extensions/v1beta1',
             'kind': 'DaemonSet',
@@ -56,23 +59,37 @@ class TestDaemonsetsUpdates():
         }
 
     def get_nginx_pods(self, k8sclient):
+        """Return the nginx pods
+            :param: k8sclient: kubernetes api client
+            :return: list of pods with nginx containers
+        """
         spec = self.get_nginx_spec()
         return [x for x in k8sclient.pods.list()
                 if spec['metadata']['name'] in x.name]
 
     def get_nginx_ds(self, k8sclient):
+        """Return the nginx DaemonSets
+            :param k8sclient: kubernetes api client
+            :return: list of DaemonSets with pods with nginx containers
+        """
         spec = self.get_nginx_spec()
         return [x for x in k8sclient.daemonsets.list()
                 if spec['metadata']['name'] in x.name]
 
     def wait_nginx_pods_ready(self, k8sclient):
-        """Wait until the nginx pods are ready"""
+        """Wait until the nginx pods are ready
+            :param: k8sclient: kubernetes api client
+            :return: None
+        """
         nginx_pods = self.get_nginx_pods(k8sclient)
         for pod in nginx_pods:
             pod.wait_running(timeout=60)
 
     def delete_nginx_pods(self, k8sclient):
-        """Delete the nginx pods"""
+        """Delete the nginx pods
+            :param: k8sclient: kubernetes api client
+            :return: None
+        """
         nginx_pods = self.get_nginx_pods(k8sclient)
         for pod in nginx_pods:
             k8sclient.pods.delete(body=pod.spec, name=pod.name)
@@ -80,6 +97,11 @@ class TestDaemonsetsUpdates():
                 x.name for x in self.get_nginx_pods(k8sclient)])
 
     def check_nginx_pods_image(self, k8sclient, nginx_image):
+        """Check nginx pods image version
+            :param: k8sclient: kubernetes api client,
+            :param: nginx_image: version of nginx_image to compare
+            :return: None
+        """
         nginx_pods = self.get_nginx_pods(k8sclient)
         for pod in nginx_pods:
             pod_image = pod.status.container_statuses[0].image
@@ -88,6 +110,11 @@ class TestDaemonsetsUpdates():
                 .format(pod.name, pod_image, nginx_image))
 
     def check_nginx_ds_image(self, k8sclient, nginx_image):
+        """Check nginx DaemonSets version
+            :param: k8sclient: kubernetes api client,
+            :param: nginx_image: version of nginx_image to compare
+            :return: None
+        """
         nginx_daemonsets = self.get_nginx_ds(k8sclient)
         for nginx_ds in nginx_daemonsets:
             nginx_ds_image = nginx_ds.spec.template.spec.containers[0].image
@@ -98,8 +125,7 @@ class TestDaemonsetsUpdates():
     @pytest.mark.revert_snapshot(ext.SNAPSHOT.k8s_deployed)
     @pytest.mark.fail_snapshot
     @pytest.mark.snapshot_needed
-    def test_daemonset_rollingupdate_noop(self, underlay, k8scluster, config,
-                                          show_step):
+    def test_daemonset_rolling_update_noop(self, k8scluster, show_step):
         """Update a daemonset using updateStrategy type: Noop
 
         Scenario:
@@ -176,3 +202,64 @@ class TestDaemonsetsUpdates():
         show_step(10)
         # Pods should have the new image version
         self.check_nginx_pods_image(k8sclient, self.to_nginx_image)
+
+    @pytest.mark.revert_snapshot(ext.SNAPSHOT.k8s_deployed)
+    @pytest.mark.fail_snapshot
+    @pytest.mark.snapshot_needed
+    def test_daemonset_rollingupdate(self, k8scluster, show_step):
+        """Update a daemonset using updateStrategy type: RollingUpdate
+
+        Scenario:
+            1. Deploy k8s using fuel-ccp-installer
+            2. Create a DaemonSet for nginx with image version 1_10 and
+               update strategy RollingUpdate
+            3. Wait until nginx pods are created and become 'ready'
+            4. Check that the image version in the nginx pods is 1_10
+               Check that the image version in the nginx daemonset is 1_10
+            5. Change nginx image version to 1_11 using YAML
+            6. Check that the image version in the nginx daemonset
+               is updated to 1.11 .
+               Wait for ~120 sec that the image version in the nginx pods
+               is changed to 1.11 .
+
+        Duration: 3000 seconds
+        """
+
+        # STEP #1
+        show_step(1)
+        k8sclient = k8scluster.api
+        assert k8sclient.nodes.list() is not None, "Can not get nodes list"
+
+        # STEP #2
+        show_step(2)
+        nginx_spec = self.get_nginx_spec()
+        nginx_spec['spec']['template']['spec']['containers'][0][
+            'image'] = self.from_nginx_image
+        k8sclient.daemonsets.create(body=nginx_spec)
+
+        # STEP #3
+        show_step(3)
+        time.sleep(3)
+        self.wait_nginx_pods_ready(k8sclient)
+
+        # STEP #4
+        show_step(4)
+        self.check_nginx_pods_image(k8sclient, self.from_nginx_image)
+        self.check_nginx_ds_image(k8sclient, self.from_nginx_image)
+
+        # STEP #5
+        show_step(5)
+        nginx_spec['spec']['template']['spec']['containers'][0][
+            'image'] = self.to_nginx_image
+        k8sclient.daemonsets.update(body=nginx_spec,
+                                    name=nginx_spec['metadata']['name'])
+
+        # STEP #6
+        show_step(6)
+        # DaemonSet should have new image version
+        self.check_nginx_ds_image(k8sclient, self.to_nginx_image)
+        # Pods should have new image version
+        helpers.wait(lambda: self.check_nginx_pods_image(k8sclient,
+                                                         self.to_nginx_image),
+                     timeout=2 * 60,
+                     timeout_msg="Image on pods is not updated")
