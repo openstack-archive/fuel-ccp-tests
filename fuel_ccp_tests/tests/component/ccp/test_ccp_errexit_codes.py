@@ -15,7 +15,6 @@
 import pytest
 
 from fuel_ccp_tests.helpers import ext
-from fuel_ccp_tests.helpers import utils
 from fuel_ccp_tests.logger import logger
 
 
@@ -44,32 +43,31 @@ class TestCppCliErrorInFetch(object):
     """
 
     @pytest.mark.fail_snapshot
-    def test_wrong_repo_name(self, admin_node):
-        utils.update_yaml(["repositories"], {'names': ['fuel-ccp-maria']},
-                          yaml_file='./.ccp.yaml', remote=admin_node)
+    def test_wrong_repo_name(self, config, underlay, admin_node):
+        with underlay.yaml_editor(
+                './.ccp.yaml', host=config.k8s.kube_host) as editor:
+            editor.content['repositories']['names'] = ['fuel-ccp-maria']
         cmd = 'ccp fetch'
         admin_node.check_call(cmd, expected=[1], verbose=True)
 
     @pytest.mark.fail_snapshot
-    def test_wrong_repo_url(self, admin_node):
-        utils.update_yaml(
-            ["repositories"], {'names': ['fuel-ccp-debian-base']},
-            yaml_file="./.ccp.yaml", remote=admin_node)
-        utils.update_yaml(
-            ["repositories"], {'fuel_ccp_debian_base': 'http://example.org'},
-            yaml_file="./.ccp.yaml", remote=admin_node)
+    def test_wrong_repo_url(self, config, underlay, admin_node):
+        with underlay.yaml_editor(
+                './.ccp.yaml', host=config.k8s.kube_host) as editor:
+            editor.content['repositories']['fuel_ccp_debian_base'] = \
+                'http://example.org'
+            editor.content['repositories']['names'] = ['fuel-ccp-debian-base']
         cmd = 'ccp fetch'
         admin_node.check_call(cmd, expected=[1], verbose=True)
         clean_repos(admin_node)
 
     @pytest.mark.fail_snapshot
-    def test_wrong_scheme_url(self, admin_node):
-        utils.update_yaml(
-            ["repositories"], {'names': ['fuel-ccp-debian-base']},
-            yaml_file="./.ccp.yaml", remote=admin_node)
-        utils.update_yaml(
-            ["repositories"], {'fuel_ccp_debian_base': 'htt://example.org'},
-            yaml_file="./.ccp.yaml", remote=admin_node)
+    def test_wrong_scheme_url(self, config, underlay, admin_node):
+        with underlay.yaml_editor(
+                './.ccp.yaml', host=config.k8s.kube_host) as editor:
+            editor.content['repositories']['fuel_ccp_debian_base'] = \
+                'http://example.org'
+            editor.content['repositories']['names'] = ['fuel-ccp-debian-base']
         cmd = 'ccp fetch'
         admin_node.check_call(cmd, expected=[1], verbose=True)
         clean_repos(admin_node)
@@ -86,19 +84,20 @@ class TestCppCliBuildExitCode(object):
        module pytest.mark: ccp_cli_errexit_codes
     """
     @pytest.mark.fail_snapshot
-    def test_nonexistent_repo_name_build(self, admin_node):
-        utils.update_yaml(
-            ['action'], {'components': ['example']},
-            yaml_file="./.ccp.yaml", remote=admin_node)
+    def test_nonexistent_repo_name_build(self, underlay, config, admin_node):
+        with underlay.yaml_editor(
+                './.ccp.yaml', host=config.k8s.kube_host) as editor:
+            editor.content['action'] = {}
+            editor.content['action']['components'] = ['example']
         cmd = 'ccp build'
         admin_node.check_call(cmd, expected=[1], verbose=True)
         clean_repos(admin_node)
 
     @pytest.mark.fail_snapshot
-    def test_error_build_image(self, admin_node):
-        utils.update_yaml(
-            ['repositories'], {'names': ['fuel-ccp-debian-base']},
-            yaml_file="./.ccp.yaml", remote=admin_node)
+    def test_error_build_image(self, config, underlay, admin_node):
+        with underlay.yaml_editor(
+                './.ccp.yaml', host=config.k8s.kube_host) as editor:
+            editor.content['repositories']['names'] = ['example']
         cmd = ('ccp fetch && '
                'echo "RUN exit 1" >> '
                '~/ccp-repos/fuel-ccp-debian-base/'
@@ -121,10 +120,11 @@ class TestCppCliDeploy(object):
     """
 
     @pytest.mark.fail_snapshot
-    def test_nonexistent_repo_name_deploy(self, admin_node):
-        utils.update_yaml(
-            ['action'], {'components': ['example']},
-            yaml_file="./.ccp.yaml", remote=admin_node)
+    def test_nonexistent_repo_name_deploy(self, underlay, config, admin_node):
+        with underlay.yaml_editor(
+                './.ccp.yaml', host=config.k8s.kube_host) as editor:
+            editor.content['repositories']['names'] = ['example']
+
         cmd = 'ccp deploy'
         admin_node.check_call(cmd, expected=[1], verbose=True)
         clean_repos(admin_node)
