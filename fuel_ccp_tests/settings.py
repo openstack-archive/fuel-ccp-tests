@@ -109,6 +109,8 @@ CALICO = {
     "ipip": get_var_as_bool('IPIP_USAGE', None),
     "overwrite_hyperkube_cni": get_var_as_bool('OVERWRITE_HYPERKUBE_CNI',
                                                None),
+    "enable_network_policy": get_var_as_bool('ENABLE_NETWORK_POLICY',
+                                             None),
 }
 
 for key, val in CALICO.items():
