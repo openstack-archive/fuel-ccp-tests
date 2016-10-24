@@ -322,3 +322,72 @@ class TestDaemonsetsUpdates():
                 self.from_nginx_image),
             timeout=2 * 60
         )
+
+    @pytest.mark.revert_snapshot(ext.SNAPSHOT.k8s_deployed)
+    @pytest.mark.fail_snapshot
+    @pytest.mark.snapshot_needed
+    def test_daemonset_rollout_noop(self, underlay,
+                                    k8scluster, config, show_step):
+        """Rollout a daemonset using updateStrategy type: Noop
+
+        Scenario:
+            1. Deploy k8s using fuel-ccp-installer
+            2. Create a DaemonSet for nginx with image version 1_10 and
+               update strategy Noop
+            3. Wait until nginx pods are created and become 'ready'
+            4. Check that the image version in the nginx pods is 1_10
+               Check that the image version in the nginx daemonset is 1_10
+            5. Change nginx image version to 1_11 using YAML
+            6. Wait for 10 seconds (needs to check that there were
+               no auto updates of the nginx pods)
+            7. Check that the image version in the nginx pods is still 1_10
+               Check that the image version in the nginx daemonset
+               is updated to 1_11
+            8. Kill all nginx pods that are belong to the nginx daemonset
+            9. Wait until nginx pods are created and become 'ready'
+           10. Check that the image version in the nginx pods
+               is updated to 1_11
+           11. Rollout the daemonset to a previous revision:
+                kubectl rollout undo daemonset/nginx
+           12. Check that the image version in the nginx pods is still 1_11
+               Check that the image version in the nginx daemonset
+               is changed to 1_10
+           13. Kill all nginx pods that are belong to the nginx daemonset
+           14. Wait until nginx pods are created and become 'ready'
+           15. Check that the image version in the nginx pods
+               is changed to 1_10
+
+
+        Duration: 3000 seconds
+        """
+
+        self.test_daemonset_rollingupdate_noop(k8scluster, show_step)
+
+        # STEP #11
+        show_step(11)
+        k8sclient = k8scluster.api
+        assert k8sclient.nodes.list() is not None, "Can not get nodes list"
+
+        cmd = "kubectl rollout undo daemonset/nginx"
+        underlay.check_call(cmd,
+                            host=config.k8s.kube_host)
+
+        # STEP #12
+        show_step(12)
+        # Pods should still have the new image version
+        self.check_nginx_pods_image(k8sclient, self.to_nginx_image)
+        # DaemonSet should have the old image version
+        self.check_nginx_ds_image(k8sclient, self.from_nginx_image)
+
+        # STEP #13
+        show_step(13)
+        self.delete_nginx_pods(k8sclient)
+
+        # STEP #14
+        show_step(14)
+        self.wait_nginx_pods_ready(k8sclient)
+
+        # STEP #15
+        show_step(15)
+        # Pods should have the old image version
+        self.check_nginx_pods_image(k8sclient, self.to_nginx_image)
