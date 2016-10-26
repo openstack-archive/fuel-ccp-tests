@@ -167,7 +167,7 @@ class TestDaemonsetsUpdates():
         start_time_after_rollout = self.get_nginx_pod_start_time(k8sclient)
 
         assert start_time == start_time_after_rollout, (
-            "pod's restarted. pods start time before rollout: \n{} "
+            "pod's restarted. pods start time before rollout: \n{}\n "
             "pods start time after rollout: \n{}".format(
                 start_time,
                 start_time_after_rollout)
@@ -870,3 +870,237 @@ class TestDaemonsetsUpdates():
         show_step(6)
         self.check_rollout_skipping(k8sclient, config.k8s.kube_host,
                                     underlay, revision=True)
+
+    @pytest.mark.revert_snapshot(ext.SNAPSHOT.k8s_deployed)
+    @pytest.mark.fail_snapshot
+    @pytest.mark.snapshot_needed
+    def test_daemonset_rollout_revision_negative_1(self, underlay, k8scluster,
+                                                   config, show_step):
+        """Test handling of negative values for --to-revision argument
+            for kubectl rollout undo daemonset/<name>
+        Scenario:
+            1. Deploy k8s using fuel-ccp-installer
+            2. Create a DaemonSet for nginx with image version 1_10 and
+               update strategy RollingUpdate
+            3. Wait until nginx pods are created and become 'ready'
+            4. Check that the image version in the nginx pods is 1_10
+               Check that the image version in the nginx daemonset is 1_10
+            5. Rollback the nginx daemonset:
+               kubectl rollout undo daemonset/nginx --to-revision=-1
+               Check that rollout was failed and pods were not restarted
+        Duration: 3000 seconds
+        """
+
+        # STEP #1
+        show_step(1)
+        k8sclient = k8scluster.api
+        assert k8sclient.nodes.list() is not None, "Can not get nodes list"
+
+        # STEP #2
+        show_step(2)
+        nginx_spec = self.get_nginx_spec()
+        nginx_spec['spec']['template']['spec']['containers'][0][
+            'image'] = self.from_nginx_image
+        k8sclient.daemonsets.create(body=nginx_spec)
+
+        # STEP #3
+        show_step(3)
+        time.sleep(3)
+        self.wait_nginx_pods_ready(k8sclient)
+
+        # STEP #4
+        show_step(4)
+        self.check_nginx_pods_image(k8sclient, self.from_nginx_image)
+        self.check_nginx_ds_image(k8sclient, self.from_nginx_image)
+
+        # STEP #5
+        show_step(5)
+        pods_start_time = self.get_nginx_pod_start_time(k8sclient)
+
+        cmd = "kubectl rollout undo daemonset/nginx --to-revision=-1"
+        underlay.check_call(cmd, expected=[1], host=config.k8s.kube_host)
+
+        pods_start_time_after_cmd = self.get_nginx_pod_start_time(k8sclient)
+
+        assert pods_start_time == pods_start_time_after_cmd, (
+            "pod's restarted. pods start time before rollout: \n{}\n "
+            "pods start time after rollout: \n{}".format(
+                pods_start_time,
+                pods_start_time_after_cmd)
+        )
+
+    @pytest.mark.revert_snapshot(ext.SNAPSHOT.k8s_deployed)
+    @pytest.mark.fail_snapshot
+    @pytest.mark.snapshot_needed
+    def test_daemonset_rollout_revision_negative_2(self, underlay, k8scluster,
+                                                   config, show_step):
+        """Test handling of negative values for --to-revision argument
+            for kubectl rollout undo daemonset/<name>
+        Scenario:
+            1. Deploy k8s using fuel-ccp-installer
+            2. Create a DaemonSet for nginx with image version 1_10 and
+               update strategy RollingUpdate
+            3. Wait until nginx pods are created and become 'ready'
+            4. Check that the image version in the nginx pods is 1_10
+               Check that the image version in the nginx daemonset is 1_10
+            5. Rollback the nginx daemonset:
+               kubectl rollout undo daemonset/nginx --to-revision="invalid"
+               Check that rollout was failed and pods were not restarted
+
+        Duration: 3000 seconds
+        """
+
+        # STEP #1
+        show_step(1)
+        k8sclient = k8scluster.api
+        assert k8sclient.nodes.list() is not None, "Can not get nodes list"
+
+        # STEP #2
+        show_step(2)
+        nginx_spec = self.get_nginx_spec()
+        nginx_spec['spec']['template']['spec']['containers'][0][
+            'image'] = self.from_nginx_image
+        k8sclient.daemonsets.create(body=nginx_spec)
+
+        # STEP #3
+        show_step(3)
+        time.sleep(3)
+        self.wait_nginx_pods_ready(k8sclient)
+
+        # STEP #4
+        show_step(4)
+        self.check_nginx_pods_image(k8sclient, self.from_nginx_image)
+        self.check_nginx_ds_image(k8sclient, self.from_nginx_image)
+
+        # STEP #5
+        show_step(5)
+        pods_start_time = self.get_nginx_pod_start_time(k8sclient)
+
+        cmd = "kubectl rollout undo daemonset/nginx --to-revision='invalid'"
+        underlay.check_call(cmd, expected=[1], host=config.k8s.kube_host)
+
+        pods_start_time_after_cmd = self.get_nginx_pod_start_time(k8sclient)
+
+        assert pods_start_time == pods_start_time_after_cmd, (
+            "pod's restarted. pods start time before rollout: \n{}\n "
+            "pods start time after rollout: \n{}".format(
+                pods_start_time,
+                pods_start_time_after_cmd)
+        )
+
+    @pytest.mark.revert_snapshot(ext.SNAPSHOT.k8s_deployed)
+    @pytest.mark.fail_snapshot
+    @pytest.mark.snapshot_needed
+    def test_daemonset_rollout_revision_negative_3(self, underlay, k8scluster,
+                                                   config, show_step):
+        """Test handling of negative values for --to-revision argument
+            for kubectl rollout undo daemonset/<name>
+        Scenario:
+            1. Deploy k8s using fuel-ccp-installer
+            2. Create a DaemonSet for nginx with image version 1_10 and
+               update strategy RollingUpdate
+            3. Wait until nginx pods are created and become 'ready'
+            4. Check that the image version in the nginx pods is 1_10
+               Check that the image version in the nginx daemonset is 1_10
+            5. Rollback the nginx daemonset:
+               kubectl rollout undo daemonset/nginx --to-revision=1.0
+               Check that rollout was failed and pods were not restarted
+        Duration: 3000 seconds
+        """
+
+        # STEP #1
+        show_step(1)
+        k8sclient = k8scluster.api
+        assert k8sclient.nodes.list() is not None, "Can not get nodes list"
+
+        # STEP #2
+        show_step(2)
+        nginx_spec = self.get_nginx_spec()
+        nginx_spec['spec']['template']['spec']['containers'][0][
+            'image'] = self.from_nginx_image
+        k8sclient.daemonsets.create(body=nginx_spec)
+
+        # STEP #3
+        show_step(3)
+        time.sleep(3)
+        self.wait_nginx_pods_ready(k8sclient)
+
+        # STEP #4
+        show_step(4)
+        self.check_nginx_pods_image(k8sclient, self.from_nginx_image)
+        self.check_nginx_ds_image(k8sclient, self.from_nginx_image)
+
+        # STEP #5
+        show_step(5)
+        pods_start_time = self.get_nginx_pod_start_time(k8sclient)
+
+        cmd = "kubectl rollout undo daemonset/nginx --to-revision=1.0"
+        underlay.check_call(cmd, expected=[1], host=config.k8s.kube_host)
+
+        pods_start_time_after_cmd = self.get_nginx_pod_start_time(k8sclient)
+
+        assert pods_start_time == pods_start_time_after_cmd, (
+            "pod's restarted. pods start time before rollout: \n{}\n "
+            "pods start time after rollout: \n{}".format(
+                pods_start_time,
+                pods_start_time_after_cmd)
+        )
+
+    @pytest.mark.revert_snapshot(ext.SNAPSHOT.k8s_deployed)
+    @pytest.mark.fail_snapshot
+    @pytest.mark.snapshot_needed
+    def test_daemonset_rollout_revision_negative_4(self, underlay, k8scluster,
+                                                   config, show_step):
+        """Test handling of negative values for --to-revision argument
+            for kubectl rollout undo daemonset/<name>
+        Scenario:
+            1. Deploy k8s using fuel-ccp-installer
+            2. Create a DaemonSet for nginx with image version 1_10 and
+               update strategy RollingUpdate
+            3. Wait until nginx pods are created and become 'ready'
+            4. Check that the image version in the nginx pods is 1_10
+               Check that the image version in the nginx daemonset is 1_10
+            5. Rollback the nginx daemonset:
+               kubectl rollout undo daemonset/nginx --to-revision=true
+               Check that rollout was failed and pods were not restarted
+
+        Duration: 3000 seconds
+        """
+
+        # STEP #1
+        show_step(1)
+        k8sclient = k8scluster.api
+        assert k8sclient.nodes.list() is not None, "Can not get nodes list"
+
+        # STEP #2
+        show_step(2)
+        nginx_spec = self.get_nginx_spec()
+        nginx_spec['spec']['template']['spec']['containers'][0][
+            'image'] = self.from_nginx_image
+        k8sclient.daemonsets.create(body=nginx_spec)
+
+        # STEP #3
+        show_step(3)
+        time.sleep(3)
+        self.wait_nginx_pods_ready(k8sclient)
+
+        # STEP #4
+        show_step(4)
+        self.check_nginx_pods_image(k8sclient, self.from_nginx_image)
+        self.check_nginx_ds_image(k8sclient, self.from_nginx_image)
+
+        # STEP #5
+        show_step(5)
+        pods_start_time = self.get_nginx_pod_start_time(k8sclient)
+
+        cmd = "kubectl rollout undo daemonset/nginx --to-revision=true"
+        underlay.check_call(cmd, expected=[1], host=config.k8s.kube_host)
+
+        pods_start_time_after_cmd = self.get_nginx_pod_start_time(k8sclient)
+
+        assert pods_start_time == pods_start_time_after_cmd, (
+            "pod's restarted. pods start time before rollout: \n{}\n "
+            "pods start time after rollout: \n{}".format(
+                pods_start_time,
+                pods_start_time_after_cmd)
+        )
