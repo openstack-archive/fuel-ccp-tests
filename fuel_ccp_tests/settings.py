@@ -244,13 +244,15 @@ NETCHECKER_AGENT_DIR = os.environ.get(
     'NETCHECKER_AGENT_DIR', os.path.join(os.getcwd(), 'mcp-netchecker-agent')
 )
 MCP_NETCHECKER_AGENT_IMAGE_REPO = os.environ.get(
-    'MCP_NETCHECKER_AGENT_IMAGE_REPO')
+    'MCP_NETCHECKER_AGENT_IMAGE_REPO',
+    'quay.io/l23network/mcp-netchecker-agent')
 MCP_NETCHECKER_AGENT_VERSION = os.environ.get(
-    'MCP_NETCHECKER_AGENT_VERSION')
+    'MCP_NETCHECKER_AGENT_VERSION', 'latest')
 MCP_NETCHECKER_SERVER_IMAGE_REPO = os.environ.get(
-    'MCP_NETCHECKER_SERVER_IMAGE_REPO')
+    'MCP_NETCHECKER_SERVER_IMAGE_REPO',
+    'quay.io/l23network/mcp-netchecker-server')
 MCP_NETCHECKER_SERVER_VERSION = os.environ.get(
-    'MCP_NETCHECKER_SERVER_VERSION')
+    'MCP_NETCHECKER_SERVER_VERSION', 'latest')
 
 # Settings for AppController testing
 # AC_PATH - path to k8s-AppController repo

@@ -15,18 +15,14 @@
 import pytest
 
 import base_test
-import test_netchecker
-
 from fuel_ccp_tests import logger
+from fuel_ccp_tests.helpers import netchecker
 
 LOG = logger.logger
 
 
-@pytest.mark.usefixtures("check_netchecker_files")
-@pytest.mark.usefixtures("check_netchecker_images_settings")
 @pytest.mark.usefixtures("check_calico_images_settings")
-class TestFuelCCPCalico(base_test.SystemBaseTest,
-                        test_netchecker.TestFuelCCPNetCheckerMixin):
+class TestFuelCCPCalico(base_test.SystemBaseTest):
     """Test class for Calico network plugin in k8s"""
 
     @pytest.mark.fail_snapshot
@@ -52,13 +48,13 @@ class TestFuelCCPCalico(base_test.SystemBaseTest,
 
         # STEP #2
         show_step(2)
-        self.start_netchecker_server(k8s=k8scluster)
-        self.wait_netchecker_running(config.k8s.kube_host, timeout=240)
+        netchecker.start_server(k8s=k8scluster)
+        netchecker.wait_running(config.k8s.kube_host, timeout=240)
 
         # STEP #3
         show_step(3)
-        self.start_netchecker_agent(underlay, k8scluster)
+        netchecker.start_agent(k8s=k8scluster)
 
         # STEP #4
         show_step(4)
-        self.wait_check_network(config.k8s.kube_host, works=True)
+        netchecker.wait_check_network(config.k8s.kube_host, works=True)
