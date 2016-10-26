@@ -214,11 +214,11 @@ class K8SManager(object):
                                  '"{phase}" phase'.format(
                                      pod_name=pod_name, phase=phase))
 
-    def check_pod_create(self, body, timeout=300, interval=5):
+    def check_pod_create(self, body, namespace=None, timeout=300, interval=5):
         """Check creating sample pod
 
         :param k8s_pod: V1Pod
-        :param k8sclient: K8sCluster
+        :param namespace: str
         :rtype: V1Pod
         """
         LOG.info("Creating pod in k8s cluster")
@@ -228,10 +228,10 @@ class K8SManager(object):
         )
         LOG.debug("Timeout for creation is set to {}".format(timeout))
         LOG.debug("Checking interval is set to {}".format(interval))
-        pod = self.api.pods.create(body=body)
+        pod = self.api.pods.create(body=body, namespace=namespace)
         pod.wait_running(timeout=300, interval=5)
         LOG.info("Pod '{}' is created".format(pod.metadata.name))
-        return self.api.pods.get(name=pod.metadata.name)
+        return self.api.pods.get(name=pod.metadata.name, namespace=namespace)
 
     def wait_pod_deleted(self, podname, timeout=60, interval=5):
         helpers.wait(
@@ -255,11 +255,11 @@ class K8SManager(object):
         self.wait_pod_deleted(k8s_pod.name, timeout, interval)
         LOG.debug("Pod '{}' is deleted".format(k8s_pod.name))
 
-    def check_service_create(self, body):
+    def check_service_create(self, body, namespace=None):
         """Check creating k8s service
 
         :param body: dict, service spec
-        :param k8sclient: K8sCluster object
+        :param namespace: str
         :rtype: K8sService object
         """
         LOG.info("Creating service in k8s cluster")
@@ -267,15 +267,15 @@ class K8SManager(object):
             "Service spec to create:\n{}".format(
                 yaml.dump(body, default_flow_style=False))
         )
-        service = self.api.services.create(body=body)
+        service = self.api.services.create(body=body, namespace=namespace)
         LOG.info("Service '{}' is created".format(service.metadata.name))
         return self.api.services.get(name=service.metadata.name)
 
-    def check_ds_create(self, body):
+    def check_ds_create(self, body, namespace=None):
         """Check creating k8s DaemonSet
 
         :param body: dict, DaemonSet spec
-        :param k8sclient: K8sCluster object
+        :param namespace: str
         :rtype: K8sDaemonSet object
         """
         LOG.info("Creating DaemonSet in k8s cluster")
@@ -283,7 +283,7 @@ class K8SManager(object):
             "DaemonSet spec to create:\n{}".format(
                 yaml.dump(body, default_flow_style=False))
         )
-        ds = self.api.daemonsets.create(body=body)
+        ds = self.api.daemonsets.create(body=body, namespace=namespace)
         LOG.info("DaemonSet '{}' is created".format(ds.metadata.name))
         return self.api.daemonsets.get(name=ds.metadata.name)
 
