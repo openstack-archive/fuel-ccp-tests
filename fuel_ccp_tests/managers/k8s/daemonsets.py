@@ -68,3 +68,8 @@ class K8sDaemonSetManager(K8sBaseManager):
     def full_list(self, *args, **kwargs):
         lst = self._full_list(*args, **kwargs)
         return [self.resource_class(self, item) for item in lst.items]
+
+    def update(self, body, name, namespace=None, **kwargs):
+        namespace = namespace or self.namespace
+        return self.api.patch_namespaced_daemon_set(
+            body=body, name=name, namespace=namespace, **kwargs)
