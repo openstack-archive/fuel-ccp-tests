@@ -13,17 +13,19 @@
 #    under the License.
 
 import time
-
-from devops.helpers import helpers
 import pytest
 
+from devops.helpers import helpers
+
+import base_test
 from fuel_ccp_tests.helpers import ext
 from fuel_ccp_tests import logger
+
 
 LOG = logger.logger
 
 
-class TestDaemonsetsUpdates():
+class TestDaemonsetsUpdates(base_test.SystemBaseTest):
     """Test class for update DaemonSets"""
 
     from_nginx_image = 'nginx:1.10'
@@ -173,6 +175,30 @@ class TestDaemonsetsUpdates():
                 start_time_after_rollout)
         )
 
+    def create_daemonset(self, nginx_spec, k8sclient, noop=None):
+        if noop:
+            nginx_spec['spec']['updateStrategy']['type'] = 'Noop'
+        nginx_spec['spec']['template']['spec']['containers'][0][
+            'image'] = self.from_nginx_image
+        k8sclient.daemonsets.create(body=nginx_spec)
+
+    @staticmethod
+    def update_daemonset(nginx_spec, k8sclient, nginx_image):
+        nginx_spec['spec']['template']['spec']['containers'][0][
+            'image'] = nginx_image
+        k8sclient.daemonsets.update(body=nginx_spec,
+                                    name=nginx_spec['metadata']['name'])
+
+    @staticmethod
+    def rollout_daemonset(underlay, config, revision=None):
+        if revision:
+            cmd = "kubectl rollout undo " \
+                  "daemonset/nginx --to-revision={}".format(revision)
+        else:
+            cmd = "kubectl rollout undo daemonset/nginx"
+        underlay.check_call(cmd,
+                            host=config.k8s.kube_host)
+
     @pytest.mark.revert_snapshot(ext.SNAPSHOT.k8s_deployed)
     @pytest.mark.fail_snapshot
     @pytest.mark.snapshot_needed
@@ -208,10 +234,7 @@ class TestDaemonsetsUpdates():
         # STEP #2
         show_step(2)
         nginx_spec = self.get_nginx_spec()
-        nginx_spec['spec']['updateStrategy']['type'] = 'Noop'
-        nginx_spec['spec']['template']['spec']['containers'][0][
-            'image'] = self.from_nginx_image
-        k8sclient.daemonsets.create(body=nginx_spec)
+        self.create_daemonset(nginx_spec, k8sclient, noop=True)
 
         # STEP #3
         show_step(3)
@@ -225,10 +248,7 @@ class TestDaemonsetsUpdates():
 
         # STEP #5
         show_step(5)
-        nginx_spec['spec']['template']['spec']['containers'][0][
-            'image'] = self.to_nginx_image
-        k8sclient.daemonsets.update(body=nginx_spec,
-                                    name=nginx_spec['metadata']['name'])
+        self.update_daemonset(nginx_spec, k8sclient, self.to_nginx_image)
 
         # STEP #6
         show_step(6)
@@ -286,9 +306,7 @@ class TestDaemonsetsUpdates():
         # STEP #2
         show_step(2)
         nginx_spec = self.get_nginx_spec()
-        nginx_spec['spec']['template']['spec']['containers'][0][
-            'image'] = self.from_nginx_image
-        k8sclient.daemonsets.create(body=nginx_spec)
+        self.create_daemonset(nginx_spec, k8sclient)
 
         # STEP #3
         show_step(3)
@@ -302,10 +320,7 @@ class TestDaemonsetsUpdates():
 
         # STEP #5
         show_step(5)
-        nginx_spec['spec']['template']['spec']['containers'][0][
-            'image'] = self.to_nginx_image
-        k8sclient.daemonsets.update(body=nginx_spec,
-                                    name=nginx_spec['metadata']['name'])
+        self.update_daemonset(nginx_spec, k8sclient, self.to_nginx_image)
 
         # STEP #6
         show_step(6)
@@ -358,9 +373,7 @@ class TestDaemonsetsUpdates():
         k8sclient = k8scluster.api
 
         show_step(8)
-        cmd = "kubectl rollout undo daemonset/nginx"
-        underlay.check_call(cmd,
-                            host=config.k8s.kube_host)
+        self.rollout_daemonset(underlay, config)
 
         # STEP #9
         show_step(9)
@@ -417,9 +430,7 @@ class TestDaemonsetsUpdates():
 
         # STEP #11
         show_step(11)
-        cmd = "kubectl rollout undo daemonset/nginx"
-        underlay.check_call(cmd,
-                            host=config.k8s.kube_host)
+        self.rollout_daemonset(underlay, config)
 
         # STEP #12
         show_step(12)
@@ -491,9 +502,7 @@ class TestDaemonsetsUpdates():
 
         # STEP #10
         show_step(10)
-        cmd = "kubectl rollout undo daemonset/nginx"
-        underlay.check_call(cmd,
-                            host=config.k8s.kube_host)
+        self.rollout_daemonset(underlay, config)
 
         # STEP #11
         show_step(11)
@@ -508,9 +517,7 @@ class TestDaemonsetsUpdates():
 
         # STEP #12
         show_step(12)
-        cmd = "kubectl rollout undo daemonset/nginx"
-        underlay.check_call(cmd,
-                            host=config.k8s.kube_host)
+        self.rollout_daemonset(underlay, config)
 
         # STEP #13
         show_step(13)
@@ -581,9 +588,7 @@ class TestDaemonsetsUpdates():
         # STEP #2
         show_step(2)
         nginx_spec = self.get_nginx_spec()
-        nginx_spec['spec']['template']['spec']['containers'][0][
-            'image'] = self.from_nginx_image
-        k8sclient.daemonsets.create(body=nginx_spec)
+        self.create_daemonset(nginx_spec, k8sclient)
 
         # STEP #3
         show_step(3)
@@ -597,10 +602,7 @@ class TestDaemonsetsUpdates():
 
         # STEP #5
         show_step(5)
-        nginx_spec['spec']['template']['spec']['containers'][0][
-            'image'] = self.to_nginx_image
-        k8sclient.daemonsets.update(body=nginx_spec,
-                                    name=nginx_spec['metadata']['name'])
+        self.update_daemonset(nginx_spec, k8sclient, self.to_nginx_image)
 
         # STEP #6
         show_step(6)
@@ -616,10 +618,7 @@ class TestDaemonsetsUpdates():
 
         # STEP #7
         show_step(7)
-        nginx_spec['spec']['template']['spec']['containers'][0][
-            'image'] = self.to_nginx_image_1_12
-        k8sclient.daemonsets.update(body=nginx_spec,
-                                    name=nginx_spec['metadata']['name'])
+        self.update_daemonset(nginx_spec, k8sclient, self.to_nginx_image_1_12)
 
         # STEP #8
         show_step(8)
@@ -656,9 +655,7 @@ class TestDaemonsetsUpdates():
 
         # STEP #12
         show_step(12)
-        cmd = "kubectl rollout undo daemonset/nginx --to-revision=1"
-        underlay.check_call(cmd,
-                            host=config.k8s.kube_host)
+        self.rollout_daemonset(underlay, config, revision=1)
 
         # STEP #13
         show_step(13)
@@ -673,9 +670,7 @@ class TestDaemonsetsUpdates():
 
         # STEP #14
         show_step(14)
-        cmd = "kubectl rollout undo daemonset/nginx"
-        underlay.check_call(cmd,
-                            host=config.k8s.kube_host)
+        self.rollout_daemonset(underlay, config)
 
         # STEP #15
         show_step(15)
@@ -740,9 +735,7 @@ class TestDaemonsetsUpdates():
 
         # STEP #10
         show_step(10)
-        cmd = "kubectl rollout undo daemonset/nginx --to-revision=0"
-        underlay.check_call(cmd,
-                            host=config.k8s.kube_host)
+        self.rollout_daemonset(underlay, config, revision=0)
 
         # STEP #11
         show_step(11)
@@ -757,9 +750,7 @@ class TestDaemonsetsUpdates():
 
         # STEP #12
         show_step(12)
-        cmd = "kubectl rollout undo daemonset/nginx --to-revision=0"
-        underlay.check_call(cmd,
-                            host=config.k8s.kube_host)
+        self.rollout_daemonset(underlay, config, revision=1)
 
         # STEP #13
         show_step(13)
@@ -802,9 +793,7 @@ class TestDaemonsetsUpdates():
         # STEP #2
         show_step(2)
         nginx_spec = self.get_nginx_spec()
-        nginx_spec['spec']['template']['spec']['containers'][0][
-            'image'] = self.from_nginx_image
-        k8sclient.daemonsets.create(body=nginx_spec)
+        self.create_daemonset(nginx_spec, k8sclient)
 
         # STEP #3
         show_step(3)
@@ -851,9 +840,7 @@ class TestDaemonsetsUpdates():
         # STEP #2
         show_step(2)
         nginx_spec = self.get_nginx_spec()
-        nginx_spec['spec']['template']['spec']['containers'][0][
-            'image'] = self.from_nginx_image
-        k8sclient.daemonsets.create(body=nginx_spec)
+        self.create_daemonset(nginx_spec, k8sclient)
 
         # STEP #3
         show_step(3)
@@ -900,9 +887,7 @@ class TestDaemonsetsUpdates():
         # STEP #2
         show_step(2)
         nginx_spec = self.get_nginx_spec()
-        nginx_spec['spec']['template']['spec']['containers'][0][
-            'image'] = self.from_nginx_image
-        k8sclient.daemonsets.create(body=nginx_spec)
+        self.create_daemonset(nginx_spec, k8sclient)
 
         # STEP #3
         show_step(3)
@@ -960,9 +945,7 @@ class TestDaemonsetsUpdates():
         # STEP #2
         show_step(2)
         nginx_spec = self.get_nginx_spec()
-        nginx_spec['spec']['template']['spec']['containers'][0][
-            'image'] = self.from_nginx_image
-        k8sclient.daemonsets.create(body=nginx_spec)
+        self.create_daemonset(nginx_spec, k8sclient)
 
         # STEP #3
         show_step(3)
@@ -1019,9 +1002,7 @@ class TestDaemonsetsUpdates():
         # STEP #2
         show_step(2)
         nginx_spec = self.get_nginx_spec()
-        nginx_spec['spec']['template']['spec']['containers'][0][
-            'image'] = self.from_nginx_image
-        k8sclient.daemonsets.create(body=nginx_spec)
+        self.create_daemonset(nginx_spec, k8sclient)
 
         # STEP #3
         show_step(3)
@@ -1079,9 +1060,7 @@ class TestDaemonsetsUpdates():
         # STEP #2
         show_step(2)
         nginx_spec = self.get_nginx_spec()
-        nginx_spec['spec']['template']['spec']['containers'][0][
-            'image'] = self.from_nginx_image
-        k8sclient.daemonsets.create(body=nginx_spec)
+        self.create_daemonset(nginx_spec, k8sclient)
 
         # STEP #3
         show_step(3)
@@ -1108,3 +1087,631 @@ class TestDaemonsetsUpdates():
                 pods_start_time,
                 pods_start_time_after_cmd)
         )
+
+    @pytest.mark.revert_snapshot(ext.SNAPSHOT.k8s_deployed)
+    @pytest.mark.fail_snapshot
+    @pytest.mark.snapshot_needed
+    def test_daemonset_scale_update_rolling_update_1(self, underlay,
+                                                     k8scluster, hardware,
+                                                     show_step):
+        """Update a daemonset using updateStrategy type: RollingUpdate
+            Scale two k8s nodes after daemonset was updated
+
+        Scenario:
+            1. Deploy k8s using fuel-ccp-installer
+            2. Create a DaemonSet for nginx with image version 1_10 and
+               update strategy RollingUpdate
+            3. Wait until nginx pods are created and become 'ready'
+            4. Check that the image version in the nginx pods is 1_10
+               Check that the image version in the nginx daemonset is 1_10
+            5. Change nginx image version to 1_11 using YAML
+            6. Check that the image version in the nginx daemonset
+               is updated to 1_11
+               Wait for ~120 sec that the image version in the nginx pods
+               is changed to 1_11
+            7. Add to 'underlay' new nodes for k8s scale
+            8. Run fuel-ccp installer for old+new k8s nodes
+            9. Check number of kube nodes match underlay nodes.
+            10. Check that the image version in the nginx pods is 1_11
+                Check that the image version in the nginx daemonset is 1_11
+
+        Duration: 3000 seconds
+        """
+
+        self.test_daemonset_rollingupdate(k8scluster, show_step)
+
+        k8sclient = k8scluster.api
+
+        # STEP #6
+        show_step(7)
+        config_ssh_scale = hardware.get_ssh_data(
+            roles=[ext.NODE_ROLE.k8s_scale])
+        underlay.add_config_ssh(config_ssh_scale)
+
+        # STEP #8
+        show_step(8)
+        k8scluster.install_k8s()
+
+        # STEP #9
+        show_step(9)
+        self.check_number_kube_nodes(underlay, k8sclient)
+
+        # STEP #10
+        show_step(10)
+        self.check_nginx_pods_image(k8sclient, self.to_nginx_image)
+        self.check_nginx_ds_image(k8sclient, self.to_nginx_image)
+
+    @pytest.mark.revert_snapshot(ext.SNAPSHOT.k8s_deployed)
+    @pytest.mark.fail_snapshot
+    @pytest.mark.snapshot_needed
+    def test_daemonset_scale_update_rolling_update_2(self, underlay,
+                                                     k8scluster, hardware,
+                                                     show_step):
+        """Update a daemonset using updateStrategy type: Noop
+            Scale two k8s nodes before update daemonset
+
+        Scenario:
+            1. Deploy k8s using fuel-ccp-installer
+            2. Create a DaemonSet for nginx with image version 1_10 and
+               update strategy RollingUpdate
+            3. Wait until nginx pods are created and become 'ready'
+            4. Check that the image version in the nginx pods is 1_10
+               Check that the image version in the nginx daemonset is 1_10
+            5. Add to 'underlay' new nodes for k8s scale
+            6. Run fuel-ccp installer for old+new k8s nodes
+            7. Check number of kube nodes match underlay nodes.
+            8. Check that the image version in the nginx pods is 1_10
+               Check that the image version in the nginx daemonset is 1_10
+            9. Change nginx image version to 1_11 using YAML
+            10. Check that the image version in the nginx daemonset
+               is updated to 1_11
+               Wait for ~120 sec that the image version in the nginx pods
+               is changed to 1_11
+
+        Duration: 3000 seconds
+        """
+
+        # STEP #1
+        show_step(1)
+        k8sclient = k8scluster.api
+        assert k8sclient.nodes.list() is not None, "Can not get nodes list"
+
+        # STEP #2
+        show_step(2)
+        nginx_spec = self.get_nginx_spec()
+        self.create_daemonset(nginx_spec, k8sclient)
+
+        # STEP #3
+        show_step(3)
+        time.sleep(3)
+        self.wait_nginx_pods_ready(k8sclient)
+
+        # STEP #4
+        show_step(4)
+        self.check_nginx_pods_image(k8sclient, self.from_nginx_image)
+        self.check_nginx_ds_image(k8sclient, self.from_nginx_image)
+
+        # STEP #5
+        show_step(5)
+        config_ssh_scale = hardware.get_ssh_data(
+            roles=[ext.NODE_ROLE.k8s_scale])
+        underlay.add_config_ssh(config_ssh_scale)
+
+        # STEP #6
+        show_step(6)
+        k8scluster.install_k8s()
+
+        # STEP #7
+        show_step(7)
+        self.check_number_kube_nodes(underlay, k8sclient)
+
+        # STEP #8
+        show_step(8)
+        self.check_nginx_pods_image(k8sclient, self.from_nginx_image)
+        self.check_nginx_ds_image(k8sclient, self.from_nginx_image)
+
+        # STEP #9
+        show_step(9)
+        self.update_daemonset(nginx_spec, k8sclient, self.to_nginx_image)
+
+        # STEP #10
+        show_step(10)
+
+        # DaemonSet should have new image version
+        self.check_nginx_ds_image(k8sclient, self.to_nginx_image)
+        # Pods should have new image version
+        helpers.wait_pass(
+            lambda: self.check_nginx_pods_image(
+                k8sclient,
+                self.to_nginx_image),
+            timeout=2 * 60)
+
+    @pytest.mark.revert_snapshot(ext.SNAPSHOT.k8s_deployed)
+    @pytest.mark.fail_snapshot
+    @pytest.mark.snapshot_needed
+    def test_daemonset_scale_rollout_rolling_update_1(self, config,
+                                                      underlay, k8scluster,
+                                                      hardware, show_step):
+        """Rollout a daemonset using updateStrategy type: Noop
+            Scale two k8s nodes after rollout daemonset
+
+        Scenario:
+            1. Deploy k8s using fuel-ccp-installer
+            2. Create a DaemonSet for nginx with image version 1_10 and
+               update strategy RollingUpdate
+            3. Wait until nginx pods are created and become 'ready'
+            4. Check that the image version in the nginx pods is 1_10
+               Check that the image version in the nginx daemonset is 1_10
+            5. Change nginx image version to 1_11 using YAML
+            6. Check that the image version in the nginx daemonset
+               is updated to 1_11
+               Wait for ~120 sec that the image version in the nginx pods
+               is changed to 1_11
+            7. Rollback the nginx daemonset:
+               kubectl rollout undo daemonset/nginx
+            8. Check that the image version in the nginx daemonset is
+               downgraded to 1_10
+               Wait for ~120 sec that the image version
+               in the nginx pods is downgraded to 1_10
+            9. Add to 'underlay' new nodes for k8s scale
+            10. Run fuel-ccp installer for old+new k8s nodes
+            11. Check number of kube nodes match underlay nodes.
+            12. Check that the image version in the nginx pods is 1_10
+                Check that the image version in the nginx daemonset is 1_10
+
+        Duration: 3000 seconds
+        """
+        self.test_daemonset_rollout_rollingupdate(underlay, k8scluster,
+                                                  config, show_step)
+        k8sclient = k8scluster.api
+
+        # STEP #9
+        show_step(9)
+        config_ssh_scale = hardware.get_ssh_data(
+            roles=[ext.NODE_ROLE.k8s_scale])
+        underlay.add_config_ssh(config_ssh_scale)
+
+        # STEP #10
+        show_step(10)
+        k8scluster.install_k8s()
+
+        # STEP #11
+        show_step(11)
+        self.check_number_kube_nodes(underlay, k8sclient)
+
+        # STEP #12
+        show_step(12)
+        self.check_nginx_pods_image(k8sclient, self.from_nginx_image)
+        self.check_nginx_ds_image(k8sclient, self.from_nginx_image)
+
+    @pytest.mark.revert_snapshot(ext.SNAPSHOT.k8s_deployed)
+    @pytest.mark.fail_snapshot
+    @pytest.mark.snapshot_needed
+    def test_daemonset_scale_rollout_rolling_update2(self, underlay,
+                                                     config, k8scluster,
+                                                     hardware, show_step):
+        """Rollout a daemonset using updateStrategy type: Rollingupdate
+            Scale two k8s nodes before rollout daemonset
+
+        Scenario:
+            1. Deploy k8s using fuel-ccp-installer
+            2. Create a DaemonSet for nginx with image version 1_10 and
+               update strategy RollingUpdate
+            3. Wait until nginx pods are created and become 'ready'
+            4. Check that the image version in the nginx pods is 1_10
+               Check that the image version in the nginx daemonset is 1_10
+            5. Add to 'underlay' new nodes for k8s scale
+            6. Run fuel-ccp installer for old+new k8s nodes
+            7. Check number of kube nodes match underlay nodes.
+            8. Check that the image version in the nginx pods is 1_10
+               Check that the image version in the nginx daemonset is 1_10
+            9. Change nginx image version to 1_11 using YAML
+            10. Check that the image version in the nginx daemonset
+               is updated to 1_11
+               Wait for ~120 sec that the image version in the nginx pods
+               is changed to 1_11
+            11. Rollback the nginx daemonset:
+               kubectl rollout undo daemonset/nginx
+            12. Check that the image version in the nginx daemonset is
+               downgraded to 1_10
+               Wait for ~120 sec that the image version
+               in the nginx pods is downgraded to 1_10
+
+        Duration: 3000 seconds
+        """
+
+        # STEP #1
+        show_step(1)
+        k8sclient = k8scluster.api
+        assert k8sclient.nodes.list() is not None, "Can not get nodes list"
+
+        # STEP #2
+        show_step(2)
+        nginx_spec = self.get_nginx_spec()
+        self.create_daemonset(nginx_spec, k8sclient)
+
+        # STEP #3
+        show_step(3)
+        time.sleep(3)
+        self.wait_nginx_pods_ready(k8sclient)
+
+        # STEP #4
+        show_step(4)
+        self.check_nginx_pods_image(k8sclient, self.from_nginx_image)
+        self.check_nginx_ds_image(k8sclient, self.from_nginx_image)
+
+        # STEP #5
+        show_step(5)
+        config_ssh_scale = hardware.get_ssh_data(
+            roles=[ext.NODE_ROLE.k8s_scale])
+        underlay.add_config_ssh(config_ssh_scale)
+
+        # STEP #6
+        show_step(6)
+        k8scluster.install_k8s()
+
+        # STEP #7
+        show_step(7)
+        self.check_number_kube_nodes(underlay, k8sclient)
+
+        # STEP #8
+        show_step(8)
+        self.check_nginx_pods_image(k8sclient, self.from_nginx_image)
+        self.check_nginx_ds_image(k8sclient, self.from_nginx_image)
+
+        # STEP #9
+        show_step(9)
+        self.update_daemonset(nginx_spec, k8sclient, self.to_nginx_image)
+
+        # STEP #10
+        show_step(10)
+
+        # DaemonSet should have new image version
+        self.check_nginx_ds_image(k8sclient, self.to_nginx_image)
+        # Pods should have new image version
+        helpers.wait_pass(
+            lambda: self.check_nginx_pods_image(
+                k8sclient,
+                self.to_nginx_image),
+            timeout=2 * 60)
+
+        # STEP #11
+        show_step(11)
+        self.rollout_daemonset(underlay, config)
+
+        # STEP #12
+        show_step(12)
+        self.check_nginx_ds_image(k8sclient, self.from_nginx_image)
+        # Pods should have new image version
+        helpers.wait_pass(
+            lambda: self.check_nginx_pods_image(
+                k8sclient,
+                self.from_nginx_image),
+            timeout=2 * 60
+        )
+
+    @pytest.mark.revert_snapshot(ext.SNAPSHOT.k8s_deployed)
+    @pytest.mark.fail_snapshot
+    @pytest.mark.snapshot_needed
+    def test_daemonset_scale_noop_update_1(self, hardware, underlay,
+                                           k8scluster, show_step):
+        """Update a daemonset using updateStrategy type: Noop
+            Scale two k8s nodes after daemonset updated
+
+        Scenario:
+            1. Deploy k8s using fuel-ccp-installer
+            2. Create a DaemonSet for nginx with image version 1_10 and
+               update strategy Noop
+            3. Wait until nginx pods are created and become 'ready'
+            4. Check that the image version in the nginx pods is 1_10
+               Check that the image version in the nginx daemonset is 1_10
+            5. Change nginx image version to 1_11 using YAML
+            6. Wait for 10 seconds (needs to check that there were
+               no auto updates of the nginx pods)
+            7. Check that the image version in the nginx pods is still 1_10
+               Check that the image version in the nginx daemonset
+               is updated to 1_11
+            8. Kill all nginx pods that are belong to the nginx daemonset
+            9. Wait until nginx pods are created and become 'ready'
+           10. Check that the image version in the nginx pods
+               is updated to 1_11
+           11. Add to 'underlay' new nodes for k8s scale
+           12. Run fuel-ccp installer for old+new k8s nodes
+           13. Check number of kube nodes match underlay nodes.
+           14. Check that the image version in the nginx pods is 1_11
+                Check that the image version in the nginx daemonset is 1_11
+
+
+        Duration: 3000 seconds
+        """
+        self.test_daemonset_rollingupdate_noop(k8scluster, show_step)
+
+        k8sclient = k8scluster.api
+
+        # STEP #11
+        show_step(11)
+        config_ssh_scale = hardware.get_ssh_data(
+            roles=[ext.NODE_ROLE.k8s_scale])
+        underlay.add_config_ssh(config_ssh_scale)
+
+        # STEP #12
+        show_step(12)
+        k8scluster.install_k8s()
+
+        # STEP #13
+        show_step(13)
+        self.check_number_kube_nodes(underlay, k8sclient)
+
+        # STEP #14
+        show_step(14)
+        self.check_nginx_pods_image(k8sclient, self.to_nginx_image)
+        self.check_nginx_ds_image(k8sclient, self.to_nginx_image)
+
+    @pytest.mark.revert_snapshot(ext.SNAPSHOT.k8s_deployed)
+    @pytest.mark.fail_snapshot
+    @pytest.mark.snapshot_needed
+    def test_daemonset_scale_noop_update_2(self, hardware, underlay,
+                                           k8scluster, show_step):
+        """Update a daemonset using updateStrategy type: Noop
+           Scale two k8s nodes before update daemonset
+
+        Scenario:
+            1. Deploy k8s using fuel-ccp-installer
+            2. Create a DaemonSet for nginx with image version 1_10 and
+               update strategy Noop
+            3. Wait until nginx pods are created and become 'ready'
+            4. Check that the image version in the nginx pods is 1_10
+               Check that the image version in the nginx daemonset is 1_10
+            5. Add to 'underlay' new nodes for k8s scale
+            6. Run fuel-ccp installer for old+new k8s nodes
+            7. Check number of kube nodes match underlay nodes.
+            8. Check that the image version in the nginx pods is 1_10
+               Check that the image version in the nginx daemonset is 1_10
+            9. Change nginx image version to 1_11 using YAML
+            10. Wait for 10 seconds (needs to check that there were
+               no auto updates of the nginx pods)
+            11. Check that the image version in the nginx pods is still 1_10
+               Check that the image version in the nginx daemonset
+               is updated to 1_11
+            12. Kill all nginx pods that are belong to the nginx daemonset
+            13. Wait until nginx pods are created and become 'ready'
+            14. Check that the image version in the nginx pods
+               is updated to 1_11
+            15. Check that the image version in the nginx pods is 1_11
+                Check that the image version in the nginx daemonset is 1_11
+
+
+        Duration: 3000 seconds
+        """
+
+        # STEP #1
+        show_step(1)
+        k8sclient = k8scluster.api
+        assert k8sclient.nodes.list() is not None, "Can not get nodes list"
+
+        # STEP #2
+        show_step(2)
+        nginx_spec = self.get_nginx_spec()
+        self.create_daemonset(nginx_spec, k8sclient, noop=True)
+
+        # STEP #3
+        show_step(3)
+        time.sleep(3)
+        self.wait_nginx_pods_ready(k8sclient)
+
+        # STEP #4
+        show_step(4)
+        self.check_nginx_pods_image(k8sclient, self.from_nginx_image)
+        self.check_nginx_ds_image(k8sclient, self.from_nginx_image)
+
+        # STEP #5
+        show_step(5)
+        config_ssh_scale = hardware.get_ssh_data(
+            roles=[ext.NODE_ROLE.k8s_scale])
+        underlay.add_config_ssh(config_ssh_scale)
+
+        # STEP #6
+        show_step(6)
+        k8scluster.install_k8s()
+
+        # STEP #7
+        show_step(7)
+        self.check_number_kube_nodes(underlay, k8sclient)
+
+        # STEP #8
+        show_step(8)
+        self.check_nginx_pods_image(k8sclient, self.from_nginx_image)
+        self.check_nginx_ds_image(k8sclient, self.from_nginx_image)
+
+        # STEP #9
+        show_step(9)
+        self.update_daemonset(nginx_spec, k8sclient, self.to_nginx_image)
+
+        # STEP #10
+        show_step(10)
+        time.sleep(10)
+
+        # STEP #11
+        show_step(11)
+        # Pods should still have the old image version
+        self.check_nginx_pods_image(k8sclient, self.from_nginx_image)
+        # DaemonSet should have new image version
+        self.check_nginx_ds_image(k8sclient, self.to_nginx_image)
+
+        # STEP #12
+        show_step(12)
+        self.delete_nginx_pods(k8sclient)
+
+        # STEP #13
+        show_step(13)
+        self.wait_nginx_pods_ready(k8sclient)
+
+        # STEP #14
+        show_step(14)
+        # Pods should have the new image version
+        self.check_nginx_pods_image(k8sclient, self.to_nginx_image)
+
+        # STEP #15
+        show_step(15)
+        self.check_nginx_pods_image(k8sclient, self.to_nginx_image)
+        self.check_nginx_ds_image(k8sclient, self.to_nginx_image)
+
+    @pytest.mark.revert_snapshot(ext.SNAPSHOT.k8s_deployed)
+    @pytest.mark.fail_snapshot
+    @pytest.mark.snapshot_needed
+    def test_daemonset_scale_noop_rollout_1(self, underlay, k8scluster,
+                                            config, hardware, show_step):
+        """Rollback a daemonset using updateStrategy type: Noop
+
+        Scenario:
+            1. Deploy k8s using fuel-ccp-installer
+            2. Create a DaemonSet for nginx with image version 1_10 and
+               update strategy Noop
+            3. Wait until nginx pods are created and become 'ready'
+            4. Check that the image version in the nginx pods is 1_10
+               Check that the image version in the nginx daemonset is 1_10
+            5. Change nginx image version to 1_11 using YAML
+            6. Wait for 10 seconds (needs to check that there were
+               no auto updates of the nginx pods)
+            7. Check that the image version in the nginx pods is still 1_10
+               Check that the image version in the nginx daemonset
+               is updated to 1_11
+            8. Kill all nginx pods that are belong to the nginx daemonset
+            9. Wait until nginx pods are created and become 'ready'
+           10. Check that the image version in the nginx pods
+               is updated to 1_11
+           11. Rollout the daemonset to a previous revision:
+                kubectl rollout undo daemonset/nginx
+           12. Check that the image version in the nginx pods is still 1_11
+               Check that the image version in the nginx daemonset
+               is changed to 1_10
+           13. Kill all nginx pods that are belong to the nginx daemonset
+           14. Wait until nginx pods are created and become 'ready'
+           15. Check that the image version in the nginx pods
+               is changed to 1_10
+           16. Add to 'underlay' new nodes for k8s scale
+           17. Run fuel-ccp installer for old+new k8s nodes
+           18. Check number of kube nodes match underlay nodes.
+           19. Check that the image version in the nginx pods is 1_10
+                Check that the image version in the nginx daemonset is 1_10
+
+
+
+        Duration: 3000 seconds
+        """
+
+        self.test_daemonset_rollout_noop(underlay, k8scluster,
+                                         config, show_step)
+
+        k8sclient = k8scluster.api
+
+        # STEP #16
+        show_step(16)
+        config_ssh_scale = hardware.get_ssh_data(
+            roles=[ext.NODE_ROLE.k8s_scale])
+        underlay.add_config_ssh(config_ssh_scale)
+
+        # STEP #17
+        show_step(17)
+        k8scluster.install_k8s()
+
+        # STEP #18
+        show_step(18)
+        self.check_number_kube_nodes(underlay, k8sclient)
+
+        # STEP #19
+        show_step(19)
+        self.check_nginx_pods_image(k8sclient, self.to_nginx_image)
+        self.check_nginx_ds_image(k8sclient, self.to_nginx_image)
+
+    @pytest.mark.revert_snapshot(ext.SNAPSHOT.k8s_deployed)
+    @pytest.mark.fail_snapshot
+    @pytest.mark.snapshot_needed
+    def test_daemonset_scale_noop_rollout_2(self, underlay,
+                                            k8scluster, config, hardware,
+                                            show_step):
+        """Rollback a daemonset using updateStrategy type: Noop
+
+        Scenario:
+            1. Deploy k8s using fuel-ccp-installer
+            2. Create a DaemonSet for nginx with image version 1_10 and
+               update strategy Noop
+            3. Wait until nginx pods are created and become 'ready'
+            4. Check that the image version in the nginx pods is 1_10
+               Check that the image version in the nginx daemonset is 1_10
+            5. Change nginx image version to 1_11 using YAML
+            6. Wait for 10 seconds (needs to check that there were
+               no auto updates of the nginx pods)
+            7. Check that the image version in the nginx pods is still 1_10
+               Check that the image version in the nginx daemonset
+               is updated to 1_11
+            8. Kill all nginx pods that are belong to the nginx daemonset
+            9. Wait until nginx pods are created and become 'ready'
+           10. Check that the image version in the nginx pods
+               is updated to 1_11
+           11. Add to 'underlay' new nodes for k8s scale
+           12. Run fuel-ccp installer for old+new k8s nodes
+           13. Check number of kube nodes match underlay nodes.
+           14. Check that the image version in the nginx pods is 1_11
+                Check that the image version in the nginx daemonset is 1_11
+           15. Rollout the daemonset to a previous revision:
+                kubectl rollout undo daemonset/nginx
+           16. Check that the image version in the nginx pods is still 1_11
+               Check that the image version in the nginx daemonset
+               is changed to 1_10
+           17. Kill all nginx pods that are belong to the nginx daemonset
+           18. Wait until nginx pods are created and become 'ready'
+           19. Check that the image version in the nginx pods
+               is changed to 1_10
+
+
+
+        Duration: 3000 seconds
+        """
+
+        self.test_daemonset_rollingupdate_noop(k8scluster, show_step)
+
+        k8sclient = k8scluster.api
+
+        # STEP #11
+        show_step(11)
+        config_ssh_scale = hardware.get_ssh_data(
+            roles=[ext.NODE_ROLE.k8s_scale])
+        underlay.add_config_ssh(config_ssh_scale)
+
+        # STEP #12
+        show_step(12)
+        k8scluster.install_k8s()
+
+        # STEP #13
+        show_step(13)
+        self.check_number_kube_nodes(underlay, k8sclient)
+
+        # STEP #14
+        show_step(14)
+        self.check_nginx_pods_image(k8sclient, self.to_nginx_image)
+        self.check_nginx_ds_image(k8sclient, self.to_nginx_image)
+
+        # STEP #15
+        show_step(15)
+        self.rollout_daemonset(underlay, config, revision=1)
+
+        # STEP #16
+        show_step(16)
+        # Pods should still have the new image version
+        self.check_nginx_pods_image(k8sclient, self.to_nginx_image)
+        # DaemonSet should have the old image version
+        self.check_nginx_ds_image(k8sclient, self.from_nginx_image)
+
+        # STEP #17
+        show_step(17)
+        self.delete_nginx_pods(k8sclient)
+
+        # STEP #18
+        show_step(18)
+        self.wait_nginx_pods_ready(k8sclient)
+
+        # STEP #19
+        show_step(19)
+        # Pods should have the old image version
+        self.check_nginx_pods_image(k8sclient, self.from_nginx_image)
