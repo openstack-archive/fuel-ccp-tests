@@ -12,7 +12,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import re
+
 from devops.helpers import helpers
+
+from fuel_ccp_tests import logger
+
+
+LOG = logger.logger
 
 
 def check_calico_network(remote, k8sclient):
@@ -31,3 +38,26 @@ def check_calico_network(remote, k8sclient):
     calico_options = remote.execute(
         'calicoctl pool show --ipv4')['stdout'][3].split('|')[2].strip()
     assert calico_options == options
+
+
+def required_images_exists(node_name, underlay, required_images):
+    """Check if there are all base containers on node
+
+    :param node_name: string
+    :param underlay: fuel_ccp_tests.managers.UnderlaySSHManager
+    :param required_images: list
+    """
+    cmd = "docker ps --no-trunc --format '{{.Image}}'"
+    result = underlay.sudo_check_call(cmd, node_name=node_name)
+    images = set([x.strip() for x in result['stdout']])
+    LOG.debug('Containers on node "{0}" use images: '
+              '{1}'.format(node_name, images))
+    # Image name could contain unpredictable Docker registry name
+    # (host:port), e.g. example.net:5000/hyperkube-amd64:v1.4.1
+    # Use regex to check that image (base name) is used by some container
+    assert all(
+        any(re.match('^([\w.-]+(:\d+)?/)?'  # Host:port (optional)
+                     '{0}:\S+$'  # image name + ":" + image tag
+                     .format(required_image), image)
+            for image in images)
+        for required_image in required_images)

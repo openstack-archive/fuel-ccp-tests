@@ -13,6 +13,8 @@
 #    under the License.
 
 from fuel_ccp_tests import logger
+from fuel_ccp_tests.helpers import post_install_k8s_checks
+
 
 LOG = logger.logger
 LOG.addHandler(logger.console)
@@ -30,19 +32,6 @@ class SystemBaseTest(object):
         for node_name in underlay.node_names():
             underlay.sudo_check_call(cmd, node_name=node_name)
 
-    def required_images_exists(self, node_name, underlay, required_images):
-        """Check if there are all base containers on node
-
-        :param node_name: string
-        :param underlay: fuel_ccp_tests.managers.UnderlaySSHManager
-        :param required_images: list
-        """
-        cmd = "docker ps --no-trunc --format '{{.Image}}'"
-        result = underlay.sudo_check_call(cmd, node_name=node_name)
-        images = [x.split(":")[0] for x in result['stdout']]
-        assert set(required_images) < set(images),\
-            "Running containers check failed on node '{}'".format(node_name)
-
     def check_list_required_images(self, underlay, required_images):
         """Check running containers on each node
 
@@ -51,7 +40,9 @@ class SystemBaseTest(object):
         """
         LOG.info("Check that required containers exist")
         for node_name in underlay.node_names():
-            self.required_images_exists(node_name, underlay, required_images)
+            post_install_k8s_checks.required_images_exists(node_name,
+                                                           underlay,
+                                                           required_images)
 
     def check_number_kube_nodes(self, underlay, k8sclient):
         """Check number of slaves"""
