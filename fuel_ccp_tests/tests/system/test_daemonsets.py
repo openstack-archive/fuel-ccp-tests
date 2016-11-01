@@ -28,6 +28,7 @@ class TestDaemonsetsUpdates():
 
     from_nginx_image = 'nginx:1.10'
     to_nginx_image = 'nginx:1.11'
+    to_nginx_image_1_12 = 'nginx:1.12'
 
     def get_nginx_spec(self):
         """Create specification for DaemonSet with Nginx containers
@@ -121,6 +122,19 @@ class TestDaemonsetsUpdates():
             assert nginx_ds_image == nginx_image, (
                 "DaemonSet {0} has image {1} while expected {2}"
                 .format(nginx_ds.name, nginx_ds_image, nginx_image))
+
+    def check_nginx_revision_image(self, config, underlay,
+                                   revision, nginx_image):
+        cmd = "kubectl rollout history daemonset/nginx " \
+              "--revision {} | grep Image".format(revision)
+        nginx_revision_image = underlay.check_call(cmd,
+                                                   host=config
+                                                   )['stdout_str'].replace(
+            '\t', '').split(
+            ":", 1)[1]
+        assert nginx_revision_image == nginx_image, (
+            "revision {0} has image {1} while expected {2}".format(
+                revision, nginx_revision_image, nginx_image))
 
     @pytest.mark.revert_snapshot(ext.SNAPSHOT.k8s_deployed)
     @pytest.mark.fail_snapshot
@@ -469,5 +483,170 @@ class TestDaemonsetsUpdates():
             lambda: self.check_nginx_pods_image(
                 k8sclient,
                 self.from_nginx_image),
+            timeout=2 * 60
+        )
+
+    @pytest.mark.revert_snapshot(ext.SNAPSHOT.k8s_deployed)
+    @pytest.mark.fail_snapshot
+    @pytest.mark.snapshot_needed
+    def test_daemonset_multirollout_rollingupdate_revision(self,
+                                                           config,
+                                                           k8scluster,
+                                                           show_step,
+                                                           underlay):
+        """Rollout a daemonset using updateStrategy type: RollingUpdate and
+            --to-revision argument
+
+        Scenario:
+            1. Deploy k8s using fuel-ccp-installer
+            2. Create a DaemonSet for nginx with image version 1_10 and
+               update strategy RollingUpdate
+            3. Wait until nginx pods are created and become 'ready'
+            4. Check that the image version in the nginx pods is 1_10
+               Check that the image version in the nginx daemonset is 1_10
+            5. Change nginx image version to 1_11 using YAML
+            6. Check that the image version in the nginx daemonset
+               is updated to 1_11
+               Wait for ~120 sec that the image version in the nginx pods
+               is changed to 1_11
+            7. Change nginx image version to 1_12 using YAML
+            8. Check that the image version in the nginx daemonset
+                is updated to 1_12.
+               Wait for ~120 sec that the image version in the nginx pods
+               is changed to 1_12 .
+            9. Get the revision #1 and check that there are the image
+               version 1_10
+            10. Get the revision #2 and check that there are the image
+                version 1_11
+            11. Get the revision #3 and check that there are the image
+                version 1_12
+            12. Rollback the nginx daemonset to revision #1:
+                kubectl rollout undo daemonset/nginx --to-revision=1
+            13. Check that the image version in the nginx daemonset
+                is updated to 1_10
+                Wait for ~120 sec that the image version in the nginx pods
+                is changed to 1_10
+            14. Rollback the nginx daemonset:
+                kubectl rollout undo daemonset/nginx
+            15. Check that the image version in the nginx daemonset
+                is updated to 1_12
+                Wait for ~120 sec that the image version in the nginx pods
+                is changed to 1_12
+
+        Duration: 3000 seconds
+        """
+
+        # STEP #1
+        show_step(1)
+        k8sclient = k8scluster.api
+        assert k8sclient.nodes.list() is not None, "Can not get nodes list"
+
+        # STEP #2
+        show_step(2)
+        nginx_spec = self.get_nginx_spec()
+        nginx_spec['spec']['template']['spec']['containers'][0][
+            'image'] = self.from_nginx_image
+        k8sclient.daemonsets.create(body=nginx_spec)
+
+        # STEP #3
+        show_step(3)
+        time.sleep(3)
+        self.wait_nginx_pods_ready(k8sclient)
+
+        # STEP #4
+        show_step(4)
+        self.check_nginx_pods_image(k8sclient, self.from_nginx_image)
+        self.check_nginx_ds_image(k8sclient, self.from_nginx_image)
+
+        # STEP #5
+        show_step(5)
+        nginx_spec['spec']['template']['spec']['containers'][0][
+            'image'] = self.to_nginx_image
+        k8sclient.daemonsets.update(body=nginx_spec,
+                                    name=nginx_spec['metadata']['name'])
+
+        # STEP #6
+        show_step(6)
+
+        # DaemonSet should have new image version
+        self.check_nginx_ds_image(k8sclient, self.to_nginx_image)
+        # Pods should have new image version
+        helpers.wait_pass(
+            lambda: self.check_nginx_pods_image(
+                k8sclient,
+                self.to_nginx_image),
+            timeout=2 * 60)
+
+        # STEP #7
+        show_step(7)
+        nginx_spec['spec']['template']['spec']['containers'][0][
+            'image'] = self.to_nginx_image_1_12
+        k8sclient.daemonsets.update(body=nginx_spec,
+                                    name=nginx_spec['metadata']['name'])
+
+        # STEP #8
+        show_step(8)
+
+        # DaemonSet should have new image version
+        self.check_nginx_ds_image(k8sclient, self.to_nginx_image_1_12)
+        # Pods should have new image version
+        helpers.wait_pass(
+            lambda: self.check_nginx_pods_image(
+                k8sclient,
+                self.to_nginx_image_1_12),
+            timeout=2 * 60)
+
+        # STEP #9
+        show_step(9)
+        self.check_nginx_revision_image(config=config.k8s.kube_host,
+                                        underlay=underlay,
+                                        revision="1",
+                                        nginx_image=self.from_nginx_image)
+
+        # STEP #10
+        show_step(10)
+        self.check_nginx_revision_image(config=config.k8s.kube_host,
+                                        underlay=underlay,
+                                        revision="2",
+                                        nginx_image=self.to_nginx_image)
+
+        # STEP #11
+        show_step(11)
+        self.check_nginx_revision_image(config=config.k8s.kube_host,
+                                        underlay=underlay,
+                                        revision="3",
+                                        nginx_image=self.to_nginx_image_1_12)
+
+        # STEP #12
+        show_step(12)
+        cmd = "kubectl rollout undo daemonset/nginx --to-revision=1"
+        underlay.check_call(cmd,
+                            host=config.k8s.kube_host)
+
+        # STEP #13
+        show_step(13)
+        self.check_nginx_ds_image(k8sclient, self.to_nginx_image)
+        # Pods should have old image version
+        helpers.wait_pass(
+            lambda: self.check_nginx_pods_image(
+                k8sclient,
+                self.from_nginx_image),
+            timeout=2 * 60
+        )
+
+        # STEP #14
+        show_step(14)
+        cmd = "kubectl rollout undo daemonset/nginx"
+        underlay.check_call(cmd,
+                            host=config.k8s.kube_host)
+
+        # STEP #15
+        show_step(15)
+        self.check_nginx_ds_image(k8sclient, self.from_nginx_image)
+        # Pods should have new image version
+        helpers.wait_pass(
+            lambda: self.check_nginx_pods_image(
+                k8sclient,
+                self.to_nginx_image_1_12),
             timeout=2 * 60
         )
