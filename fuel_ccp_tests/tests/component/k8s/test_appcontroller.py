@@ -29,8 +29,8 @@ class AppControllerResoucesStatus(object):
     """Helper class to check defined resources creation of AppController"""
 
     resources = [
-        "dependency.appcontroller.k8s1",
-        "definition.appcontroller.k8s2"
+        "dependency.appcontroller.k8s",
+        "definition.appcontroller.k8s"
     ]
 
     def __init__(self, k8sclient, kube_ssh, expected_result=None):
