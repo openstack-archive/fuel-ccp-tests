@@ -101,6 +101,7 @@ CALICO = {
     "calico_node_image_repo": os.environ.get('CALICO_NODE_IMAGE_REPO'),
     "calico_node_image_tag": os.environ.get('CALICO_NODE_IMAGE_TAG'),
     "calicoctl_image_repo": os.environ.get('CALICOCTL_IMAGE_REPO'),
+    "calicoctl_image_tag": os.environ.get('CALICOCTL_IMAGE_TAG'),
     "calico_version": os.environ.get('CALICO_VERSION'),
     "calico_cni_download_url": os.environ.get('CALICO_CNI_DOWNLOAD_URL'),
     "calico_cni_checksum": os.environ.get('CALICO_CNI_CHECKSUM'),
