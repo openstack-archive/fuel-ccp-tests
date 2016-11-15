@@ -23,6 +23,7 @@ def enum(*values, **kwargs):
         return collections.namedtuple('Enum', names)(*values)
     return collections.namedtuple('Enum', values)(*values)
 
+
 NODE_ROLE = enum(
     'master',
     'slave',
@@ -84,6 +85,7 @@ class HttpCodes(enumerate):
 
 class Namespace(enumerate):
     BASE_NAMESPACE = 'ccp'
+
 
 DEFAULT_REPOS = ['fuel-ccp-debian-base',
                  'fuel-ccp-entrypoint',
