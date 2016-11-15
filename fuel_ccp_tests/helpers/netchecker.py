@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from distutils import version
 import requests
 
 from devops.helpers import helpers
@@ -183,6 +184,30 @@ NETCHECKER_DS_CFG = [
     }
 ]
 
+NETCHECKER_BLOCK_POLICY = {
+    "kind": "policy",
+    "spec": {
+        "ingress": [
+            {
+                "action": "allow"
+            },
+            {
+                "action": "deny",
+                "destination": {
+                    "ports": [
+                        NETCHECKER_SERVICE_PORT
+                    ]
+                },
+                "protocol": "tcp"
+            }
+        ]
+    },
+    "apiVersion": "v1",
+    "metadata": {
+        "name": "deny-netchecker"
+    }
+}
+
 
 def start_server(k8s, namespace=None,
                  pod_spec=NETCHECKER_POD_CFG,
@@ -270,17 +295,45 @@ def wait_check_network(kube_host_ip, works=True, timeout=120, interval=5):
 
 
 def calico_block_traffic_on_node(underlay, target_node):
+    if is_calico_version_new(calico_get_version(underlay, target_node)):
+        cmd = "echo '{0}' | calicoctl create -f -".format(
+            NETCHECKER_BLOCK_POLICY)
+    else:
+        cmd = ('calicoctl profile calico-k8s-network rule add --at=1 outbound '
+               'deny tcp to ports {0}'.format(NETCHECKER_SERVICE_PORT))
+    underlay.sudo_check_call(cmd, node_name=target_node)
     LOG.info('Blocked traffic to the network checker service from '
              'containers on node "{}".'.format(target_node))
-    underlay.sudo_check_call(
-        'calicoctl profile calico-k8s-network rule add --at=1 outbound '
-        'deny tcp to ports {0}'.format(NETCHECKER_SERVICE_PORT),
-        node_name=target_node)
 
 
 def calico_unblock_traffic_on_node(underlay, target_node):
+    if is_calico_version_new(calico_get_version(underlay, target_node)):
+        cmd = "echo '{0}' | calicoctl delete -f -".format(
+            NETCHECKER_BLOCK_POLICY)
+    else:
+        cmd = ('calicoctl profile calico-k8s-network '
+               'rule remove outbound --at=1')
+    underlay.sudo_check_call(cmd, node_name=target_node)
     LOG.info('Unblocked traffic to the network checker service from '
              'containers on node "{}".'.format(target_node))
-    underlay.sudo_check_call(
-        'calicoctl profile calico-k8s-network rule remove outbound --at=1',
-        node_name=target_node)
+
+
+def calico_get_version(underlay, target_node):
+    raw_version = underlay.sudo_check_call('calicoctl version',
+                                           node_name=target_node)
+
+    assert raw_version['exit_code'] == 0 and len(raw_version['stdout']) > 0, \
+        "Unable to get calico version!"
+
+    if len(raw_version['stdout']) > 1:
+        ctl_version = raw_version['stdout'][0].split()[1].strip()
+    else:
+        ctl_version = raw_version['stdout'][0].strip()
+
+    LOG.debug("Calico (calicoctl) version on '{0}': '{1}'".format(target_node,
+                                                                  ctl_version))
+    return ctl_version
+
+
+def is_calico_version_new(calico_version):
+    return version.LooseVersion(calico_version) >= version.LooseVersion('v1')
