@@ -103,11 +103,8 @@ CALICO = {
     "calicoctl_image_repo": os.environ.get('CALICOCTL_IMAGE_REPO'),
     "calicoctl_image_tag": os.environ.get('CALICOCTL_IMAGE_TAG'),
     "calico_version": os.environ.get('CALICO_VERSION'),
-    "calico_cni_download_url": os.environ.get('CALICO_CNI_DOWNLOAD_URL'),
-    "calico_cni_checksum": os.environ.get('CALICO_CNI_CHECKSUM'),
-    "calico_cni_ipam_download_url": os.environ.get(
-        'CALICO_CNI_IPAM_DOWNLOAD_URL'),
-    "calico_cni_ipam_checksum": os.environ.get('CALICO_CNI_IPAM_CHECKSUM'),
+    "calico_cni_image_repo": os.environ.get('CALICO_CNI_IMAGE_REPO'),
+    "calico_cni_image_tag": os.environ.get('CALICO_CNI_IMAGE_TAG'),
     "ipip": get_var_as_bool('IPIP_USAGE', None),
     "overwrite_hyperkube_cni": get_var_as_bool('OVERWRITE_HYPERKUBE_CNI',
                                                None),
