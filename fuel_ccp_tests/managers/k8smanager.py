@@ -55,6 +55,17 @@ class K8SManager(object):
             for node in lvm_nodes:
                 node.add_labels(lvm_mark)
 
+    def log_hyperkube_info(self, k8s_admin_ip):
+        result = None
+        cmd = "docker inspect $(docker images | " \
+              "awk \'/mirantis\/kubernetes\/hyperkube/{ print $3}\')"
+        if self.__underlay:
+            with self.__underlay.remote(host=k8s_admin_ip) as remote:
+                result = remote.execute(cmd)
+        if result:
+            labels = result.stdout_json[0]['Config']['Labels']
+            LOG.info("Docker image tags: {}".format(labels))
+
     def upload_lvm_plugin(self, node_name):
         LOG.info("Uploading LVM plugin to node '{}'".format(node_name))
         if self.__underlay:
@@ -157,6 +168,8 @@ class K8SManager(object):
         self.__config.k8s.kube_host = k8s_admin_ip
 
         self.mark_lvm_nodes(lvm_config)
+
+        self.log_hyperkube_info(k8s_admin_ip=k8s_admin_ip)
 
         return result
 
