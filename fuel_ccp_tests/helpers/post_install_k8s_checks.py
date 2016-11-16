@@ -13,6 +13,7 @@
 #    under the License.
 
 import re
+import json
 
 from devops.helpers import helpers
 
@@ -61,3 +62,28 @@ def required_images_exists(node_name, underlay, required_images):
                      .format(required_image), image)
             for image in images)
         for required_image in required_images)
+
+
+def inspect_docker_containers(image_name, underlay, host_ip):
+    result = None
+    cmd = "docker inspect " \
+          "$(docker ps --filter ancestor={image_name} --format={{{{.ID}}}})"\
+        .format(image_name=image_name)
+    if underlay:
+        with underlay.remote(host=host_ip) as remote:
+            result = remote.execute(cmd)
+    if result:
+        LOG.info("Inspecting running containers with name={name}: on: {node}".
+                 format(name=image_name, node=host_ip))
+        for container in result.stdout_json:
+            raw_out = container['Config']['Labels']
+            labels = json.dumps(
+                raw_out,
+                indent=4,
+                separators=(',', ': '),
+                sort_keys=True
+            )
+            LOG.info("Docker container {name} Labels: {labels}".format(
+                name=container['Name'],
+                labels=labels)
+            )
