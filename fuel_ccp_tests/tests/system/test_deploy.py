@@ -32,7 +32,6 @@ class TestDeployOpenstack(base_test.SystemBaseTest):
        pytest.mark: deploy_openstack
     """
 
-    @pytest.mark.revert_snapshot(ext.SNAPSHOT.ccp_deployed)
     @pytest.mark.deploy_openstack
     @pytest.mark.fail_snapshot
     @pytest.mark.smoke
@@ -70,7 +69,6 @@ class TestDeployOpenstack(base_test.SystemBaseTest):
                 settings.IFACES['public']),
             timeout=600)
 
-    @pytest.mark.revert_snapshot(ext.SNAPSHOT.ccp_deployed)
     @pytest.mark.fail_snapshot
     @pytest.mark.openstack_tempest
     def test_deploy_openstack_run_tempest(self, underlay, config,

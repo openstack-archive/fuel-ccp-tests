@@ -16,6 +16,7 @@ import pytest
 from datetime import datetime
 
 from fuel_ccp_tests.helpers import ext
+from fuel_ccp_tests.helpers import utils
 from fuel_ccp_tests import logger
 from fuel_ccp_tests import settings
 from fuel_ccp_tests.managers import envmanager_devops
@@ -23,20 +24,6 @@ from fuel_ccp_tests.managers import envmanager_empty
 from fuel_ccp_tests.managers import underlay_ssh_manager
 
 LOG = logger.logger
-
-
-def extract_name_from_mark(mark):
-    """Simple function to extract name from mark
-
-    :param mark: pytest.mark.MarkInfo
-    :rtype: string or None
-    """
-    if mark:
-        if len(mark.args) > 0:
-            return mark.args[0]
-        elif 'name' in mark.kwargs:
-            return mark.kwargs['name']
-    return None
 
 
 @pytest.fixture(scope="session")
@@ -110,17 +97,19 @@ def revert_snapshot(request, hardware):
 
     :rtype string: name of the reverted snapshot or None
     """
-    revert_snapshot = request.keywords.get('revert_snapshot', None)
-    snapshot_name = extract_name_from_mark(revert_snapshot)
+    top_fixtures_snapshots = utils.get_top_fixtures_marks(
+        request, 'revert_snapshot')
 
-    if snapshot_name and \
-            hardware.has_snapshot(snapshot_name) and \
-            hardware.has_snapshot_config(snapshot_name):
-        hardware.revert_snapshot(snapshot_name)
-        return snapshot_name
-    else:
-        hardware.revert_snapshot(ext.SNAPSHOT.hardware)
-        return None
+    # Try to revert the best matches snapshot for the test
+    for snapshot_name in top_fixtures_snapshots:
+        if hardware.has_snapshot(snapshot_name) and \
+                hardware.has_snapshot_config(snapshot_name):
+            hardware.revert_snapshot(snapshot_name)
+            return snapshot_name
+
+    # Fallback to the basic snapshot
+    hardware.revert_snapshot(ext.SNAPSHOT.hardware)
+    return None
 
 
 @pytest.fixture(scope='function', autouse=True)
@@ -146,7 +135,7 @@ def snapshot(request, hardware):
                                         request.node.function.__name__)
         if hasattr(request.node, 'rep_call') and request.node.rep_call.passed \
                 and snapshot_needed:
-            snapshot_name = extract_name_from_mark(snapshot_needed) or \
+            snapshot_name = utils.extract_name_from_mark(snapshot_needed) or \
                 "{}_passed".format(default_snapshot_name)
             hardware.create_snapshot(snapshot_name)
 
@@ -163,6 +152,7 @@ def snapshot(request, hardware):
     request.addfinalizer(test_fin)
 
 
+@pytest.mark.revert_snapshot(ext.SNAPSHOT.underlay)
 @pytest.fixture(scope="function")
 def underlay(revert_snapshot, config, hardware):
     """Fixture that should provide SSH access to underlay objects.
@@ -179,14 +169,6 @@ def underlay(revert_snapshot, config, hardware):
                                - provide SSH access to underlay nodes using
                                  node names or node IPs.
     """
-    # If no snapshot was reverted, then try to revert the snapshot
-    # that belongs to the fixture.
-    # Note: keep fixtures in strict dependences from each other!
-    if not revert_snapshot:
-        if hardware.has_snapshot(ext.SNAPSHOT.underlay) and \
-                hardware.has_snapshot_config(ext.SNAPSHOT.underlay):
-            hardware.revert_snapshot(ext.SNAPSHOT.underlay)
-
     # Create Underlay
     if not config.underlay.ssh:
         # If config.underlay.ssh wasn't provided from external config, then
