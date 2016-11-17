@@ -411,3 +411,75 @@ class YamlEditor(object):
         if self.content == self.__original_content:
             return
         self.write_content()
+
+
+def extract_name_from_mark(mark):
+    """Simple function to extract name from pytest mark
+
+    :param mark: pytest.mark.MarkInfo
+    :rtype: string or None
+    """
+    if mark:
+        if len(mark.args) > 0:
+            return mark.args[0]
+        elif 'name' in mark.kwargs:
+            return mark.kwargs['name']
+    return None
+
+
+def get_top_fixtures_marks(request, mark_name):
+    """Order marks according to fixtures order
+
+    When a test use fixtures that depend on each other in some order,
+    that fixtures can have the same pytest mark.
+
+    This method extracts such marks from fixtures that are used in the
+    current test and return the content of the marks ordered by the
+    fixture dependences.
+    If the test case have the same mark, than the content of this mark
+    will be the first element in the resulting list.
+
+    :param request: pytest 'request' fixture
+    :param mark_name: name of the mark to search on the fixtures and the test
+
+    :rtype list: marks content, from last to first executed.
+    """
+
+    fixtureinfo = request.session._fixturemanager.getfixtureinfo(
+        request.node, request.function, request.cls)
+
+    top_fixtures_names = []
+    for _ in enumerate(fixtureinfo.name2fixturedefs):
+        parent_fixtures = set()
+        child_fixtures = set()
+        for name in sorted(fixtureinfo.name2fixturedefs):
+            if name in top_fixtures_names:
+                continue
+            parent_fixtures.add(name)
+            child_fixtures.update(
+                fixtureinfo.name2fixturedefs[name][0].argnames)
+        top_fixtures_names.extend(list(parent_fixtures - child_fixtures))
+
+    top_fixtures_marks = []
+
+    if mark_name in request.function.func_dict:
+        # The top priority is the 'revert_snapshot' mark on the test
+        top_fixtures_marks.append(
+            extract_name_from_mark(
+                request.function.func_dict[mark_name]))
+
+    for top_fixtures_name in top_fixtures_names:
+        fd = fixtureinfo.name2fixturedefs[top_fixtures_name][0]
+        if mark_name in fd.func.func_dict:
+            fixture_mark = extract_name_from_mark(
+                fd.func.func_dict[mark_name])
+            # Append the snapshot names in the order that fixtures are called
+            # starting from the last called fixture to the first one
+            top_fixtures_marks.append(fixture_mark)
+
+    LOG.debug("Fixtures ordered from last to first called: {0}"
+              .format(top_fixtures_names))
+    LOG.debug("Marks ordered from most to least preffered: {0}"
+              .format(top_fixtures_marks))
+
+    return top_fixtures_marks

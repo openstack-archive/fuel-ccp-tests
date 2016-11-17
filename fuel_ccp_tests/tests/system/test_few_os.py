@@ -18,7 +18,6 @@ import pytest
 import base_test
 from fuel_ccp_tests import logger
 from fuel_ccp_tests import settings
-from fuel_ccp_tests.helpers import ext
 from fuel_ccp_tests.helpers import post_os_deploy_checks
 
 LOG = logger.logger
@@ -28,7 +27,6 @@ class TestDeployTwoOS(base_test.SystemBaseTest):
     """Deploy Two OpenStack clusters with CCP
 
     """
-    @pytest.mark.revert_snapshot(ext.SNAPSHOT.ccp_deployed)
     @pytest.mark.deploy_two_os
     @pytest.mark.fail_snapshot
     @pytest.mark.system_few_os
@@ -97,7 +95,6 @@ class TestDeployTwoOS(base_test.SystemBaseTest):
                 settings.IFACES['public']),
             timeout=600)
 
-    @pytest.mark.revert_snapshot(ext.SNAPSHOT.ccp_deployed)
     @pytest.mark.snapshot_needed(name="two_os")
     @pytest.mark.deploy_two_os
     @pytest.mark.fail_snapshot
@@ -168,7 +165,6 @@ class TestDeployTwoOS(base_test.SystemBaseTest):
                 settings.IFACES['public']),
             timeout=600)
 
-    @pytest.mark.revert_snapshot(ext.SNAPSHOT.ccp_deployed)
     @pytest.mark.deploy_two_os
     @pytest.mark.fail_snapshot
     @pytest.mark.system_few_os

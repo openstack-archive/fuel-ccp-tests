@@ -14,7 +14,6 @@
 import pytest
 
 from fuel_ccp_tests import logger
-from fuel_ccp_tests.helpers import ext
 
 LOG = logger.logger
 
@@ -38,7 +37,6 @@ class TestLVMPluginUsage(object):
                               timeout=120)
 
     @pytest.mark.nginx_with_lvm
-    @pytest.mark.revert_snapshot(ext.SNAPSHOT.k8s_deployed)
     def test_create_nginx_with_lvm(self, underlay, k8scluster):
         """Test creating pod with LVM plugin
 

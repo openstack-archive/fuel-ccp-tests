@@ -21,6 +21,7 @@ from fuel_ccp_tests.managers.osmanager import OSManager
 LOG = logger.logger
 
 
+@pytest.mark.revert_snapshot(ext.SNAPSHOT.os_deployed)
 @pytest.fixture(scope='function')
 def os_deployed(ccpcluster,
                 hardware,
@@ -30,14 +31,6 @@ def os_deployed(ccpcluster,
                 k8s_actions):
     """Deploy openstack
     """
-    # If no snapshot was reverted, then try to revert the snapshot
-    # that belongs to the fixture.
-    # Note: keep fixtures in strict dependences from each other!
-    if not revert_snapshot:
-        if hardware.has_snapshot(ext.SNAPSHOT.os_deployed) and \
-                hardware.has_snapshot_config(ext.SNAPSHOT.os_deployed):
-            hardware.revert_snapshot(ext.SNAPSHOT.os_deployed)
-
     osmanager = OSManager(config, underlay, k8s_actions, ccpcluster)
     if not config.os.running:
         LOG.info("Preparing openstack log collector fixture...")
