@@ -17,7 +17,6 @@ import pytest
 
 import base_test
 from fuel_ccp_tests import settings
-from fuel_ccp_tests.helpers import ext
 
 
 class FuelCCPInstallerConfigMixin:
@@ -77,7 +76,6 @@ class TestFuelCCPInstaller(base_test.SystemBaseTest,
 
     @pytest.mark.k8s_installed_default
     @pytest.mark.snapshot_needed
-    @pytest.mark.revert_snapshot(ext.SNAPSHOT.underlay)
     @pytest.mark.fail_snapshot
     def test_k8s_installed_default(self, underlay, k8s_actions):
         """Test for deploying an k8s environment and check it
@@ -107,7 +105,6 @@ class TestFuelCCPInstaller(base_test.SystemBaseTest,
 
     @pytest.mark.k8s_installed_custom
     @pytest.mark.snapshot_needed
-    @pytest.mark.revert_snapshot(ext.SNAPSHOT.underlay)
     @pytest.mark.fail_snapshot
     @pytest.mark.bvt
     def test_k8s_installed_custom(self, underlay, k8s_actions, show_step):
@@ -151,7 +148,6 @@ class TestFuelCCPInstaller(base_test.SystemBaseTest,
 
     @pytest.mark.k8s_installed_with_etcd_on_host
     @pytest.mark.snapshot_needed
-    @pytest.mark.revert_snapshot(ext.SNAPSHOT.underlay)
     @pytest.mark.fail_snapshot
     def test_k8s_installed_with_etcd_on_host(self, underlay, k8s_actions):
         """Test for deploying an k8s environment and check it
@@ -192,7 +188,6 @@ class TestFuelCCPInstaller(base_test.SystemBaseTest,
 
     @pytest.mark.k8s_installed_with_etcd_in_container
     @pytest.mark.snapshot_needed
-    @pytest.mark.revert_snapshot(ext.SNAPSHOT.underlay)
     @pytest.mark.fail_snapshot
     def test_k8s_installed_with_etcd_in_container(self, underlay, k8s_actions):
         """Test for deploying an k8s environment and check it
@@ -233,7 +228,6 @@ class TestFuelCCPInstaller(base_test.SystemBaseTest,
 
     @pytest.mark.k8s_installed_with_ready_ssh_keys
     @pytest.mark.snapshot_needed
-    @pytest.mark.revert_snapshot(ext.SNAPSHOT.underlay)
     @pytest.mark.fail_snapshot
     def test_k8s_installed_with_ready_ssh_keys(self, ssh_keys_dir,
                                                underlay, k8s_actions):
@@ -267,7 +261,6 @@ class TestFuelCCPInstaller(base_test.SystemBaseTest,
         k8s_actions.check_pod_delete(pod)
 
     @pytest.mark.test_k8s_installed_with_ipip
-    @pytest.mark.revert_snapshot(ext.SNAPSHOT.underlay)
     @pytest.mark.fail_snapshot
     def test_k8s_installed_with_ipip(self, underlay, k8s_actions, show_step):
         """Test for deploying an k8s environment with IPIP tunnels for Calico
@@ -326,7 +319,6 @@ class TestFuelCCPInstallerIdempotency(base_test.SystemBaseTest,
 
     @pytest.mark.ccp_idempotency_default
     @pytest.mark.snapshot_needed
-    @pytest.mark.revert_snapshot(ext.SNAPSHOT.underlay)
     @pytest.mark.fail_snapshot
     def test_k8s_ccp_idempotency_default(self, config, underlay, k8s_actions):
         """Test for deploying an k8s environment and check it
@@ -350,7 +342,6 @@ class TestFuelCCPInstallerIdempotency(base_test.SystemBaseTest,
 
     @pytest.mark.ccp_idempotency_with_etcd_on_host
     @pytest.mark.snapshot_needed
-    @pytest.mark.revert_snapshot(ext.SNAPSHOT.underlay)
     @pytest.mark.fail_snapshot
     def test_ccp_idempotency_with_etcd_on_host(self, config, underlay,
                                                k8s_actions):
@@ -383,7 +374,6 @@ class TestFuelCCPInstallerIdempotency(base_test.SystemBaseTest,
 
     @pytest.mark.ccp_idempotency_with_etcd_in_container
     @pytest.mark.snapshot_needed
-    @pytest.mark.revert_snapshot(ext.SNAPSHOT.underlay)
     @pytest.mark.fail_snapshot
     def test_ccp_idempotency_with_etcd_in_container(self, config, underlay,
                                                     k8s_actions):
@@ -418,7 +408,6 @@ class TestFuelCCPInstallerIdempotency(base_test.SystemBaseTest,
 
     @pytest.mark.ccp_idempotency_with_ready_ssh_keys
     @pytest.mark.snapshot_needed
-    @pytest.mark.revert_snapshot(ext.SNAPSHOT.underlay)
     @pytest.mark.fail_snapshot
     def test_ccp_idempotency_with_ready_ssh_keys(self, ssh_keys_dir,
                                                  config, underlay,

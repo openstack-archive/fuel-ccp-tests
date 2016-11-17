@@ -13,7 +13,6 @@
 #    under the License.
 import pytest
 
-from fuel_ccp_tests.helpers import ext
 from fuel_ccp_tests import logger
 from fuel_ccp_tests import settings
 
@@ -30,7 +29,6 @@ class TestK8sDashboard(object):
         "searchdomains": settings.SEARCH_DOMAINS,
     }
 
-    @pytest.mark.revert_snapshot(ext.SNAPSHOT.k8s_deployed)
     @pytest.mark.fail_snapshot
     @pytest.mark.dashboard_exists
     def test_k8s_dashboard_exists(self, k8scluster):
