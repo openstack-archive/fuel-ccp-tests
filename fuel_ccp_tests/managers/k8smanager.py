@@ -20,6 +20,7 @@ from devops.helpers import helpers
 
 from fuel_ccp_tests.helpers import exceptions
 from fuel_ccp_tests.helpers import _subprocess_runner
+from fuel_ccp_tests.helpers import post_install_k8s_checks
 from fuel_ccp_tests import logger
 from fuel_ccp_tests import settings
 from fuel_ccp_tests.managers.k8s import cluster
@@ -157,6 +158,14 @@ class K8SManager(object):
         self.__config.k8s.kube_host = k8s_admin_ip
 
         self.mark_lvm_nodes(lvm_config)
+
+        hkube_image_name = '{}:{}'.format(
+            settings.HYPERKUBE_IMAGE_REPO, settings.HYPERKUBE_IMAGE_TAG
+        )
+        post_install_k8s_checks.inspect_docker_containers(
+            image_name=hkube_image_name,
+            underlay=self.__underlay,
+            host_ip=k8s_admin_ip)
 
         return result
 
