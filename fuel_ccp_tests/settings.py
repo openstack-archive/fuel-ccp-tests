@@ -42,6 +42,12 @@ SSH_NODE_CREDENTIALS = {"login": SSH_LOGIN,
 CONF_PATH = os.environ.get('CONF_PATH', os.path.abspath(_default_conf))
 SHUTDOWN_ENV_ON_TEARDOWN = get_var_as_bool('SHUTDOWN_ENV_ON_TEARDOWN', True)
 DEPLOY_SCRIPT = os.environ.get("DEPLOY_SCRIPT", None)
+CONFORMANCE_RUNNER_SCRIPT = os.environ.get(
+    "CONFORMANCE_RUNNER_SCRIPT",
+    "fuel-ccp-installer/utils/jenkins/run_k8s_verify.sh")
+E2E_CONFORMANCE_IMAGE = os.environ.get("E2E_CONFORMANCE_IMAGE", None)
+
+E2E_CONFORMANCE_TIMEOUT = int(os.environ.get("E2E_CONFORMANCE_TIMEOUT", 3600))
 
 PRIVATE_REGISTRY = os.environ.get('PRIVATE_REGISTRY', None)
 
