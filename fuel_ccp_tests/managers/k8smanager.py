@@ -18,12 +18,12 @@ import yaml
 
 from devops.helpers import helpers
 
-from fuel_ccp_tests.helpers import exceptions
 from fuel_ccp_tests.helpers import _subprocess_runner
+from fuel_ccp_tests.helpers import exceptions
 from fuel_ccp_tests.helpers import post_install_k8s_checks
 from fuel_ccp_tests import logger
-from fuel_ccp_tests import settings
 from fuel_ccp_tests.managers.k8s import cluster
+from fuel_ccp_tests import settings
 
 LOG = logger.logger
 
@@ -39,6 +39,13 @@ class K8SManager(object):
         self.__underlay = underlay
         self._api_client = None
         super(K8SManager, self).__init__()
+
+    def get_conformance_log(self):
+        LOG.info("Downloading conformance logs")
+        if self.__underlay:
+            with self.__underlay.remote(
+                    host=self.__config.k8s.kube_host) as remote:
+                remote.download('/var/log/e2e-conformance.log', 'logs/')
 
     def mark_lvm_nodes(self, lvm_config):
         if lvm_config:
