@@ -40,6 +40,12 @@ class K8SManager(object):
         self._api_client = None
         super(K8SManager, self).__init__()
 
+    @property
+    def k8s_admin_ip(self):
+        return self.__underlay.host_by_node_name(
+            self.__underlay.node_names()[0]
+        )
+
     def mark_lvm_nodes(self, lvm_config):
         if lvm_config:
             lvm_mark = {"lvm": "on"}

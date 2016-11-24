@@ -42,6 +42,11 @@ SSH_NODE_CREDENTIALS = {"login": SSH_LOGIN,
 CONF_PATH = os.environ.get('CONF_PATH', os.path.abspath(_default_conf))
 SHUTDOWN_ENV_ON_TEARDOWN = get_var_as_bool('SHUTDOWN_ENV_ON_TEARDOWN', True)
 DEPLOY_SCRIPT = os.environ.get("DEPLOY_SCRIPT", None)
+CONFORMANCE_RUNNER_SCRIPT = os.environ.get("CONFORMANCE_RUNNER_SCRIPT", None)
+E2E_CONFORMANCE_IMAGE_REPO = os.environ.get("E2E_CONFORMANCE_IMAGE_REPO", None)
+E2E_CONFORMANCE_IMAGE_TAG = os.environ.get("E2E_CONFORMANCE_IMAGE_TAG", None)
+
+CONFORMANCE_TIMEOUT = int(os.environ.get("CONFORMANCE_TIMEOUT", 3600))
 
 PRIVATE_REGISTRY = os.environ.get('PRIVATE_REGISTRY', None)
 
@@ -95,6 +100,8 @@ DEFAULT_CUSTOM_YAML = {
     "hyperkube_image_repo": HYPERKUBE_IMAGE_REPO,
     "kube_version": KUBE_VERSION,
     "searchdomains": SEARCH_DOMAINS,
+    "e2e_conformance_image_repo": E2E_CONFORMANCE_IMAGE_REPO,
+    "e2e_conformance_image_tag": E2E_CONFORMANCE_IMAGE_TAG,
 }
 
 CALICO = {
