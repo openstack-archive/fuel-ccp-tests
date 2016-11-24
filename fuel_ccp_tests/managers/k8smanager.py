@@ -40,6 +40,18 @@ class K8SManager(object):
         self._api_client = None
         super(K8SManager, self).__init__()
 
+    @property
+    def k8s_admin_ip(self):
+        return self.__underlay.host_by_node_name(
+            self.__underlay.node_names()[0]
+        )
+
+    def get_conformance_log(self):
+        LOG.info("Downloading conformance logs")
+        if self.__underlay:
+            with self.__underlay.remote(host=self.k8s_admin_ip) as remote:
+                remote.download('/var/log/e2e-conformance.log', 'logs/')
+
     def mark_lvm_nodes(self, lvm_config):
         if lvm_config:
             lvm_mark = {"lvm": "on"}
