@@ -16,6 +16,7 @@ import re
 import json
 
 from devops.helpers import helpers
+from devops.error import DevopsError
 
 from fuel_ccp_tests import logger
 
@@ -75,15 +76,19 @@ def inspect_docker_containers(image_name, underlay, host_ip):
     if result:
         LOG.info("Inspecting running containers with name={name}: on: {node}".
                  format(name=image_name, node=host_ip))
-        for container in result.stdout_json:
-            raw_out = container['Config']['Labels']
-            labels = json.dumps(
-                raw_out,
-                indent=4,
-                separators=(',', ': '),
-                sort_keys=True
-            )
-            LOG.info("Docker container {name} Labels: {labels}".format(
-                name=container['Name'],
-                labels=labels)
-            )
+        try:
+            for container in result.stdout_json:
+                raw_out = container['Config']['Labels']
+                labels = json.dumps(
+                    raw_out,
+                    indent=4,
+                    separators=(',', ': '),
+                    sort_keys=True
+                )
+                LOG.info("Docker container {name} Labels: {labels}".format(
+                    name=container['Name'],
+                    labels=labels)
+                )
+        except DevopsError:
+            LOG.info("{} stdout is not a valid json. Stdout:{}".format(
+                cmd, result.stdout))
