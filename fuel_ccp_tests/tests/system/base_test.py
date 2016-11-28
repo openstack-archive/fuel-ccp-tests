@@ -54,7 +54,9 @@ class SystemBaseTest(object):
 
     def check_etcd_health(self, underlay):
         node_names = underlay.node_names()
-        cmd = "etcdctl cluster-health | grep -c 'got healthy result'"
+        #TODO remove export after that issue will be fixed in KARGO
+        cmd = "export ETCDCTL_ENDPOINT=https://127.0.0.1:2379;" \
+              "etcdctl cluster-health | grep -c 'got healthy result'"
 
         etcd_nodes = underlay.sudo_check_call(
             cmd, node_name=node_names[0])['stdout'][0]
