@@ -65,9 +65,8 @@ class TestDeployOpenstack(base_test.SystemBaseTest):
                                  host=config.k8s.kube_host)
         remote.check_call(
             "source openrc-{0}; bash fuel-ccp/tools/deploy-test-vms.sh -a"
-            " create -i {1}".format(
-                settings.CCP_CONF["kubernetes"]["namespace"],
-                settings.IFACES['public']),
+            " create".format(
+                settings.CCP_CONF["kubernetes"]["namespace"]),
             timeout=600)
 
     @pytest.mark.revert_snapshot(ext.SNAPSHOT.ccp_deployed)

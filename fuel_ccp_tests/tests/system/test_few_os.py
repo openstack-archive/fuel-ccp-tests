@@ -68,9 +68,8 @@ class TestDeployTwoOS(base_test.SystemBaseTest):
         post_os_deploy_checks.check_pods_status(k8s_actions.api)
         remote.check_call(
             "source openrc-{}; bash fuel-ccp/tools/deploy-test-vms.sh -a"
-            " create -i {1}".format(
-                settings.CCP_CONF["kubernetes"]["namespace"],
-                settings.IFACES['public']),
+            " create".format(
+                settings.CCP_CONF["kubernetes"]["namespace"]),
             timeout=600)
 
         topology_path = \
@@ -92,9 +91,8 @@ class TestDeployTwoOS(base_test.SystemBaseTest):
                                                 namespace="ccp-second")
         remote.check_call(
             "source openrc-{}; bash fuel-ccp/tools/deploy-test-vms.sh -a"
-            " create -i {1}".format(
-                settings.CCP_CONF["kubernetes"]["namespace"],
-                settings.IFACES['public']),
+            " create".format(
+                settings.CCP_CONF["kubernetes"]["namespace"]),
             timeout=600)
 
     @pytest.mark.revert_snapshot(ext.SNAPSHOT.ccp_deployed)
@@ -139,9 +137,8 @@ class TestDeployTwoOS(base_test.SystemBaseTest):
         post_os_deploy_checks.check_pods_status(k8s_actions.api)
         remote.check_call(
             "source openrc-{}; bash fuel-ccp/tools/deploy-test-vms.sh -a"
-            " create -i {1}".format(
-                settings.CCP_CONF["kubernetes"]["namespace"],
-                settings.IFACES['public']),
+            " create".format(
+                settings.CCP_CONF["kubernetes"]["namespace"]),
             timeout=600)
 
         topology_path = \
@@ -163,9 +160,8 @@ class TestDeployTwoOS(base_test.SystemBaseTest):
                                                 namespace="ccp-second")
         remote.check_call(
             "source openrc-{}; bash fuel-ccp/tools/deploy-test-vms.sh -a"
-            " create -i {1}".format(
-                settings.CCP_CONF["kubernetes"]["namespace"],
-                settings.IFACES['public']),
+            " create".format(
+                settings.CCP_CONF["kubernetes"]["namespace"]),
             timeout=600)
 
     @pytest.mark.revert_snapshot(ext.SNAPSHOT.ccp_deployed)
@@ -271,9 +267,8 @@ class TestDeployTwoOS(base_test.SystemBaseTest):
             namespace=settings.CCP_CONF["kubernetes"]["namespace"])
         remote.check_call(
             "source openrc-{}; bash fuel-ccp/tools/deploy-test-vms.sh -a"
-            " create -i {1}".format(
-                settings.CCP_CONF["kubernetes"]["namespace"],
-                settings.IFACES['public']),
+            " create".format(
+                settings.CCP_CONF["kubernetes"]["namespace"]),
             timeout=600)
 
     @pytest.mark.revert_snapshot(name="two_os")
@@ -296,7 +291,6 @@ class TestDeployTwoOS(base_test.SystemBaseTest):
             namespace=settings.CCP_CONF["kubernetes"]["namespace"])
         remote.check_call(
             "source openrc-{}; bash fuel-ccp/tools/deploy-test-vms.sh -a"
-            " create -i {1}".format(
-                settings.CCP_CONF["kubernetes"]["namespace"],
-                settings.IFACES['public']),
+            " create".format(
+                settings.CCP_CONF["kubernetes"]["namespace"]),
             timeout=600)
