@@ -54,11 +54,12 @@ def required_images_exists(node_name, underlay, required_images):
     images = set([x.strip() for x in result['stdout']])
     LOG.debug('Containers on node "{0}" use images: '
               '{1}'.format(node_name, images))
-    # Image name could contain unpredictable Docker registry name
-    # (host:port), e.g. example.net:5000/hyperkube-amd64:v1.4.1
+    # Image name could contain unpredictable Docker registry name (host:port)
+    # and namespace, e.g. example.net:5000/mirantis/k8s/hyperkube-amd64:v1.4.1
     # Use regex to check that image (base name) is used by some container
     assert all(
         any(re.match('^([\w.-]+(:\d+)?/)?'  # Host:port (optional)
+                     '([\w/]+/)?' # namespace and/or project name (optional)
                      '{0}:\S+$'  # image name + ":" + image tag
                      .format(required_image), image)
             for image in images)
