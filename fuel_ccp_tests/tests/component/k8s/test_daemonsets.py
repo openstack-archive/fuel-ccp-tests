@@ -40,6 +40,9 @@ class TestDaemonsetsUpdates():
             'metadata': {
                 'labels': {'app': 'nginx'},
                 'name': 'nginx',
+                'annotations': {
+                    'daemonset.kubernetes.io/strategyType': 'RollingUpdate',
+                    'daemonset.kubernetes.io/maxUnavailable': '1'},
             },
             'spec': {
                 'template': {
@@ -52,10 +55,34 @@ class TestDaemonsetsUpdates():
                              'image': self.from_nginx_image},
                         ],
                     },
-                },
-                'updateStrategy': {
-                    'type': 'RollingUpdate',
-                },
+                }
+            }
+        }
+
+    def get_ds_upgrade_controller_spec(self):
+        """Create specification for Daemonset Upgrade controller
+                    :return: nested dict
+                """
+        return {
+            'apiVersion': 'extensions/v1beta1',
+            'kind': 'Deployment',
+            'metadata': {
+                'name': 'daemonupgrader',
+            },
+            'spec': {
+                'replicas': 1,
+                'template': {
+                    'metadata': {
+                        'labels': {'app': 'daemonupgrader'}},
+                    'spec': {
+                        'containers': [
+                            {'name': 'daemonupgrader',
+                             'image': 'mirantis/'
+                                      'k8s-daemonupgradecontroller:latest',
+                             'imagePullPolicy': 'IfNotPresent'},
+                        ],
+                    },
+                }
             }
         }
 
@@ -181,20 +208,21 @@ class TestDaemonsetsUpdates():
 
         Scenario:
             1. Deploy k8s using fuel-ccp-installer
-            2. Create a DaemonSet for nginx with image version 1_10 and
+            2. Create a Deployment for Daemonset Upgrade controller
+            3. Create a DaemonSet for nginx with image version 1_10 and
                update strategy Noop
-            3. Wait until nginx pods are created and become 'ready'
-            4. Check that the image version in the nginx pods is 1_10
+            4. Wait until nginx pods are created and become 'ready'
+            5. Check that the image version in the nginx pods is 1_10
                Check that the image version in the nginx daemonset is 1_10
-            5. Change nginx image version to 1_11 using YAML
-            6. Wait for 10 seconds (needs to check that there were
+            6. Change nginx image version to 1_11 using YAML
+            7. Wait for 10 seconds (needs to check that there were
                no auto updates of the nginx pods)
-            7. Check that the image version in the nginx pods is still 1_10
+            8. Check that the image version in the nginx pods is still 1_10
                Check that the image version in the nginx daemonset
                is updated to 1_11
-            8. Kill all nginx pods that are belong to the nginx daemonset
-            9. Wait until nginx pods are created and become 'ready'
-           10. Check that the image version in the nginx pods
+            9. Kill all nginx pods that are belong to the nginx daemonset
+           10. Wait until nginx pods are created and become 'ready'
+           11. Check that the image version in the nginx pods
                is updated to 1_11
 
         Duration: 3000 seconds
@@ -207,50 +235,56 @@ class TestDaemonsetsUpdates():
 
         # STEP #2
         show_step(2)
+        ds_controller_spec = self.get_ds_upgrade_controller_spec()
+        k8sclient.deployments.create(body=ds_controller_spec)
+
+        # STEP #3
+        show_step(3)
         nginx_spec = self.get_nginx_spec()
-        nginx_spec['spec']['updateStrategy']['type'] = 'Noop'
+        nginx_spec['metadata']['annotations'][
+            'daemonset.kubernetes.io/strategyType'] = 'Noop'
         nginx_spec['spec']['template']['spec']['containers'][0][
             'image'] = self.from_nginx_image
         k8sclient.daemonsets.create(body=nginx_spec)
 
-        # STEP #3
-        show_step(3)
-        time.sleep(3)
-        self.wait_nginx_pods_ready(k8sclient)
-
         # STEP #4
         show_step(4)
-        self.check_nginx_pods_image(k8sclient, self.from_nginx_image)
-        self.check_nginx_ds_image(k8sclient, self.from_nginx_image)
+        time.sleep(4)
+        self.wait_nginx_pods_ready(k8sclient)
 
         # STEP #5
         show_step(5)
+        self.check_nginx_pods_image(k8sclient, self.from_nginx_image)
+        self.check_nginx_ds_image(k8sclient, self.from_nginx_image)
+
+        # STEP #6
+        show_step(6)
         nginx_spec['spec']['template']['spec']['containers'][0][
             'image'] = self.to_nginx_image
         k8sclient.daemonsets.update(body=nginx_spec,
                                     name=nginx_spec['metadata']['name'])
 
-        # STEP #6
-        show_step(6)
-        time.sleep(10)
-
         # STEP #7
         show_step(7)
+        time.sleep(10)
+
+        # STEP #8
+        show_step(8)
         # Pods should still have the old image version
         self.check_nginx_pods_image(k8sclient, self.from_nginx_image)
         # DaemonSet should have new image version
         self.check_nginx_ds_image(k8sclient, self.to_nginx_image)
 
-        # STEP #8
-        show_step(8)
-        self.delete_nginx_pods(k8sclient)
-
         # STEP #9
         show_step(9)
-        self.wait_nginx_pods_ready(k8sclient)
+        self.delete_nginx_pods(k8sclient)
 
         # STEP #10
         show_step(10)
+        self.wait_nginx_pods_ready(k8sclient)
+
+        # STEP #11
+        show_step(11)
         # Pods should have the new image version
         self.check_nginx_pods_image(k8sclient, self.to_nginx_image)
 
