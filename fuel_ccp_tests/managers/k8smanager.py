@@ -343,3 +343,8 @@ class K8SManager(object):
                 self.__config.underlay.upstream_dns_servers
             LOG.info('Added custom upstream DNS servers (dnsmasq) to the '
                      'settings: {0}'.format(k8s_settings['nameservers']))
+
+    def get_pods_number(self, pod_name, namespace=None):
+        pods = [pod for pod in self.api.pods.list(namespace=namespace)
+                if pod_name in pod.name]
+        return len(pods)
