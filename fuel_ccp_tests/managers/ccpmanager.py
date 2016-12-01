@@ -198,10 +198,10 @@ class CCPManager(object):
                      components=components,
                      params=params, suppress_output=suppress_output)
 
-    def deploy(self, components=None, params=None):
+    def deploy(self, components=None, params=None, use_cli_params=False):
         self.run('deploy',
                  components=components,
-                 params=params)
+                 params=params, use_cli_params=use_cli_params)
 
     def dry_deploy(self, export_dir, components=None, params=None):
         self.run('deploy --dry-run --export-dir={export_dir}'.format(
