@@ -1,0 +1,40 @@
+nodes:
+  node[1-3]:
+    roles:
+      - openvswitch
+      - controller-net-host
+      - controller-net-bridge
+  node4:
+    roles:
+      - openvswitch
+      - compute
+      - controller-net-bridge
+roles:
+  controller-net-host:
+    - neutron-dhcp-agent
+    - neutron-l3-agent
+    - neutron-metadata-agent
+  controller-net-bridge:
+    - etcd
+    - glance-api
+    - glance-registry
+    - heat-api
+    - heat-engine
+    - horizon
+    - keystone
+    - galera
+    - memcached
+    - neutron-server
+    - nova-api
+    - nova-conductor
+    - nova-consoleauth
+    - nova-novncproxy
+    - nova-scheduler
+    - rabbitmq
+  compute:
+    - nova-compute
+    - nova-libvirt
+  openvswitch:
+    - neutron-openvswitch-agent
+    - openvswitch-db
+    - openvswitch-vswitchd
