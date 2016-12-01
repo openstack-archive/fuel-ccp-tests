@@ -470,3 +470,47 @@ class EnvironmentManager(object):
             self.__config.underlay.nameservers = [self.nameserver]
         if not self.__config.underlay.upstream_dns_servers:
             self.__config.underlay.upstream_dns_servers = [self.nameserver]
+
+    def get_node_by_ip(self, node_ip):
+        nodes = self._env.get_nodes()
+        node = [node for node in nodes if self.node_ip(node) == node_ip]
+        assert len(node) == 1, "Node with {} ip isn't found".format(node_ip)
+        return node[0]
+
+    def shutdown_node_by_ip(self, node_ip):
+        """Shutdown hardware node by ip address
+
+        """
+        node = self.get_node_by_ip(node_ip)
+        node.shutdown()
+
+    def start_node_by_ip(self, node_ip):
+        """Start hardware node by ip address
+
+        """
+        node = self.get_node_by_ip(node_ip)
+        node.start()
+
+    def wait_node_is_offline(self, node_ip, timeout):
+        """Wait node is shutdown and doesn't respond
+
+        """
+        helpers.wait(
+            lambda: not helpers.tcp_ping(node_ip, 22),
+            timeout=timeout,
+            timeout_msg="Node '{}' didn't go offline after {} sec".format(
+                node_ip, timeout
+            )
+        )
+
+    def wait_node_is_online(self, node_ip, timeout):
+        """Wait node is online after starting
+
+        """
+        helpers.wait(
+            lambda: helpers.tcp_ping(node_ip, 22),
+            timeout=timeout,
+            timeout_msg="Node '{}' didn't become online after {} sec".format(
+                node_ip, timeout
+            )
+        )
