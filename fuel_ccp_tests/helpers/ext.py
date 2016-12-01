@@ -42,7 +42,8 @@ SNAPSHOT = enum(
     'k8s_deployed',
     'ccp_deployed',
     'os_deployed',
-    'os_deployed_stacklight'
+    'os_deployed_stacklight',
+    'os_galera_deployed',
 )
 
 LOG_LEVELS = enum(
