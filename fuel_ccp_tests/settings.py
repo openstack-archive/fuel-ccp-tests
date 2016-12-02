@@ -50,7 +50,8 @@ CCP_REPO = os.environ.get('CCP_REPO',
 KARGO_REPO = os.environ.get('KARGO_REPO',
                             'https://github.com/kubespray/kargo.git')
 KARGO_COMMIT = os.environ.get('KARGO_COMMIT', 'master')
-KARGO_TIMEOUT = int(os.environ.get('KARGO_TIMEOUT', 2400))
+#FIXME(vshypyguzov) Decrease timeout when CI issues are resolved
+KARGO_TIMEOUT = int(os.environ.get('KARGO_TIMEOUT', 3600))
 
 KUBE_HOSTPATH_DYNAMIC_PROVISIONER = get_var_as_bool(
     'KUBE_HOSTPATH_DYNAMIC_PROVISIONER', True)
