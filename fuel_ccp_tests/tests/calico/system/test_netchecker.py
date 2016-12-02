@@ -16,7 +16,7 @@ import os
 import pytest
 import yaml
 
-import base_test
+from fuel_ccp_tests import base_test
 from fuel_ccp_tests.helpers import ext
 from fuel_ccp_tests.helpers import netchecker
 from fuel_ccp_tests import logger

@@ -32,7 +32,6 @@ class ServiceBaseTest(object):
     @classmethod
     def setup_class(cls):
         """Start container from image
-
         Scenario:
             1. Get image from private registry
             2. Start container with it
@@ -62,11 +61,9 @@ class ServiceBaseTest(object):
     @classmethod
     def teardown_class(cls):
         """Down service
-
         Scenario:
             5. Kill container
             6. Remove volumes
-
         """
         LOG.info("Down service and remove volume")
         cls.project.down(remove_image_type=False,
@@ -93,10 +90,8 @@ class TestMysqlImage(ServiceBaseTest):
     @pytest.mark.mysql_base
     def test_mysql_check_mysqld(self):
         """Start container from image, check if mysql is running
-
         Scenario:
             4. Check access from root user
-
         """
         LOG.info("Trying check daemon")
         container = self.containers[0]
@@ -107,10 +102,8 @@ class TestMysqlImage(ServiceBaseTest):
     @pytest.mark.mysql_base
     def test_mysql_is_running(self):
         """Start container from image, check if mysql is running
-
         Scenario:
             3. Check port 3306
-
         """
         LOG.info("Trying to reach port 3306")
         helpers.wait(lambda: helpers.tcp_ping('localhost', 33306),
@@ -120,10 +113,8 @@ class TestMysqlImage(ServiceBaseTest):
     @pytest.mark.mysql_base
     def test_mysql_is_accessible(self):
         """Start container from image, check if mysql is running
-
         Scenario:
             4. Check access from root user
-
         """
         LOG.info("Trying fetch databases list")
         container = self.containers[0]
