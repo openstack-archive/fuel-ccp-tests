@@ -15,7 +15,7 @@ import copy
 
 import pytest
 
-import base_test
+from fuel_ccp_tests import base_test
 from fuel_ccp_tests import settings
 
 
@@ -32,7 +32,7 @@ class FuelCCPInstallerConfigMixin:
 
 
 @pytest.mark.fuel_ccp_installer
-@pytest.mark.system
+@pytest.mark.system_k8s
 class TestFuelCCPInstaller(base_test.SystemBaseTest,
                            FuelCCPInstallerConfigMixin):
     """Test class for testing k8s deployed by fuel-ccp-installer

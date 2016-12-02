@@ -13,12 +13,13 @@
 #    under the License.
 import pytest
 
-import base_test
+from fuel_ccp_tests import base_test
 from fuel_ccp_tests.helpers import ext
 
 
 @pytest.mark.fuel_ccp_scale_k8s
-@pytest.mark.system_lcm
+@pytest.mark.system_k8s
+@pytest.mark.system_k8s_lcm
 class TestLCMScaleK8s(base_test.SystemBaseTest):
     """Test class for testing k8s scale by fuel-ccp-installer
 
