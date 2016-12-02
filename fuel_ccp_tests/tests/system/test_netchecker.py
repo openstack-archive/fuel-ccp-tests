@@ -26,6 +26,10 @@ LOG = logger.logger
 
 
 class TestFuelCCPNetCheckerMixin:
+
+    kube_settings = settings.DEFAULT_CUSTOM_YAML
+    kube_settings['deploy_netchecker'] = False
+
     pod_yaml_file = os.path.join(
         settings.NETCHECKER_SERVER_DIR,
         'k8s_resources/netchecker-server_pod.yaml')

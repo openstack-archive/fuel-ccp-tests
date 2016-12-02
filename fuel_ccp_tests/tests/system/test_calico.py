@@ -16,6 +16,7 @@ import pytest
 
 import base_test
 from fuel_ccp_tests import logger
+from fuel_ccp_tests import settings
 from fuel_ccp_tests.helpers import netchecker
 
 LOG = logger.logger
@@ -24,6 +25,9 @@ LOG = logger.logger
 @pytest.mark.usefixtures("check_calico_images_settings")
 class TestFuelCCPCalico(base_test.SystemBaseTest):
     """Test class for Calico network plugin in k8s"""
+
+    kube_settings = settings.DEFAULT_CUSTOM_YAML
+    kube_settings['deploy_netchecker'] = False
 
     @pytest.mark.fail_snapshot
     @pytest.mark.snapshot_needed

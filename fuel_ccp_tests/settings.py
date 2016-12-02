@@ -110,6 +110,8 @@ CALICO = {
                                                None),
     "enable_network_policy": get_var_as_bool('ENABLE_NETWORK_POLICY',
                                              None),
+    "deploy_netchecker": get_var_as_bool('DEPLOY_NETCHECKER',
+                                         None),
 }
 
 for key, val in CALICO.items():
