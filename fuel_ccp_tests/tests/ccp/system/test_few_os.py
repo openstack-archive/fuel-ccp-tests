@@ -15,7 +15,7 @@ import copy
 import os
 import pytest
 
-import base_test
+from fuel_ccp_tests import base_test
 from fuel_ccp_tests import logger
 from fuel_ccp_tests import settings
 from fuel_ccp_tests.helpers import ext
