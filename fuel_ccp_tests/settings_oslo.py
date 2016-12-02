@@ -81,6 +81,8 @@ k8s_deploy_opts = [
            help="", default=None),
     ct.Cfg('kube_settings', ct.JSONDict(),
            help="", default={}),
+    ct.Cfg('deploy_netchecker', ct.Boolean(),
+           help="", default=False),
 ]
 
 # Access credentials to a ready K8S cluster
