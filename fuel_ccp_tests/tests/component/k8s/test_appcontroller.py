@@ -20,7 +20,6 @@ import yaml
 
 from fuel_ccp_tests import logger
 from fuel_ccp_tests import settings
-from fuel_ccp_tests.helpers import ext
 
 LOG = logger.logger
 
@@ -141,7 +140,6 @@ class TestAppController(object):
     }
 
     @pytest.mark.ac_linear_test
-    @pytest.mark.revert_snapshot(ext.SNAPSHOT.k8s_deployed)
     @pytest.mark.skipif(settings.AC_PATH is None,
                         reason="ApplicationController repo path is not set!")
     def test_linear(self, underlay, k8scluster, show_step):

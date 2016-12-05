@@ -33,6 +33,7 @@ def ccp_actions(config, underlay):
     return ccpmanager.CCPManager(config, underlay)
 
 
+@pytest.mark.revert_snapshot(ext.SNAPSHOT.ccp_deployed)
 @pytest.fixture(scope='function')
 def ccpcluster(revert_snapshot, config, hardware,
                underlay, k8scluster, ccp_actions):
@@ -60,14 +61,6 @@ def ccpcluster(revert_snapshot, config, hardware,
     """
 
     ccp_actions.default_params = settings.CCP_CLI_PARAMS
-
-    # If no snapshot was reverted, then try to revert the snapshot
-    # that belongs to the fixture.
-    # Note: keep fixtures in strict dependences from each other!
-    if not revert_snapshot:
-        if hardware.has_snapshot(ext.SNAPSHOT.ccp_deployed) and \
-                hardware.has_snapshot_config(ext.SNAPSHOT.ccp_deployed):
-            hardware.revert_snapshot(ext.SNAPSHOT.ccp_deployed)
 
     # Install CCP
     if config.ccp.os_host == '0.0.0.0':

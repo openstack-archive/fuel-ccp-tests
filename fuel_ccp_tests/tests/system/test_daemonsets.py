@@ -17,7 +17,6 @@ import time
 from devops.helpers import helpers
 import pytest
 
-from fuel_ccp_tests.helpers import ext
 from fuel_ccp_tests import logger
 
 LOG = logger.logger
@@ -173,7 +172,6 @@ class TestDaemonsetsUpdates():
                 start_time_after_rollout)
         )
 
-    @pytest.mark.revert_snapshot(ext.SNAPSHOT.k8s_deployed)
     @pytest.mark.fail_snapshot
     @pytest.mark.snapshot_needed
     def test_daemonset_rollingupdate_noop(self, k8scluster, show_step):
@@ -254,7 +252,6 @@ class TestDaemonsetsUpdates():
         # Pods should have the new image version
         self.check_nginx_pods_image(k8sclient, self.to_nginx_image)
 
-    @pytest.mark.revert_snapshot(ext.SNAPSHOT.k8s_deployed)
     @pytest.mark.fail_snapshot
     @pytest.mark.snapshot_needed
     def test_daemonset_rollingupdate(self, k8scluster, show_step):
@@ -322,7 +319,6 @@ class TestDaemonsetsUpdates():
                 self.to_nginx_image),
             timeout=2 * 60)
 
-    @pytest.mark.revert_snapshot(ext.SNAPSHOT.k8s_deployed)
     @pytest.mark.fail_snapshot
     @pytest.mark.snapshot_needed
     def test_daemonset_rollout_rollingupdate(self, underlay,
@@ -373,7 +369,6 @@ class TestDaemonsetsUpdates():
             timeout=2 * 60
         )
 
-    @pytest.mark.revert_snapshot(ext.SNAPSHOT.k8s_deployed)
     @pytest.mark.fail_snapshot
     @pytest.mark.snapshot_needed
     def test_daemonset_rollout_noop(self, underlay,
@@ -441,7 +436,6 @@ class TestDaemonsetsUpdates():
         # Pods should have the old image version
         self.check_nginx_pods_image(k8sclient, self.from_nginx_image)
 
-    @pytest.mark.revert_snapshot(ext.SNAPSHOT.k8s_deployed)
     @pytest.mark.fail_snapshot
     @pytest.mark.snapshot_needed
     def test_daemonset_multirollout_rollingupdate(self, underlay, k8scluster,
@@ -523,7 +517,6 @@ class TestDaemonsetsUpdates():
             timeout=2 * 60
         )
 
-    @pytest.mark.revert_snapshot(ext.SNAPSHOT.k8s_deployed)
     @pytest.mark.fail_snapshot
     @pytest.mark.snapshot_needed
     def test_daemonset_multirollout_rollingupdate_revision(self,
@@ -688,7 +681,6 @@ class TestDaemonsetsUpdates():
             timeout=2 * 60
         )
 
-    @pytest.mark.revert_snapshot(ext.SNAPSHOT.k8s_deployed)
     @pytest.mark.fail_snapshot
     @pytest.mark.snapshot_needed
     def test_daemonset_multirollout_rollingupdate_default(self, underlay,
@@ -772,7 +764,6 @@ class TestDaemonsetsUpdates():
             timeout=2 * 60
         )
 
-    @pytest.mark.revert_snapshot(ext.SNAPSHOT.k8s_deployed)
     @pytest.mark.fail_snapshot
     @pytest.mark.snapshot_needed
     def test_daemonset_skip_rollout(self, underlay, k8scluster,
@@ -821,7 +812,6 @@ class TestDaemonsetsUpdates():
         show_step(6)
         self.check_rollout_skipping(k8sclient, config.k8s.kube_host, underlay)
 
-    @pytest.mark.revert_snapshot(ext.SNAPSHOT.k8s_deployed)
     @pytest.mark.fail_snapshot
     @pytest.mark.snapshot_needed
     def test_daemonset_skip_rollout_revision(self, underlay, k8scluster,
@@ -871,7 +861,6 @@ class TestDaemonsetsUpdates():
         self.check_rollout_skipping(k8sclient, config.k8s.kube_host,
                                     underlay, revision=True)
 
-    @pytest.mark.revert_snapshot(ext.SNAPSHOT.k8s_deployed)
     @pytest.mark.fail_snapshot
     @pytest.mark.snapshot_needed
     def test_daemonset_rollout_revision_negative_1(self, underlay, k8scluster,
@@ -930,7 +919,6 @@ class TestDaemonsetsUpdates():
                 pods_start_time_after_cmd)
         )
 
-    @pytest.mark.revert_snapshot(ext.SNAPSHOT.k8s_deployed)
     @pytest.mark.fail_snapshot
     @pytest.mark.snapshot_needed
     def test_daemonset_rollout_revision_negative_2(self, underlay, k8scluster,
@@ -990,7 +978,6 @@ class TestDaemonsetsUpdates():
                 pods_start_time_after_cmd)
         )
 
-    @pytest.mark.revert_snapshot(ext.SNAPSHOT.k8s_deployed)
     @pytest.mark.fail_snapshot
     @pytest.mark.snapshot_needed
     def test_daemonset_rollout_revision_negative_3(self, underlay, k8scluster,
@@ -1049,7 +1036,6 @@ class TestDaemonsetsUpdates():
                 pods_start_time_after_cmd)
         )
 
-    @pytest.mark.revert_snapshot(ext.SNAPSHOT.k8s_deployed)
     @pytest.mark.fail_snapshot
     @pytest.mark.snapshot_needed
     def test_daemonset_rollout_revision_negative_4(self, underlay, k8scluster,
