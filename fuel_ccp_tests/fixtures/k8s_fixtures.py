@@ -85,28 +85,21 @@ def k8scluster(revert_snapshot, request, config,
 
 
 @pytest.fixture(scope='class')
-def check_netchecker_files(request):
-    files_missing = []
-    for arg in request.cls.netchecker_files:
-        if not os.path.isfile(arg):
-            files_missing.append(arg)
+def check_files_missing(request):
+    LOG.info("Required files: {}".format(request.cls.required_files))
+    files_missing = [f for f in request.cls.required_files
+                     if not os.path.isfile(f)]
     assert len(files_missing) == 0, \
-        ("The following netchecker files not found: "
-         "{0}!".format(', '.join(files_missing)))
+        "Following files are not found {0}".format(files_missing)
 
 
 @pytest.fixture(scope='class')
-def check_netchecker_images_settings():
-    settings_missing = []
-    for setting in ('MCP_NETCHECKER_AGENT_IMAGE_REPO',
-                    'MCP_NETCHECKER_AGENT_VERSION',
-                    'MCP_NETCHECKER_SERVER_IMAGE_REPO',
-                    'MCP_NETCHECKER_SERVER_VERSION'):
-        if not getattr(settings, setting, None):
-            settings_missing.append(setting)
+def check_settings_missing(request):
+    LOG.info("Required settings: {}".format(request.cls.required_settings))
+    settings_missing = [s for s in request.cls.required_settings
+                        if not getattr(settings, s, None)]
     assert len(settings_missing) == 0, \
-        ("The following environment variables are not set: "
-         "{0}!".format(', '.join(settings_missing)))
+        "Following env variables are not set {}". format(settings_missing)
 
 
 @pytest.fixture(scope='class')

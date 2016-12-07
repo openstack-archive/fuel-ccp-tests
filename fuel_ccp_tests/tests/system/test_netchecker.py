@@ -27,6 +27,11 @@ LOG = logger.logger
 
 class TestFuelCCPNetCheckerMixin:
 
+    required_settings = ('MCP_NETCHECKER_AGENT_IMAGE_REPO',
+                         'MCP_NETCHECKER_AGENT_VERSION',
+                         'MCP_NETCHECKER_SERVER_IMAGE_REPO',
+                         'MCP_NETCHECKER_SERVER_VERSION')
+
     kube_settings = settings.DEFAULT_CUSTOM_YAML
     kube_settings['deploy_netchecker'] = False
 
@@ -38,7 +43,7 @@ class TestFuelCCPNetCheckerMixin:
         'k8s_resources/netchecker-server_svc.yaml')
     ds_yaml_file = os.path.join(
         settings.NETCHECKER_AGENT_DIR, 'netchecker-agent.yaml')
-    netchecker_files = (pod_yaml_file, svc_yaml_file, ds_yaml_file)
+    required_files = (pod_yaml_file, svc_yaml_file, ds_yaml_file)
 
     @property
     def pod_spec(self):
@@ -62,8 +67,7 @@ class TestFuelCCPNetCheckerMixin:
             return [i for i in yaml.load_all(ds_conf)]
 
 
-@pytest.mark.usefixtures("check_netchecker_files")
-@pytest.mark.usefixtures("check_netchecker_images_settings")
+@pytest.mark.usefixtures("check_files_missing", "check_settings_missing")
 class TestFuelCCPNetChecker(base_test.SystemBaseTest,
                             TestFuelCCPNetCheckerMixin):
     """Test class for network connectivity verification in k8s"""
