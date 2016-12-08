@@ -50,7 +50,7 @@ class OSManager(object):
         Deploy openstack with stacklight topology
         """
         LOG.info("Preparing openstack log collector fixture...")
-        if settings.BUILD_IMAGES:
+        if settings.REGISTRY == "127.0.0.1:31500":
             LOG.info("Creating registry...")
             self.__k8s_actions.create_registry()
             LOG.info("Building images...")

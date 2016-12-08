@@ -46,14 +46,10 @@ class TestDeployOpenstack(base_test.SystemBaseTest):
 
         Duration 35 min
         """
-        if settings.BUILD_IMAGES:
+        if settings.REGISTRY == "127.0.0.1:31500":
             k8s_actions.create_registry()
             ccpcluster.build()
-        else:
-            if not settings.REGISTRY:
-                raise ValueError("The REGISTRY variable should be set with "
-                                 "external registry address, "
-                                 "current value {0}".format(settings.REGISTRY))
+
         ccpcluster.deploy()
         post_os_deploy_checks.check_jobs_status(k8s_actions.api)
         post_os_deploy_checks.check_pods_status(k8s_actions.api)
@@ -82,14 +78,10 @@ class TestDeployOpenstack(base_test.SystemBaseTest):
         Duration 35 min
         """
         remote = underlay.remote(host=config.k8s.kube_host)
-        if settings.BUILD_IMAGES:
+        if settings.REGISTRY == "127.0.0.1:31500":
             k8s_actions.create_registry()
             ccpcluster.build()
-        else:
-            if not settings.REGISTRY:
-                raise ValueError("The REGISTRY variable should be set with "
-                                 "external registry address, "
-                                 "current value {0}".format(settings.REGISTRY))
+
         ccpcluster.deploy()
         post_os_deploy_checks.check_jobs_status(k8s_actions.api, timeout=4500)
         post_os_deploy_checks.check_pods_status(k8s_actions.api, timeout=4500)

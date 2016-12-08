@@ -45,7 +45,7 @@ class TestDeployTwoOS(base_test.SystemBaseTest):
 
         Duration 90 min
         """
-        if not settings.REGISTRY:
+        if settings.REGISTRY == "127.0.0.1:31500":
             k8s_actions.create_registry()
             ccpcluster.build()
         topology_path = \
@@ -113,7 +113,7 @@ class TestDeployTwoOS(base_test.SystemBaseTest):
 
         Duration 90 min
         """
-        if not settings.REGISTRY:
+        if settings.REGISTRY == "127.0.0.1:31500":
             k8s_actions.create_registry()
             ccpcluster.build()
         topology_path = \
@@ -182,7 +182,7 @@ class TestDeployTwoOS(base_test.SystemBaseTest):
 
         Duration 60 min
         """
-        if not settings.REGISTRY:
+        if settings.REGISTRY == "127.0.0.1:31500":
             k8s_actions.create_registry()
             ccpcluster.build()
         topology_path = \

@@ -64,7 +64,7 @@ def galera_deployed(ccpcluster,
     # Note: keep fixtures in strict dependences from each other!
     if not config.os.running:
         general_config = deepcopy(settings.CCP_CONF)
-        if settings.BUILD_IMAGES:
+        if settings.REGISTRY == "127.0.0.1:31500":
             k8s_actions.create_registry()
             ccpcluster.build()
         topology_path = \
