@@ -75,6 +75,9 @@ def ccpcluster(revert_snapshot, config, hardware,
         ccp_actions.put_yaml_config(
             path=settings.CCP_FETCH_CONFIG,
             config=settings.CCP_FETCH_PARAMS)
+        ccp_actions.put_yaml_config(
+            path=settings.CCP_APT_CACHE_CONFIG,
+            config=settings.CCP_APT_CACHE_PARAMS)
 
         with open(settings.TOPOLOGY_PATH, 'r') as f:
             ccp_actions.put_raw_config(
@@ -85,7 +88,8 @@ def ccpcluster(revert_snapshot, config, hardware,
             settings.CCP_DEPLOY_CONFIG,
             settings.CCP_SOURCES_CONFIG,
             settings.CCP_DEPLOY_TOPOLOGY,
-            settings.CCP_FETCH_CONFIG])
+            settings.CCP_FETCH_CONFIG,
+            settings.CCP_APT_CACHE_CONFIG])
         config.ccp.os_host = config.k8s.kube_host
 
         hardware.create_snapshot(ext.SNAPSHOT.ccp_deployed)

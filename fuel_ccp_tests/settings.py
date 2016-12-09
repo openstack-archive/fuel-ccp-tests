@@ -235,6 +235,16 @@ CCP_DEFAULT_GLOBALS = {
     }
 }
 
+CCP_APT_CACHE_CONFIG = "~/.ccp.apt-cache.yaml"
+
+CCP_APT_CACHE_PARAMS = {
+    'url': {
+        'debian': 'https://artifactory.mcp.mirantis.net/debian-virtual',
+        'debian_security':
+        'https://artifactory.mcp.mirantis.net/in-debian-security',
+        'pypi_index':
+        'https://artifactory.mcp.mirantis.net/api/pypi/pypi-virtual/simple/'}}
+
 CCP_ENVIRONMENT_PARAMS = {
     "microservices_home": "$HOME/ccp-repos"
 }
