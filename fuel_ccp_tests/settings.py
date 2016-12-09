@@ -235,6 +235,15 @@ CCP_DEFAULT_GLOBALS = {
     }
 }
 
+CCP_APT_CACHE_CONFIG = "~/.ccp.apt-cache.yaml"
+
+CCP_APT_CACHE_PARAMS = {
+    'url': {
+        'debian': 'http://172.18.229.26:3142/debian',
+        'security': 'http://172.18.229.26:3142/security',
+        'ceph': {'debian': {'repo': 'http://172.18.229.26:3142/ceph'}},
+        'mariadb': {'debian': {'repo': 'http://172.18.229.26:3142/mariadb'}}}}
+
 CCP_ENVIRONMENT_PARAMS = {
     "microservices_home": "$HOME/ccp-repos"
 }
