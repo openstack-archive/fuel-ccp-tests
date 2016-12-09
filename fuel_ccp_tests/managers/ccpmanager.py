@@ -157,11 +157,12 @@ class CCPManager(object):
             else:
                 components = ''
 
-            cmd = "ccp {params} {cmd} {components} {ccp_out_redirect}".format(
+            cmd = "ccp -v --debug {params} {cmd} {components}" \
+                  " {ccp_out_redirect}".format(
                 params=params, cmd=cmd, components=components,
                 ccp_out_redirect=ccp_out_redirect)
         else:
-            cmd = "ccp {cmd} {ccp_out_redirect}".format(
+            cmd = "ccp -v --debug {cmd} {ccp_out_redirect}".format(
                 cmd=cmd, ccp_out_redirect=ccp_out_redirect)
 
         LOG.info("Running {cmd}".format(cmd=cmd))
