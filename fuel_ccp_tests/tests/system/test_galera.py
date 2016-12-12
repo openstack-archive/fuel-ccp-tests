@@ -43,7 +43,9 @@ class TestGalera(base_test.SystemBaseTest):
         Duration 30 min
         """
         show_step(2)
-        hardware.shutdown_node_by_ip(underlay.node_names()[1])
+        galera_node = underlay.node_names()[1]
+        galera_node_ip = underlay.host_by_node_name(galera_node)
+        hardware.shutdown_node_by_ip(galera_node_ip)
         show_step(3)
         # todo: add wait for galera to assemble when galera_checker is ready
         remote = underlay.remote(host=config.k8s.kube_host)
@@ -71,7 +73,9 @@ class TestGalera(base_test.SystemBaseTest):
         Duration 30 min
         """
         show_step(2)
-        hardware.shutdown_node_by_ip(underlay.node_names()[1])
+        galera_node = underlay.node_names()[1]
+        galera_node_ip = underlay.host_by_node_name(galera_node)
+        hardware.shutdown_node_by_ip(galera_node_ip)
         hardware.start_node_by_ip(underlay.host_by_node_name('slave-0'))
         show_step(3)
         # todo: add wait for galera to assemble when galera_checker is ready
