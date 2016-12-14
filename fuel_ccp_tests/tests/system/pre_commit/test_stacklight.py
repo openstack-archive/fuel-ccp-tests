@@ -64,7 +64,8 @@ class TestPreStackLight(object):
             ccpcluster.build(suppress_output=False)
 
         topology_path = os.getcwd() + '/fuel_ccp_tests/templates/' \
-                                      'k8s_templates/stacklight_topology.yaml'
+                                      'ccp_deploy_topology/' \
+                                      'stacklight_topology.yaml'
 
         remote.upload(topology_path, settings.CCP_CLI_PARAMS['deploy-config'])
         ccpcluster.deploy()

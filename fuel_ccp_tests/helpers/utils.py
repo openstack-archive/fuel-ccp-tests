@@ -14,10 +14,12 @@
 
 import copy
 import os
+import random
 import shutil
 import tempfile
 import time
 import traceback
+import uuid
 
 import paramiko
 import yaml
@@ -483,3 +485,11 @@ def get_top_fixtures_marks(request, mark_name):
               .format(top_fixtures_marks))
 
     return top_fixtures_marks
+
+
+def rand_name(name='ost1_test-'):
+    return name + str(random.randint(1, 0x7fffffff))
+
+
+def generate_uuid():
+    return uuid.uuid4().hex

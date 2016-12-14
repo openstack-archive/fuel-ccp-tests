@@ -11,7 +11,6 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-import os
 
 from fuel_ccp_tests import logger
 from fuel_ccp_tests import settings
@@ -59,11 +58,9 @@ class OSManager(object):
             LOG.info("Pushing topology yaml...")
             LOG.warn(
                 "Patched topology used, workaround until kube 1.4 released")
-            topology_path = \
-                os.getcwd() + topology
             self.__underlay.remote(
                 host=self.__config.k8s.kube_host).upload(
-                topology_path,
+                topology,
                 settings.DEPLOY_CONFIG)
         LOG.info("Deploy openstack")
         self.__ccpcluster.deploy()

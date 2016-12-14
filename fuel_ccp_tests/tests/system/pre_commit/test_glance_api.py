@@ -51,7 +51,8 @@ class TestServiceGlance(object):
             ccpcluster.build()
 
         topology_path = os.getcwd() + '/fuel_ccp_tests/templates/' \
-                                      'k8s_templates/k8s_topology.yaml'
+                                      'ccp_deploy_topology/' \
+                                      'default_deploy_topology.yaml'
         remote.upload(topology_path, './')
         with remote.get_sudo(remote):
             ccpcluster.deploy()

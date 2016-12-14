@@ -12,7 +12,7 @@ fuel_ccp_tests
 ├── managers
 │   └── k8s
 ├── templates
-│   ├── k8s_templates
+│   ├── ccp_deploy_topology
 │   ├── misc
 │   └── registry_templates
 └── tests
@@ -47,7 +47,7 @@ Contains .yaml templates with environment configuration(virtual machines, networ
 
 Tests Overview
 ================
-The fuel-ccp-test are performed to verify that the completed software (ccp) functions according to the expectations defined by the requirements. 
+The fuel-ccp-test are performed to verify that the completed software (ccp) functions according to the expectations defined by the requirements.
 
 The tests depended on purpose are divided on several categories.
 
@@ -67,7 +67,7 @@ Consists from 2 categories **precommit** and **system**.  The purpose of the sys
 
 Test execution
 --------------
-To execute tests necessary to add value to several variables via *export* or in the test command. Variables: 
+To execute tests necessary to add value to several variables via *export* or in the test command. Variables:
 
 - ENV_NAME - prefix name for the env and VMs
 - IMAGE_PATH  - qcow2 image path
@@ -78,4 +78,3 @@ To execute tests necessary to add value to several variables via *export* or in 
 After exporting execute the command:
 
 py.test -vvv -s -k <test_name> or py.test -vvv -s -m <test_mark>
-
