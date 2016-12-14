@@ -15,11 +15,13 @@
 from copy import deepcopy
 import os
 import pytest
+from devops.helpers import helpers
 
 from fuel_ccp_tests import logger
 from fuel_ccp_tests import settings
 from fuel_ccp_tests.helpers import ext
 from fuel_ccp_tests.helpers import post_os_deploy_checks
+from fuel_ccp_tests.helpers import rabbit
 from fuel_ccp_tests.managers.osmanager import OSManager
 
 LOG = logger.logger
@@ -37,12 +39,7 @@ def os_deployed(ccpcluster,
     """
     osmanager = OSManager(config, underlay, k8s_actions, ccpcluster)
     if not config.os.running:
-        LOG.info("Preparing openstack log collector fixture...")
-        topology = None
-        if config.os_deploy.stacklight_enable:
-            topology = ('/fuel_ccp_tests/templates/k8s_templates/'
-                        'stacklight_topology.yaml')
-        osmanager.install_os(topology=topology)
+        osmanager.install_os()
         hardware.create_snapshot(ext.SNAPSHOT.os_deployed)
     else:
         LOG.info("Openstack allready installed and running...")
@@ -68,7 +65,7 @@ def galera_deployed(ccpcluster,
             k8s_actions.create_registry()
             ccpcluster.build()
         topology_path = \
-            os.getcwd() + '/fuel_ccp_tests/templates/k8s_templates/' \
+            os.getcwd() + '/fuel_ccp_tests/templates/ccp_deploy_topology/' \
                           '3galera_1comp.yaml'
         remote = underlay.remote(host=config.k8s.kube_host)
         remote.upload(topology_path, '/tmp')
@@ -93,3 +90,17 @@ def galera_deployed(ccpcluster,
 
         config.os.running = True
         hardware.create_snapshot(ext.SNAPSHOT.os_galera_deployed)
+
+
+@pytest.fixture(scope='function')
+def rabbit_client(underlay, config, os_deployed):
+    """Deploy openstack
+    """
+    host = config.k8s.kube_host
+    remote = underlay.remote(host=host)
+    rabbit_port = ''.join(remote.execute(
+        "kubectl get service --namespace ccp rabbitmq -o yaml |"
+        " awk '/nodePort: / {print $NF}'")['stdout'])
+    client = helpers.wait_pass(lambda: rabbit.RabbitClient(host, rabbit_port),
+                               interval=60, timeout=360)
+    return client

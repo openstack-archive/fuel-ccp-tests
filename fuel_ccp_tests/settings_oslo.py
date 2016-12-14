@@ -26,6 +26,9 @@ from fuel_ccp_tests import settings
 _default_conf = pkg_resources.resource_filename(
     __name__, 'templates/default.yaml')
 
+_default_topology = pkg_resources.resource_filename(
+    __name__, 'templates/ccp_deploy_topology/default_deploy_topology.yaml')
+
 
 hardware_opts = [
     ct.Cfg('manager', ct.String(),
@@ -103,7 +106,9 @@ ccp_deploy_opts = [
     ct.Cfg('ccp_globals', ct.JSONDict(),
            help="", default=None),
     ct.Cfg('ccp_params', ct.JSONDict(),
-           help="", default=None)
+           help="", default=None),
+    ct.Cfg('topology_path', ct.String(),
+           help="", default=_default_topology),
 ]
 
 # Access credentials to a ready CCP
