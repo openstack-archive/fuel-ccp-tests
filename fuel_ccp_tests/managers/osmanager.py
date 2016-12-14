@@ -11,7 +11,6 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-import os
 
 from fuel_ccp_tests import logger
 from fuel_ccp_tests import settings
@@ -57,14 +56,10 @@ class OSManager(object):
             self.__ccpcluster.build()
         if topology:
             LOG.info("Pushing topology yaml...")
-            LOG.warn(
-                "Patched topology used, workaround until kube 1.4 released")
-            topology_path = \
-                os.getcwd() + topology
-            self.__underlay.remote(
-                host=self.__config.k8s.kube_host).upload(
-                topology_path,
-                settings.DEPLOY_CONFIG)
+            with open(topology, 'r') as f:
+                self.__ccpcluster.put_raw_config(
+                    path=settings.CCP_DEPLOY_TOPOLOGY,
+                    content=f.read())
         LOG.info("Deploy openstack")
         self.__ccpcluster.deploy()
         if check_os_ready:
@@ -77,8 +72,8 @@ class OSManager(object):
         if check_jobs_ready:
             LOG.info("Checking openstack jobs statuses...")
             post_os_deploy_checks.check_jobs_status(self.__k8s_actions.api,
-                                                    timeout=3600)
+                                                    timeout=4500)
         if check_pods_ready:
             LOG.info("Checking openstack pods statuses...")
             post_os_deploy_checks.check_pods_status(self.__k8s_actions.api,
-                                                    timeout=3600)
+                                                    timeout=4500)
