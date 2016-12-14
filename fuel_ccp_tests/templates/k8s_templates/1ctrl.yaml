@@ -25,6 +25,8 @@ roles:
     - nova-consoleauth
     - nova-novncproxy
     - nova-scheduler
+    - sahara-api
+    - sahara-engine
     - rabbitmq
   openvswitch:
     - neutron-openvswitch-agent

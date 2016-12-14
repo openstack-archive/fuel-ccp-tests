@@ -30,6 +30,8 @@ roles:
     - nova-consoleauth
     - nova-novncproxy
     - nova-scheduler
+    - sahara-api
+    - sahara-engine
     - rabbitmq
   compute:
     - nova-compute

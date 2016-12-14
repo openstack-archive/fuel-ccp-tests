@@ -28,6 +28,8 @@ roles:
     - nova-novncproxy
     - nova-scheduler
     - rabbitmq
+    - sahara-api
+    - sahara-engine
   compute:
     - nova-compute
     - nova-libvirt
