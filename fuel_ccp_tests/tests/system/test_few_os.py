@@ -49,7 +49,7 @@ class TestDeployTwoOS(base_test.SystemBaseTest):
             k8s_actions.create_registry()
             ccpcluster.build()
         topology_path = \
-            os.getcwd() + '/fuel_ccp_tests/templates/k8s_templates/' \
+            os.getcwd() + '/fuel_ccp_tests/templates/ccp_deploy_topology/' \
                           '1ctrl_1comp.yaml'
         remote = underlay.remote(host=config.k8s.kube_host)
         remote.upload(topology_path, '/tmp')
@@ -71,7 +71,7 @@ class TestDeployTwoOS(base_test.SystemBaseTest):
             timeout=600)
 
         topology_path = \
-            os.getcwd() + '/fuel_ccp_tests/templates/k8s_templates/' \
+            os.getcwd() + '/fuel_ccp_tests/templates/ccp_deploy_topology/' \
                           '1ctrl_1comp_diff.yaml'
         remote.upload(topology_path, '/tmp')
         conf = copy.deepcopy(settings.CCP_CONF)
@@ -117,7 +117,7 @@ class TestDeployTwoOS(base_test.SystemBaseTest):
             k8s_actions.create_registry()
             ccpcluster.build()
         topology_path = \
-            os.getcwd() + '/fuel_ccp_tests/templates/k8s_templates/' \
+            os.getcwd() + '/fuel_ccp_tests/templates/ccp_deploy_topology/' \
                           '1ctrl_1comp.yaml'
         remote = underlay.remote(host=config.k8s.kube_host)
         remote.upload(topology_path, '/tmp')
@@ -139,7 +139,7 @@ class TestDeployTwoOS(base_test.SystemBaseTest):
             timeout=600)
 
         topology_path = \
-            os.getcwd() + '/fuel_ccp_tests/templates/k8s_templates/' \
+            os.getcwd() + '/fuel_ccp_tests/templates/ccp_deploy_topology/' \
                           '1ctrl_1comp_same.yaml'
         remote.upload(topology_path, '/tmp')
         conf = copy.deepcopy(settings.CCP_CONF)
@@ -186,7 +186,7 @@ class TestDeployTwoOS(base_test.SystemBaseTest):
             k8s_actions.create_registry()
             ccpcluster.build()
         topology_path = \
-            os.getcwd() + '/fuel_ccp_tests/templates/k8s_templates/' \
+            os.getcwd() + '/fuel_ccp_tests/templates/ccp_deploy_topology/' \
                           '1ctrl.yaml'
         remote = underlay.remote(host=config.k8s.kube_host)
         remote.upload(topology_path, '/tmp')
