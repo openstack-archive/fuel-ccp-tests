@@ -123,8 +123,8 @@ CCP_DEPLOY_CONFIG = '~/.ccp.deploy-config.yaml'
 CCP_DEPLOY_TOPOLOGY = '~/.ccp.deploy-topology.yaml'
 TOPOLOGY_PATH = os.environ.get('TOPOLOGY_PATH',
                                os.getcwd() + '/fuel_ccp_tests/templates/'
-                               'k8s_templates/k8s_topology.yaml')
-
+                               'ccp_deploy_topology/'
+                               'default_deploy_topology.yaml')
 
 FUEL_CCP_KEYSTONE_LOCAL_REPO = os.environ.get('FUEL_CCP_KEYSTONE_LOCAL_REPO',
                                               None)
