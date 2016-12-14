@@ -93,3 +93,52 @@ def galera_deployed(ccpcluster,
 
         config.os.running = True
         hardware.create_snapshot(ext.SNAPSHOT.os_galera_deployed)
+
+
+@pytest.mark.revert_snapshot(ext.SNAPSHOT.os_sahara_deployed)
+@pytest.fixture(scope='function')
+def sahara_deployed(ccpcluster,
+                    hardware,
+                    underlay,
+                    revert_snapshot,
+                    config,
+                    k8s_actions):
+    """Deploy sahara services
+    """
+    # If no snapshot was reverted, then try to revert the snapshot
+    # that belongs to the fixture.
+    # Note: keep fixtures in strict dependences from each other!
+    if not config.os.running:
+        general_config = deepcopy(settings.CCP_CONF)
+        if settings.REGISTRY == "127.0.0.1:31500":
+            k8s_actions.create_registry()
+            ccpcluster.build()
+        topology_path = \
+            os.getcwd() + '/fuel_ccp_tests/templates/k8s_templates/' \
+                          'sahara.yaml'
+        remote = underlay.remote(host=config.k8s.kube_host)
+        remote.upload(topology_path, '/tmp')
+        ccpcluster.put_yaml_config('./config_1.yaml', general_config)
+        ccpcluster.add_includes('./config_1.yaml', [
+            settings.CCP_DEPLOY_CONFIG,
+            settings.CCP_SOURCES_CONFIG,
+            '/tmp/sahara.yaml'])
+
+        underlay.sudo_check_call("pip install python-openstackclient",
+                                 host=config.k8s.kube_host)
+        ccpcluster.deploy(params={"config-file": "./config_1.yaml"},
+                          use_cli_params=True)
+        post_os_deploy_checks.check_jobs_status(k8s_actions.api, timeout=2000)
+        post_os_deploy_checks.check_pods_status(k8s_actions.api)
+        remote.check_call(
+            "source openrc-{}; bash fuel-ccp/tools/deploy-test-vms.sh -a"
+            " create".format(
+                settings.CCP_CONF["kubernetes"]["namespace"]),
+            timeout=600)
+        remote.check_call(
+            "source openrc-{}; openstack dataprocessing cluster list".format(
+                settings.CCP_CONF["kubernetes"]["namespace"]),
+            timeout=10)
+
+        config.os.running = True
+        hardware.create_snapshot(ext.SNAPSHOT.os_sahara_deployed)

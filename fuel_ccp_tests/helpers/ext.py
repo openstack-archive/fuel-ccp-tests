@@ -44,6 +44,7 @@ SNAPSHOT = enum(
     'os_deployed',
     'os_deployed_stacklight',
     'os_galera_deployed',
+    'os_sahara_deployed'
 )
 
 LOG_LEVELS = enum(
