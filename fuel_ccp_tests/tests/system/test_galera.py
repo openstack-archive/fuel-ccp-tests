@@ -251,12 +251,12 @@ class TestGalera(base_test.SystemBaseTest):
         show_step(7)
         # todo: add invocation of galera checker script
         show_step(8)
-        galera_pods = \
+        galera_pods = (
             k8s_actions.get_pods_number('galera',
                                         settings.
-                                        CCP_CONF['kubernetes']['namespace'])
-        assert galera_pods == 3,\
-            "Expcted tp have 3 galera pods, got {}".format(galera_pods)
+                                        CCP_CONF['kubernetes']['namespace']))
+        assert galera_pods == 3, ("Expcted tp have 3 galera pods, "
+                                  "got {}".format(galera_pods))
         show_step(9)
         remote.check_call(
             "source openrc-{}; bash fuel-ccp/tools/deploy-test-vms.sh -a"
