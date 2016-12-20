@@ -229,7 +229,7 @@ class TestGalera(base_test.SystemBaseTest):
                                         settings.
                                         CCP_CONF['kubernetes']['namespace'])
         assert galera_pods == 5,\
-            "Expcted tp have 5 galera pods, got {}".format(galera_pods)
+            "Expected to have 5 galera pods, got {}".format(galera_pods)
 
         show_step(5)
         remote = underlay.remote(host=config.k8s.kube_host)
@@ -263,3 +263,53 @@ class TestGalera(base_test.SystemBaseTest):
             " create".format(
                 settings.CCP_CONF["kubernetes"]["namespace"]),
             timeout=600)
+
+    @pytest.mark.fail_snapshot
+    @pytest.mark.galera_cluster_shutdown
+    @pytest.mark.galera
+    def test_galera_node_replacement(self, hardware, underlay, config,
+                                     ccpcluster, k8s_actions, show_step,
+                                     galera_deployed):
+        """Galera node replacement
+
+        Scenario:
+        1. Revert snapshot with deployed galera
+        2. Shutdown one galera node
+        3. Update config for ccp
+        4. Run re-deployment
+        5. Check of galera pods
+
+        Duration 30 min
+        """
+        galera_nodes = underlay.node_names()[:3]
+
+        show_step(2)
+        galera_node_ip = underlay.host_by_node_name(galera_node[1])
+        hardware.shutdown_node_by_ip(galera_node_ip)
+        hardware.wait_node_is_offline(galera_node_ip, 90)
+
+        while galera_pods != 2:
+            galera_pods = (k8s_actions.get_pods_number(
+                'galera', settings.CCP_CONF['kubernetes']['namespace']))
+
+        show_step(3)
+        with underlay.yaml_editor('/tmp/3galera_1comp.yaml',
+                                  host=config.k8s.kube_host) as editor:
+            del editor.content['nodes']['node[1-3]']
+            editor.content['nodes']['node[1-2]'] = {'roles': ['galera']}
+            editor.content['nodes']['node4'] = {'roles': ['galera', 'etcd']}
+
+        show_step(4)
+        ccpcluster.deploy(params={"config-file": "./config_1.yaml"},
+                          use_cli_params=True)
+
+        post_os_deploy_checks.check_jobs_status(k8s_actions.api, timeout=2000)
+        post_os_deploy_checks.check_pods_status(k8s_actions.api)
+
+        show_step(5)
+        galera_pods = (
+            k8s_actions.get_pods_number('galera',
+                                        settings.
+                                        CCP_CONF['kubernetes']['namespace']))
+        assert galera_pods == 3, ("Expected to have 3 galera pods, "
+                                  "got {}".format(galera_pods))
