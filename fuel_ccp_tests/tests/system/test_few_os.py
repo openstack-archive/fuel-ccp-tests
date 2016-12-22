@@ -62,7 +62,7 @@ class TestDeployTwoOS(base_test.SystemBaseTest):
         underlay.sudo_check_call("pip install python-openstackclient",
                                  host=config.k8s.kube_host)
         ccpcluster.deploy(params={"config-file": "./config_1.yaml"})
-        post_os_deploy_checks.check_jobs_status(k8s_actions.api, timeout=2000)
+        post_os_deploy_checks.check_jobs_status(k8s_actions.api)
         post_os_deploy_checks.check_pods_status(k8s_actions.api)
         remote.check_call(
             "source openrc-{}; bash fuel-ccp/tools/deploy-test-vms.sh -a"
@@ -83,7 +83,7 @@ class TestDeployTwoOS(base_test.SystemBaseTest):
             '/tmp/1ctrl_1comp_diff.yaml'])
 
         ccpcluster.deploy(params={"config-file": "./config_2.yaml"})
-        post_os_deploy_checks.check_jobs_status(k8s_actions.api, timeout=2000,
+        post_os_deploy_checks.check_jobs_status(k8s_actions.api,
                                                 namespace="ccp-second")
         post_os_deploy_checks.check_pods_status(k8s_actions.api,
                                                 namespace="ccp-second")
@@ -130,7 +130,7 @@ class TestDeployTwoOS(base_test.SystemBaseTest):
         underlay.sudo_check_call("pip install python-openstackclient",
                                  host=config.k8s.kube_host)
         ccpcluster.deploy(params={"config-file": "./config_1.yaml"})
-        post_os_deploy_checks.check_jobs_status(k8s_actions.api, timeout=2000)
+        post_os_deploy_checks.check_jobs_status(k8s_actions.api)
         post_os_deploy_checks.check_pods_status(k8s_actions.api)
         remote.check_call(
             "source openrc-{}; bash fuel-ccp/tools/deploy-test-vms.sh -a"
@@ -151,7 +151,7 @@ class TestDeployTwoOS(base_test.SystemBaseTest):
             '/tmp/1ctrl_1comp_same.yaml'])
 
         ccpcluster.deploy(params={"config-file": "./config_2.yaml"})
-        post_os_deploy_checks.check_jobs_status(k8s_actions.api, timeout=2000,
+        post_os_deploy_checks.check_jobs_status(k8s_actions.api,
                                                 namespace="ccp-second")
         post_os_deploy_checks.check_pods_status(k8s_actions.api,
                                                 namespace="ccp-second")
@@ -199,7 +199,7 @@ class TestDeployTwoOS(base_test.SystemBaseTest):
         underlay.sudo_check_call("pip install python-openstackclient",
                                  host=config.k8s.kube_host)
         ccpcluster.deploy(params={"config-file": "./config_1.yaml"})
-        post_os_deploy_checks.check_jobs_status(k8s_actions.api, timeout=2000)
+        post_os_deploy_checks.check_jobs_status(k8s_actions.api)
         post_os_deploy_checks.check_pods_status(k8s_actions.api)
         remote.check_call(
             "source openrc-{}; openstack flavor create"
@@ -217,7 +217,7 @@ class TestDeployTwoOS(base_test.SystemBaseTest):
             '/tmp/1ctrl.yaml'])
 
         ccpcluster.deploy(params={"config-file": "./config_2.yaml"})
-        post_os_deploy_checks.check_jobs_status(k8s_actions.api, timeout=2000,
+        post_os_deploy_checks.check_jobs_status(k8s_actions.api,
                                                 namespace="ccp-second")
         post_os_deploy_checks.check_pods_status(k8s_actions.api,
                                                 namespace="ccp-second")
@@ -234,7 +234,7 @@ class TestDeployTwoOS(base_test.SystemBaseTest):
             settings.CCP_SOURCES_CONFIG,
             '/tmp/1ctrl.yaml'])
         ccpcluster.deploy(params={"config-file": "./config_3.yaml"})
-        post_os_deploy_checks.check_jobs_status(k8s_actions.api, timeout=2000,
+        post_os_deploy_checks.check_jobs_status(k8s_actions.api,
                                                 namespace="ccp-third")
         post_os_deploy_checks.check_pods_status(k8s_actions.api,
                                                 namespace="ccp-third")
