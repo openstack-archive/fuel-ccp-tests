@@ -63,7 +63,8 @@ class TestServiceHorizon(object):
             ccpcluster.build()
 
         topology_path = os.getcwd() + '/fuel_ccp_tests/templates/' \
-                                      'k8s_templates/k8s_topology.yaml'
+                                      'ccp_deploy_topology/' \
+                                      'default_deploy_topology.yaml'
         remote.upload(topology_path, settings.CCP_CLI_PARAMS['deploy-config'])
         ccpcluster.deploy()
         post_os_deploy_checks.check_jobs_status(k8sclient, timeout=1500,

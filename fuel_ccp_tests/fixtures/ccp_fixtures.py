@@ -76,7 +76,7 @@ def ccpcluster(revert_snapshot, config, hardware,
             path=settings.CCP_FETCH_CONFIG,
             config=settings.CCP_FETCH_PARAMS)
 
-        with open(settings.TOPOLOGY_PATH, 'r') as f:
+        with open(config.ccp_deploy.topology_path, 'r') as f:
             ccp_actions.put_raw_config(
                 path=settings.CCP_DEPLOY_TOPOLOGY,
                 content=f.read())
