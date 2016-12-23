@@ -84,6 +84,10 @@ k8s_deploy_opts = [
            help="", default=None),
     ct.Cfg('kube_settings', ct.JSONDict(),
            help="", default={}),
+    ct.Cfg('e2e_conformance_image', ct.String(),
+           help="", default=''),
+    ct.Cfg('e2e_conformance_timeout', ct.Integer(),
+           help="", default=3600),
 ]
 
 # Access credentials to a ready K8S cluster
