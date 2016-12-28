@@ -12,13 +12,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from operator import attrgetter
 import os
 import pytest
 
-from fuel_ccp_tests import logger
 from fuel_ccp_tests.helpers import ext
-from fuel_ccp_tests import settings
+from fuel_ccp_tests import logger
 from fuel_ccp_tests.managers import k8smanager
+from fuel_ccp_tests import settings
 
 LOG = logger.logger
 
@@ -94,12 +95,17 @@ def check_files_missing(request):
 
 
 @pytest.fixture(scope='class')
-def check_settings_missing(request):
+def check_settings_missing(request, config):
+    def get_attr(attr, obj):
+        try:
+            return attrgetter(attr)(obj)
+        except Exception:
+            return None
     LOG.info("Required settings: {}".format(request.cls.required_settings))
-    settings_missing = [s for s in request.cls.required_settings
-                        if not getattr(settings, s, None)]
-    assert len(settings_missing) == 0, \
-        "Following env variables are not set {}". format(settings_missing)
+    missing = [s for s in request.cls.required_settings
+               if not (getattr(settings, s, None) or get_attr(s, config))]
+    assert len(missing) == 0, \
+        "Following env variables are not set {}". format(missing)
 
 
 @pytest.fixture(scope='class')
