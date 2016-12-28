@@ -34,17 +34,20 @@ class CCPManager(object):
         self.__underlay = underlay
         super(CCPManager, self).__init__()
 
-    def install_ccp(self, use_defaults=True):
-        """Base action to deploy k8s by external deployment script"""
-        LOG.info("Trying to install fuel-ccp on admin node")
+    def fetch_ccp(self):
         with self.__underlay.remote(
                 host=self.__config.k8s.kube_host) as remote:
-
             ccp_repo_url = settings.CCP_REPO
             LOG.info("Fetch ccp from github")
             cmd = 'git clone {}'.format(ccp_repo_url)
             remote.check_call(cmd, verbose=True)
 
+    def install_ccp(self, use_defaults=True):
+        """Base action to deploy k8s by external deployment script"""
+        LOG.info("Trying to install fuel-ccp on admin node")
+        self.fetch_ccp()
+        with self.__underlay.remote(
+                host=self.__config.k8s.kube_host) as remote:
             LOG.info('Install fuel-ccp from local path')
             cmd = 'pip install --upgrade fuel-ccp/'
             with remote.get_sudo(remote):
@@ -52,6 +55,22 @@ class CCPManager(object):
                 result = remote.check_call(cmd, verbose=True)
                 LOG.debug("*** Result STDOUT:\n{0}".format(result.stdout_str))
                 LOG.debug("*** Result STDERR:\n{0}".format(result.stderr_str))
+
+    def dockerize_ccp(self):
+        self.__underlay.sudo_check_call("cd fuel-ccp/docker/"
+                                        "ccp&&./dockerize.sh",
+                                        host=self.__config.k8s.kube_host)
+        ccp_script = '''
+        docker run --rm  -i --name=fuel-ccp --network=host \
+        -v ~/:/home/`whoami`/ -v /var/run/docker.sock:/var/run/docker.sock \
+        -e LOCAL_USER_ID=`id -u $USER` -e LOCAL_USER_NAME=`whoami` \
+        fuel-ccp:latest $@
+        '''
+        self.__underlay.sudo_check_call("echo -e '{}' > /usr/local/"
+                                        "bin/ccp".format(ccp_script),
+                                        host=self.__config.k8s.kube_host)
+        self.__underlay.sudo_check_call("chmod +x /usr/local/bin/ccp",
+                                        host=self.__config.k8s.kube_host)
 
     @property
     def default_params(self):
