@@ -51,8 +51,8 @@ class TestGalera(base_test.SystemBaseTest):
         remote = underlay.remote(host=config.k8s.kube_host)
         show_step(4)
         remote.check_call(
-            "source openrc-{}; bash fuel-ccp/tools/deploy-test-vms.sh -a"
-            " create".format(
+            "source openrc-{0}; bash fuel-ccp/tools/deploy-test-vms.sh -k {0}"
+            " -a create".format(
                 settings.CCP_CONF["kubernetes"]["namespace"]),
             timeout=600)
 
@@ -82,8 +82,8 @@ class TestGalera(base_test.SystemBaseTest):
         remote = underlay.remote(host=config.k8s.kube_host)
         show_step(4)
         remote.check_call(
-            "source openrc-{}; bash fuel-ccp/tools/deploy-test-vms.sh -a"
-            " create".format(
+            "source openrc-{0}; bash fuel-ccp/tools/deploy-test-vms.sh -k {0}"
+            " -a create".format(
                 settings.CCP_CONF["kubernetes"]["namespace"]),
             timeout=600)
 
@@ -114,8 +114,8 @@ class TestGalera(base_test.SystemBaseTest):
         remote = underlay.remote(host=config.k8s.kube_host)
         show_step(4)
         remote.check_call(
-            "source openrc-{}; bash fuel-ccp/tools/deploy-test-vms.sh -a"
-            " create".format(
+            "source openrc-{0}; bash fuel-ccp/tools/deploy-test-vms.sh -k {0}"
+            " -a create".format(
                 settings.CCP_CONF["kubernetes"]["namespace"]),
             timeout=600)
 
@@ -148,8 +148,8 @@ class TestGalera(base_test.SystemBaseTest):
         remote = underlay.remote(host=config.k8s.kube_host)
         show_step(4)
         remote.check_call(
-            "source openrc-{}; bash fuel-ccp/tools/deploy-test-vms.sh -a"
-            " create".format(
+            "source openrc-{0}; bash fuel-ccp/tools/deploy-test-vms.sh -k {0}"
+            " -a create".format(
                 settings.CCP_CONF["kubernetes"]["namespace"]),
             timeout=600)
 
@@ -185,8 +185,8 @@ class TestGalera(base_test.SystemBaseTest):
         remote = underlay.remote(host=config.k8s.kube_host)
         show_step(4)
         remote.check_call(
-            "source openrc-{}; bash fuel-ccp/tools/deploy-test-vms.sh -a"
-            " create".format(
+            "source openrc-{0}; bash fuel-ccp/tools/deploy-test-vms.sh -k {0}"
+            " -a create".format(
                 settings.CCP_CONF["kubernetes"]["namespace"]),
             timeout=600)
 
@@ -234,8 +234,8 @@ class TestGalera(base_test.SystemBaseTest):
         show_step(5)
         remote = underlay.remote(host=config.k8s.kube_host)
         remote.check_call(
-            "source openrc-{}; bash fuel-ccp/tools/deploy-test-vms.sh -a"
-            " create".format(
+            "source openrc-{0}; bash fuel-ccp/tools/deploy-test-vms.sh -k {0}"
+            " -a create".format(
                 settings.CCP_CONF["kubernetes"]["namespace"]),
             timeout=600)
         show_step(6)
@@ -259,7 +259,7 @@ class TestGalera(base_test.SystemBaseTest):
                                   "got {}".format(galera_pods))
         show_step(9)
         remote.check_call(
-            "source openrc-{}; bash fuel-ccp/tools/deploy-test-vms.sh -a"
-            " create".format(
+            "source openrc-{0}; bash fuel-ccp/tools/deploy-test-vms.sh -k {0}"
+            " -a create".format(
                 settings.CCP_CONF["kubernetes"]["namespace"]),
             timeout=600)

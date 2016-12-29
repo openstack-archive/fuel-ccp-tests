@@ -115,8 +115,8 @@ class TestRabbitmq(base_test.SystemBaseTest):
         rabbit_client.delete_queue(queue)
         show_step(5)
         remote.check_call(
-            "source openrc-{}; bash fuel-ccp/tools/deploy-test-vms.sh -a"
-            " create".format(namespace), timeout=600)
+            "source openrc-{0}; bash fuel-ccp/tools/deploy-test-vms.sh -k {0}"
+            " -a create".format(namespace), timeout=600)
 
     @pytest.mark.fail_snapshot
     @pytest.mark.rabbitmq_cold_restart
@@ -176,8 +176,8 @@ class TestRabbitmq(base_test.SystemBaseTest):
         rabbit_client.delete_queue(queue)
         show_step(5)
         remote.check_call(
-            "source openrc-{}; bash fuel-ccp/tools/deploy-test-vms.sh -a"
-            " create".format(namespace), timeout=600)
+            "source openrc-{0}; bash fuel-ccp/tools/deploy-test-vms.sh -k {0}"
+            " -a create".format(namespace), timeout=600)
 
     @pytest.mark.fail_snapshot
     @pytest.mark.rabbitmq_poweroff
@@ -228,8 +228,8 @@ class TestRabbitmq(base_test.SystemBaseTest):
         rabbit_client.delete_queue(queue)
         show_step(5)
         remote.check_call(
-            "source openrc-{}; bash fuel-ccp/tools/deploy-test-vms.sh -a"
-            " create".format(namespace), timeout=600)
+            "source openrc-{0}; bash fuel-ccp/tools/deploy-test-vms.sh -k {0}"
+            " -a create".format(namespace), timeout=600)
 
     @pytest.mark.fail_snapshot
     @pytest.mark.rabbitmq_soft_reboot
@@ -282,8 +282,8 @@ class TestRabbitmq(base_test.SystemBaseTest):
         rabbit_client.delete_queue(queue)
         show_step(5)
         remote.check_call(
-            "source openrc-{}; bash fuel-ccp/tools/deploy-test-vms.sh -a"
-            " create".format(namespace), timeout=600)
+            "source openrc-{0}; bash fuel-ccp/tools/deploy-test-vms.sh -k {0}"
+            " -a create".format(namespace), timeout=600)
 
     @pytest.mark.fail_snapshot
     @pytest.mark.rabbitmq_cluster_shutdown
@@ -343,8 +343,8 @@ class TestRabbitmq(base_test.SystemBaseTest):
                                                  pod.name, namespace)
         rabbit_client.delete_queue(queue)
         remote.check_call(
-            "source openrc-{}; bash fuel-ccp/tools/deploy-test-vms.sh -a"
-            " create".format(namespace), timeout=600)
+            "source openrc-{0}; bash fuel-ccp/tools/deploy-test-vms.sh -k {0}"
+            " -a create".format(namespace), timeout=600)
 
     @pytest.mark.fail_snapshot
     @pytest.mark.rabbitmq_scale_up_down
@@ -400,8 +400,8 @@ class TestRabbitmq(base_test.SystemBaseTest):
 
         show_step(5)
         remote.check_call(
-            "source openrc-{}; bash fuel-ccp/tools/deploy-test-vms.sh -a"
-            " create".format(namespace), timeout=600)
+            "source openrc-{0}; bash fuel-ccp/tools/deploy-test-vms.sh -k {0}"
+            " -a create".format(namespace), timeout=600)
         show_step(6)
         with underlay.yaml_editor(settings.CCP_DEPLOY_TOPOLOGY,
                                   host=config.k8s.kube_host) as editor:
@@ -419,8 +419,8 @@ class TestRabbitmq(base_test.SystemBaseTest):
             "Expcted to have 3 rabbit pods, got {}".format(rabbit_pods)
         show_step(9)
         remote.check_call(
-            "source openrc-{}; bash fuel-ccp/tools/deploy-test-vms.sh -a"
-            " create".format(namespace), timeout=600)
+            "source openrc-{0}; bash fuel-ccp/tools/deploy-test-vms.sh -k {0}"
+            " -a create".format(namespace), timeout=600)
 
     @pytest.mark.fail_snapshot
     @pytest.mark.rabbitmq_node_replacement
@@ -483,5 +483,5 @@ class TestRabbitmq(base_test.SystemBaseTest):
         rabbit_client.delete_queue(queue)
         show_step(7)
         remote.check_call(
-            "source openrc-{}; bash fuel-ccp/tools/deploy-test-vms.sh -a"
-            " create".format(namespace), timeout=600)
+            "source openrc-{0}; bash fuel-ccp/tools/deploy-test-vms.sh -k {0}"
+            " -a create".format(namespace), timeout=600)

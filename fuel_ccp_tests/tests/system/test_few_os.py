@@ -88,8 +88,8 @@ class TestDeployTwoOS(base_test.SystemBaseTest):
         post_os_deploy_checks.check_pods_status(k8s_actions.api,
                                                 namespace="ccp-second")
         remote.check_call(
-            "source openrc-{}; bash fuel-ccp/tools/deploy-test-vms.sh -a"
-            " create".format(
+            "source openrc-{0}; bash fuel-ccp/tools/deploy-test-vms.sh -k {0}"
+            " -a create".format(
                 settings.CCP_CONF["kubernetes"]["namespace"]),
             timeout=600)
 
@@ -156,8 +156,8 @@ class TestDeployTwoOS(base_test.SystemBaseTest):
         post_os_deploy_checks.check_pods_status(k8s_actions.api,
                                                 namespace="ccp-second")
         remote.check_call(
-            "source openrc-{}; bash fuel-ccp/tools/deploy-test-vms.sh -a"
-            " create".format(
+            "source openrc-{0}; bash fuel-ccp/tools/deploy-test-vms.sh -k {0}"
+            " -a create".format(
                 settings.CCP_CONF["kubernetes"]["namespace"]),
             timeout=600)
 
@@ -262,8 +262,8 @@ class TestDeployTwoOS(base_test.SystemBaseTest):
             name='keystone',
             namespace=settings.CCP_CONF["kubernetes"]["namespace"])
         remote.check_call(
-            "source openrc-{}; bash fuel-ccp/tools/deploy-test-vms.sh -a"
-            " create".format(
+            "source openrc-{0}; bash fuel-ccp/tools/deploy-test-vms.sh -k {0}"
+            " -a create".format(
                 settings.CCP_CONF["kubernetes"]["namespace"]),
             timeout=600)
 
@@ -286,7 +286,7 @@ class TestDeployTwoOS(base_test.SystemBaseTest):
             name='nova-api',
             namespace=settings.CCP_CONF["kubernetes"]["namespace"])
         remote.check_call(
-            "source openrc-{}; bash fuel-ccp/tools/deploy-test-vms.sh -a"
-            " create".format(
+            "source openrc-{0}; bash fuel-ccp/tools/deploy-test-vms.sh -k {0}"
+            " -a create".format(
                 settings.CCP_CONF["kubernetes"]["namespace"]),
             timeout=600)
