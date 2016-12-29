@@ -1,0 +1,8 @@
+Code-Review+2: Dennis Dmitriev <ddmitriev@mirantis.com>
+Workflow+1: tatyana-leontovich <tleontovich@mirantis.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Thu, 29 Dec 2016 11:41:10 +0000
+Reviewed-on: https://review.openstack.org/415670
+Project: openstack/fuel-ccp-tests
+Branch: refs/heads/master
