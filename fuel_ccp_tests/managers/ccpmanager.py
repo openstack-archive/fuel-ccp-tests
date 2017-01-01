@@ -254,3 +254,7 @@ class CCPManager(object):
                 "/home/{user}/ccp-repos/fuel-ccp-{service}".format(
                     user=settings.SSH_LOGIN,
                     service=service_name))
+
+    def status(self):
+        status = self.run('status -s -f value')
+        return status['stdout_str']

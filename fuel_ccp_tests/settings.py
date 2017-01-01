@@ -268,3 +268,50 @@ LVM_FILENAME = os.path.basename(LVM_PLUGIN_PATH)
 
 PRECOMMIT_SNAPSHOT_NAME = os.environ.get(
     'PRECOMMIT_SNAPSHOT_NAME', ext.SNAPSHOT.ccp_deployed)
+
+DEFAULT_REPOS = {'repositories':
+                    {'repos': [
+                        {'name': 'fuel-ccp-debian-base',
+                         'git_url': 'https://git.openstack.org/openstack/'
+                                    'fuel-ccp-debian-base'},
+                        {'name': 'fuel-ccp-ceph',
+                         'git_url': 'https://git.openstack.org/openstack/'
+                                    'fuel-ccp-ceph'},
+                        {'name': 'fuel-ccp-cinder',
+                         'git_url': 'https://git.openstack.org/openstack/'
+                                    'fuel-ccp-cinder'},
+                        {'name': 'fuel-ccp-entrypoint',
+                         'git_url': 'https://git.openstack.org/openstack/'
+                                    'fuel-ccp-entrypoint'},
+                        {'name': 'fuel-ccp-etcd',
+                         'git_url': 'https://git.openstack.org/openstack/'
+                                    'fuel-ccp-etcd'},
+                        {'name': 'fuel-ccp-memcached',
+                         'git_url': 'https://git.openstack.org/openstack/'
+                                    'fuel-ccp-memcached'},
+                        {'name': 'fuel-ccp-glance',
+                         'git_url': 'https://git.openstack.org/openstack/'
+                                    'fuel-ccp-glance'},
+                        {'name': 'fuel-ccp-heat',
+                         'git_url': 'https://git.openstack.org/openstack/'
+                                    'fuel-ccp-heat'},
+                        {'name': 'fuel-ccp-horizon',
+                         'git_url': 'https://git.openstack.org/openstack/'
+                                    'fuel-ccp-horizon'},
+                        {'name': 'fuel-ccp-keystone',
+                         'git_url': 'https://git.openstack.org/openstack/'
+                                    'fuel-ccp-keystone'},
+                        {'name': 'fuel-ccp-neutron',
+                         'git_url': 'https://git.openstack.org/openstack/'
+                                    'fuel-ccp-neutron'},
+                        {'name': 'fuel-ccp-nova',
+                         'git_url': 'https://git.openstack.org/openstack/'
+                                    'fuel-ccp-nova'},
+                        {'name': 'fuel-ccp-openstack-base',
+                         'git_url': 'https://git.openstack.org/openstack/'
+                                    'fuel-ccp-openstack-base'},
+                        {'name': 'fuel-ccp-rabbitmq',
+                         'git_url': 'https://git.openstack.org/openstack/'
+                                    'fuel-ccp-rabbitmq'},
+                        ]}}
+

@@ -61,6 +61,10 @@ def galera_deployed(ccpcluster,
     # Note: keep fixtures in strict dependences from each other!
     if not config.os.running:
         general_config = deepcopy(settings.CCP_CONF)
+        general_config['replicas'] = {'galera': 3}
+        repos = deepcopy(settings.DEFAULT_REPOS)
+        repos['repositories']['repos'].append({'git_url': 'https://git.openstack.org/openstack/fuel-ccp-galera', 'name': 'fuel-ccp-galera'})
+        general_config.update(repos)
         if settings.REGISTRY == "127.0.0.1:31500":
             k8s_actions.create_registry()
             ccpcluster.build()
