@@ -487,7 +487,7 @@ def get_top_fixtures_marks(request, mark_name):
     return top_fixtures_marks
 
 
-def rand_name():
+def rand_number():
     return str(random.randint(1, 0x7fffffff))
 
 
