@@ -33,7 +33,7 @@ class RabbitClient(object):
                                             queue))
 
     def create_queue(self):
-        test_queue = 'test-rabbit-{}'.format(utils.rand_name())
+        test_queue = 'test-rabbit-{}'.format(utils.rand_number())
         q = kombu.Queue(test_queue, channel=self.ch, durable=False,
                         queue_arguments={"x-expires": 15 * 60 * 1000})
         q.declare()

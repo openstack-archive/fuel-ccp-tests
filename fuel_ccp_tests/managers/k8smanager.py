@@ -250,7 +250,8 @@ class K8SManager(object):
             timeout_msg="Pod deletion timeout reached!"
         )
 
-    def check_pod_delete(self, k8s_pod, timeout=300, interval=5):
+    def check_pod_delete(self, k8s_pod, timeout=300, interval=5,
+                         namespace=None):
         """Deleting pod from k8s
 
         :param k8s_pod: fuel_ccp_tests.managers.k8s.nodes.K8sNode
@@ -260,7 +261,8 @@ class K8SManager(object):
         LOG.debug("Pod status:\n{}".format(k8s_pod.status))
         LOG.debug("Timeout for deletion is set to {}".format(timeout))
         LOG.debug("Checking interval is set to {}".format(interval))
-        self.api.pods.delete(body=k8s_pod, name=k8s_pod.name)
+        self.api.pods.delete(body=k8s_pod, name=k8s_pod.name,
+                             namespace=namespace)
         self.wait_pod_deleted(k8s_pod.name, timeout, interval)
         LOG.debug("Pod '{}' is deleted".format(k8s_pod.name))
 
