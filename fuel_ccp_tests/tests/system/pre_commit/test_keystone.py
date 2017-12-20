@@ -34,7 +34,7 @@ class TestPreCommitKeystone(object):
             3. Fetch all repositories
             4. Fetch keystone from review
             5. Fetch containers from external registry
-            6. Build keytone container
+            6. Build keystone container
             7. Deploy Openstack
             8. Run tempest
 
